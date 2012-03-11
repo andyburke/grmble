@@ -1,0 +1,15 @@
+{
+  "name": "grumble",
+  "description": "A chat server.",
+  "author": "Andy Burke <aburke@bitflood.org>",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "2.5.x",
+    "sha1": "0.0.x",
+    "mongodb": "0.9.x",
+    "mongoose": "2.5.x",
+    "mongoose-types": "1.0.x",
+    "connect-mongodb": "1.1.x"
+  },
+  "engine": "node >= 0.6.6"
+}
