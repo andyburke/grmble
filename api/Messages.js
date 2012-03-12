@@ -26,29 +26,29 @@ exports.bind = function( app ) {
         var query = models.Message.find( {} );
         
         query.where( 'roomId', request.params.roomId );
-        query.limit( typeof( request.param( 'limit' ) ) != undefined ? request.param( 'limit' ) : 100 );
+        query.limit( request.param( 'limit', 100 ) );
 
-        if ( typeof( request.param( 'skip' ) ) != undefined )
+        if ( typeof( request.param( 'skip' ) ) != 'undefined' )
         {
             query.skip( request.param( 'skip' ) );
         }
         
-        if ( typeof( request.param( 'since' ) ) != undefined )
+        if ( typeof( request.param( 'since' ) ) != 'undefined' )
         {
             query.$gte( 'createdAt', request.param( 'since' ) );
         }
         
-        if ( typeof( request.param( 'until' ) ) != undefined )
+        if ( typeof( request.param( 'until' ) ) != 'undefined' )
         {
             query.$lte( 'createdAt', request.param( 'until' ) );
         }
 
-        query.sort( 'createdAt', 'descending' );
+        query.desc( 'createdAt' );
 
-        query.run( function( error, messages ) {
+        query.exec( function( error, messages ) {
             if ( error )
             {
-                response.json( error, 500 );
+                response.json( error.message ? error.message : error, 500 );
                 return;
             }
             

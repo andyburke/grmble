@@ -3,7 +3,7 @@ var checks = require( './checks.js' );
 
 var sha1 = require( 'sha1' );
 
-exports.bind = function( app, io ) {
+exports.bind = function( app ) {
     app.post( '/api/1.0/User', function( request, response ) {
     
         if ( !request.param( 'email' ) )

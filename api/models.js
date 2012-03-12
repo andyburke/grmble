@@ -1,7 +1,7 @@
 var mongoose = require( 'mongoose' );
 var MongooseTypes = require( 'mongoose-types' );
 MongooseTypes.loadTypes( mongoose );
-var UseTimestamps = MongooseTypes.useTimestamps;
+var SimpleTimestamps = require( 'mongoose-SimpleTimestamps' ).SimpleTimestamps;
 
 // TODO: make this be on the mongoose model prototype
 var censor = exports.censor = function ( object, fields )
@@ -22,7 +22,7 @@ exports.UserSchema = new mongoose.Schema({
     passwordHash: { type: String },
     nickname: { type: String }
 });
-exports.UserSchema.plugin( UseTimestamps );
+exports.UserSchema.plugin( SimpleTimestamps );
 exports.User = mongoose.model( 'User', exports.UserSchema );
 
 exports.RoomSchema = new mongoose.Schema({
@@ -30,7 +30,7 @@ exports.RoomSchema = new mongoose.Schema({
     owners: { type: Array, index: true },
     isPublic: { type: Boolean }
 });
-exports.RoomSchema.plugin( UseTimestamps );
+exports.RoomSchema.plugin( SimpleTimestamps );
 exports.Room = mongoose.model( 'Room', exports.RoomSchema );
 
 exports.MessageSchema = new mongoose.Schema({
@@ -40,5 +40,5 @@ exports.MessageSchema = new mongoose.Schema({
     kind: { type: String },
     content: { type: String }
 });
-exports.MessageSchema.plugin( UseTimestamps );
+exports.MessageSchema.plugin( SimpleTimestamps );
 exports.Message = mongoose.model( 'Message', exports.MessageSchema );

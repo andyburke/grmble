@@ -19,13 +19,14 @@ var app = express.createServer(
     express.bodyParser(),
     express.cookieParser(),
     express.session({
-            cookie: { maxAge: 60000 * 60 * 24 * 30 }, // 30 days
-            secret: sessionSecret,
-            store: new mongoStore( { db: sessionDb } )
+        cookie: { maxAge: 60000 * 60 * 24 * 30 }, // 30 days
+        secret: sessionSecret,
+        store: new mongoStore( { db: sessionDb } )
     })
 );
 
 var apiModules = [
+    require( './api/Sessions.js' ),
     require( './api/Users.js' ),
     require( './api/Rooms.js' ),
     require( './api/Messages.js' )
