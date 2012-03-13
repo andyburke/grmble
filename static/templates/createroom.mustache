@@ -3,33 +3,36 @@
 </div>
 <div class="row">
     <div class="span7">
-        <form>
+        <form class="form-horizontal">
             <fieldset>
                 <div class="control-group">
-                    <label for="name">Name</label>
-                    <div class="input">
+                    <label class="control-label" for="name">Name</label>
+                    <div class="controls">
                         <input class="span7" id="name" name="name" size="30" type="text" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
-                    <label for="description">Description</label>
-                    <div class="input">
+                    <label class="control-label" for="description">Description</label>
+                    <div class="controls">
                         <textarea class="span7" id="description" name="description" rows="3"></textarea>
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
-                    <label for="tags">Tags</label>
-                    <div class="input">
+                    <label class="control-label" for="tags">Tags</label>
+                    <div class="controls">
                         <input class="span7" id="tags" name="tags" size="30" type="text" placeholder="eg: cats, robots, llamas" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
-                    <select id="protection">
-                        <option selected>Public</option>
-                        <option>Private</option>
-                    </select>
+                    <label class="control-label" for="protection">Visibility</label>
+                    <div class="controls">
+                        <select id="protection">
+                            <option selected>Public</option>
+                            <option>Private</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="actions">
+                <div class="form-actions">
                     <input type="submit" class="btn primary button-create-room" value="Create">
                 </div>
             </fieldset>
