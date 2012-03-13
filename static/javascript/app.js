@@ -531,235 +531,60 @@ $('.update-room-button').live( 'click', function( event ) {
     }
 });
 
-$('.reset-apikey-button').live( 'click', function( event ) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    var button = this;
-    var form = $(this).parents( 'form:first' );
-    var contextId = $(form).find( '#id' ).val();
-
-    $.ajax({
-        url: apiServer + '/api/1.0/Context/' + contextId + '/ResetAPIKey',
-        type: 'POST',
-        data: '{}',
-        dataType: 'json',
-        contentType: 'application/json',
-        success: function( context ) {
-            g_ContextCache[ context._id ] = context;
-            for ( var key in context )
-            {
-                $(form).find( '#' + key ).val( context[ key ] );
-                $(form).find( '#' + key ).html( context[ key ] );
-            }
-            $(button).button( 'complete' );
-            setTimeout( function() {
-                $(button).button( 'reset' );
-            }, 2000 );
-        },
-        error: function( response, status, error ) {
-            console.log( error );
-            $(button).button( 'reset' );
-        }
-    });
-});
-
-$('.reset-context-button').live( 'click', function( event ) {
+$('.reset-room-button').live( 'click', function( event ) {
     event.preventDefault();
     var form = $(this).parents( 'form:first' );
 
     // TODO: prompt for confirmation, maybe use bootstrap-modal.js?
     
-    var contextId = $(form).find( '#id' ).val();
-    var context = g_ContextCache[ contextId ];
+    var roomId = $(form).find( '#id' ).val();
+    var room = g_RoomCache[ roomId ];
     
-    if ( !context )
+    if ( !room )
     {
-        console.error( 'Context should be set.' );
+        console.error( 'Cache error.' );
         return;
     }
     
-    for ( var key in context )
+    for ( var key in room )
     {
-        $(form).find( '#' + key ).val( context[ key ] );
-        $(form).find( '#' + key ).html( context[ key ] );
+        $(form).find( '#' + key ).val( room[ key ] );
+        $(form).find( '#' + key ).html( room[ key ] );
     }
 });
 
-$('.button-create-achievementclass').live( 'click', function( event ) {
-    event.preventDefault();
-    var form = $(this).parents( 'form:first' );
-
-    $(form).spin( 'medium' );
-
-    var contextId = $(form).find( '#contextId' ).val();
-    var name = $(form).find( '#name' ).val();
-    var description = $(form).find( '#description' ).val();
-    
-    $.ajax({
-        url: apiServer + '/api/1.0/Context/' + contextId + '/AchievementClass',
-        type: 'POST',
-        data: JSON.stringify({
-            'name': name,
-            'description': description
-        }),
-        dataType: 'json',
-        contentType: 'application/json',
-        cache: false,
-        success: function( achievementClass ) {
-            $(form).spin( false );
-            
-            g_AchievementClassCache[ achievementClass._id ] = achievementClass;
-            g_AchievementClassListCache[ contextId ].push( achievementClass );
-            
-            app.setLocation( '#/Context/' + contextId + '/ManageAchievementClass/' + achievementClass._id );
-        },
-        error: function( response, status, error ) {
-            $(form).spin( false );
-            console.log( error );
-        }
-    });
-});
-
-$('.update-achievementclass-button').live( 'click', function( event ) {
-    event.preventDefault();
-    var button = this;
-    var form = $(this).parents( 'form:first' );
-
-    var toBeUpdated = {};
-
-    var contextId = $(form).find( '#contextId' ).val();
-    var achievementClassId = $(form).find( '#id' ).val();
-    var cachedAchievementClass = g_AchievementClassCache[ achievementClassId ];
-    
-    var imageFileInput = $(form).find( '#image-file' );
-    if ( imageFileInput.length )
-    {
-        var file = imageFileInput[ 0 ].files[ 0 ];
-        if ( file && file.fileName )
-        {
-            $( '#achievementclass-image' ).spin( 'medium' );
-            
-            var formData = new FormData();
-            formData.append( 'achievementClassImage', file );
-
-            $.ajax({
-                url: apiServer + '/api/1.0/Context/' + contextId + '/AchievementClass/' + achievementClassId + '/Image',
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                type: 'POST',
-                success: function( updatedAchievementClass ) {
-                    g_AchievementClassCache[ achievementClassId ] = updatedAchievementClass;
-                    $( '#achievementclass-image' ).attr( 'src', updatedAchievementClass.image );
-                    $( '#achievementclass-image' ).spin( false );
-                },
-                error: function( xhr ) {
-                    console.log( "error updating image" );
-                    $( '#achievementclass-image' ).spin( false );
-                }
-            });
-        }
-    }
-    
-    var name = $(form).find( "#name" ).val();
-    if ( name != cachedAchievementClass.name )
-    {
-        toBeUpdated.name = name;
-    }
-    
-    var description = $(form).find( "#description" ).val();
-    if ( description != cachedAchievementClass.description )
-    {
-        toBeUpdated.description = description;
-    }
-    
-    // only send if toBeUpdated has at least one key
-    for ( var key in toBeUpdated )
-    {
-        $(button).button( 'loading' );
-        $(form).spin( 'medium' );
-
-        $.ajax({
-            url: apiServer + '/api/1.0/Context/' + contextId + '/AchievementClass/' + achievementClassId,
-            type: 'PUT',
-            data: JSON.stringify( toBeUpdated ),
-            dataType: 'json',
-            contentType: 'application/json',
-            success: function( achievementClass ) {
-                g_AchievementClassCache[ achievementClass._id ] = achievementClass;
-                $(form).spin( false );
-                $(button).button( 'complete' );
-                setTimeout( function() {
-                    $(button).button( 'reset' );
-                }, 2000 );
-            },
-            error: function( response, status, error ) {
-                $(form).spin( false );
-                console.log( error );
-                $(button).button( 'reset' );
-            }
-        });
-
-        break; // we break, no matter what, because we just wanted to see if there was a key in toBeUpdated
-    }
-});
-
-$('.reset-achievementclass-button').live( 'click', function( event ) {
-    event.preventDefault();
-    var form = $(this).parents( 'form:first' );
-
-    // TODO: prompt for confirmation, maybe use bootstrap-modal.js?
-    
-    var achievementClassId = $(form).find( '#id' ).val();
-    var cachedAchievementClass = g_AchievementClassCache[ achievementClassId ];
-    
-    if ( !cachedAchievementClass )
-    {
-        console.error( 'AchievementClass should be set.' );
-        return;
-    }
-    
-    for ( var key in cachedAchievementClass )
-    {
-        $(form).find( '#' + key ).val( cachedAchievementClass[ key ] );
-        $(form).find( '#' + key ).html( cachedAchievementClass[ key ] );
-    }
-});
-
-$('.add-context-owner-button').live( 'click', function( event ) {
+$('.add-room-owner-button').live( 'click', function( event ) {
     event.preventDefault();
     var button = this;    
     var form = $( this ).parents( 'form:first' );
     
     $( button ).button( 'loading' );
-    var contextId = $( form ).find( '#contextId' ).val();
+    var roomId = $( form ).find( '#roomId' ).val();
     var hash = Crypto.MD5( $( form ).find( '#newowner' ).val().trim().toLowerCase() );
 
     $.ajax({
-        url: apiServer + '/api/1.0/Context/' + contextId + '/Owners/' + hash,
+        url: apiServer + '/api/1.0/Room/' + roomId + '/Owners/' + hash,
         type: 'POST',
         dataType: 'json',
-        success: function( context ) {
-            g_ContextCache[ context._id ] = context;
+        success: function( room ) {
+            g_RoomCache[ room._id ] = room;
             $(button).button( 'complete' );
             setTimeout( function() {
                 $(button).button( 'reset' );
             }, 2000 );            
 
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': context.owners, 'context': context }, function() {
+            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': room.owners, 'room': room }, function() {
                 $.ajax({
                     url: apiServer + '/api/1.0/Users',
                     type: 'POST',
-                    data: JSON.stringify( { 'users': context.owners } ),
+                    data: JSON.stringify( { 'users': room.owners } ),
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function( owners ) {
                         for ( var index = 0; index < owners.length; ++index )
                         {
-                            $( '#' + owners[ index ].hash + '-nickname' ).html( owners[ index ].nickname );
+                            $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
                         }
                         $( '#ownerlist' ).spin( false ); 
                     },
@@ -777,7 +602,7 @@ $('.add-context-owner-button').live( 'click', function( event ) {
     });
 });
 
-$('.remove-context-owner-link').live( 'click', function( event ) {
+$('.remove-room-owner-link').live( 'click', function( event ) {
     event.preventDefault();
     var link = this;
     
@@ -785,21 +610,21 @@ $('.remove-context-owner-link').live( 'click', function( event ) {
         url: apiServer + link.href,
         type: 'DELETE',
         dataType: 'json',
-        success: function( context ) {
-            g_ContextCache[ context._id ] = context;
+        success: function( room ) {
+            g_RoomCache[ room._id ] = room;
             
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': context.owners, 'context': context }, function() {
+            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': room.owners, 'context': room }, function() {
                 $.ajax({
                     url: apiServer + '/api/1.0/Users',
                     type: 'POST',
-                    data: JSON.stringify( { 'users': context.owners } ),
+                    data: JSON.stringify( { 'users': room.owners } ),
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function( owners ) {
                         for ( var index = 0; index < owners.length; ++index )
                         {
-                            $( '#' + owners[ index ].hash + '-nickname' ).html( owners[ index ].nickname );
+                            $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
                         }
                         $( '#ownerlist' ).spin( false ); 
                     },
@@ -811,35 +636,6 @@ $('.remove-context-owner-link').live( 'click', function( event ) {
             });
         },
         error: function( response, status, error ) {
-            console.log( error );
-        }
-    });
-});
-
-$('.grant-achievement-button').live( 'click', function( event ) {
-    event.preventDefault();
-    var button = this;
-    var form = $( this ).parents( 'form:first' );
-    
-    $( button ).button( 'loading' );
-    var contextId = $( form ).find( '#contextId' ).val();
-    var achievementClassId = $( form ).find( '#achievementClassId' ).val();
-    var hash = Crypto.MD5( $( form ).find( '#target' ).val().trim().toLowerCase() );
-
-    $.ajax({
-        url: apiServer + '/api/1.0/User/' + hash + '/Context/' + contextId + '/AchievementClass/' + achievementClassId,
-        type: 'POST',
-        dataType: 'json',
-        success: function( context ) {
-            $(button).button( 'complete' );
-            setTimeout( function() {
-                $(button).button( 'reset' );
-            }, 2000 );
-            
-            $( form ).find( '#target' ).val( '' );
-        },
-        error: function( response, status, error ) {
-            $( button ).button( 'reset' );
             console.log( error );
         }
     });
