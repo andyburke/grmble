@@ -15,7 +15,6 @@ var mongoStore = require( 'connect-mongodb' );
 var sessionSecret = process.env[ 'GRUMBLE_SECRET' ] != null ? sha1( process.env[ 'GRUMBLE_SECRET' ] ) : sha1( __dirname + __filename + process.env[ 'USER' ] );
 
 var app = express.createServer(
-    express.static( __dirname + '/site' ),
     express.bodyParser(),
     express.cookieParser(),
     express.session({
