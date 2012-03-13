@@ -3,13 +3,13 @@ Grumble
 
 #### Getting Started
 
-1) Install node (http://nodejs.org/)
-2) Install mongo (http://www.mongodb.org/downloads)
-3) Clone the code: git clone git@github.com:andyburke/grumble.git
-4) cd grumble
-5) npm install
-6) node server.js
-7) http://localhost:8000/
+ 1. Install node (http://nodejs.org/)
+ 2. Install mongo (http://www.mongodb.org/downloads)
+ 3. Clone the code: git clone git@github.com:andyburke/grumble.git
+ 4. cd grumble
+ 5. npm install
+ 6. node server.js
+ 7. http://localhost:8000/
 
 #### Optional, But Recommended
 
