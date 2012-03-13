@@ -1,0 +1,57 @@
+<div class="page-header">
+    <h1>My Account</h1>
+</div>
+<div class="row">
+    <div class="span4">
+        <img src="http://www.gravatar.com/avatar/{{hash}}?s=256">
+        <p>
+        <h1>Web Score: {{ score }}</h1>
+        <p>
+        <a href="/#/User/{{hash}}">Public Profile</a>
+    </div>
+    <div class="span7">
+        <form class="form-horizontal">
+          <fieldset>
+            <div class="control-group">
+              <label for="email">Email</label>
+              <div class="controls">
+                <input class="input-xlarge" id="email" name="email" type="text" value="{{ email }}" />
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label for="password">New Password</label>
+              <div class="controls">
+                <input class="input-xlarge" id="password" name="password" type="password" value="" />
+                <div class="help-block">
+                    Only enter a password here if you want to change your current password.
+                </div>
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label for="nickname">Nickname</label>
+              <div class="controls">
+                <input class="input-xlarge" id="nickname" name="nickname" type="text" value="{{ nickname }}" />
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label for="location">Location</label>
+              <div class="controls">
+                <input class="input-xlarge" id="location" name="location" type="text" value="{{ location }}" placeholder="eg: Los Angeles, CA" />
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label for="textarea">Bio</label>
+              <div class="controls">
+                <textarea class="input-xlarge" id="bio" name="bio" rows="3">{{ bio }}</textarea>
+                <div class="help-block">
+                  Enter a short bio if you please.
+                </div>
+              </div>
+            </div><!-- /clearfix -->
+            <div class="form-actions">
+                <button class="btn btn-primary update-account-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-account-button">Reset</button>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+    <title>Grumble</title>
+
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet/less" type="text/css" href="/css/main.less">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <script src="http://crypto-js.googlecode.com/files/2.3.0-crypto-md5.js" type="text/javascript"></script>
+    <script src="/javascript/lib/bootstrap.min.js" type="text/javascript"></script>
+    <script src="/javascript/lib/spin.min.js" type="text/javascript"></script>
+    <script src="/javascript/lib/sammy-latest.min.js" type="text/javascript"></script>
+    <script src="/javascript/lib/mustache.js" type="text/javascript"></script>
+    <script src="/javascript/lib/less.js" type="text/javascript"></script>
+    <script src="/javascript/app.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <a class="brand" href="#/">Grumble</a>
+                <ul class="nav">
+                    <li class="navItem active" id="nav-about"><a href="#/">About</a></li>
+                    <li class="navItem" id="nav-rooms"><a href="#/Rooms">Rooms</a></li>
+                    <li class="navItem unauthenticated" id="nav-signup"><a href="#/SignUp">Sign Up!</a></li>
+                    <li class="navItem authenticated" id="nav-myaccount"><a href="#/MyAccount">My Account</a></li>
+                    <li class="navItem authenticated" id="nav-myrooms"><a href="#/MyRooms">My Rooms</a></li>
+                    <li class="navItem authenticated" id="nav-createroom"><a href="#/CreateRoom">Create Room</a></li>
+                </ul>
+                <form id="topbar-signin-form" class="navbar-form pull-right form-inline unauthenticated">
+                    <input class="input-medium" type="text" name="email" placeholder="Email">
+                    <input class="input-medium" type="password" name="password" placeholder="Password">
+                    <button class="btn button-signin" type="submit">Sign In</button>
+                </form>
+                <form id="topbar-signout-form" class="navbar-form pull-right form-inline authenticated">
+                    <button id="topbar-signout-button" class="btn pull-right button-signout" type="submit">Sign Out</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="content" id="main">
+        </div>
+    </div> <!-- /container --></body>
+</html>

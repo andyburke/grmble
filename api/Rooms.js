@@ -6,8 +6,10 @@ exports.bind = function( app, io ) {
         
         var room = new models.Room();
         room.name = request.param( 'name' );
+        room.description = request.param( 'description', '' );
+        room.tags = request.param( 'tags' ) || [];
         room.owners = [ request.session.user._id ];
-        room.isPublic = typeof( request.param( 'isPublic' ) ) != undefined ? request.param( 'isPublic' ) : true;
+        room.isPublic = request.param( 'isPublic', true );
     
         room.save( function( error ) {
             if ( error )
@@ -65,9 +67,11 @@ exports.bind = function( app, io ) {
 
     app.put( '/api/1.0/Room/:roomId', checks.user, checks.ownsRoom, function( request, response ) {
             
-        request.room.name = typeof( request.param( 'name' ) ) != undefined ? request.param( 'name' ) : request.room.name;
-        request.room.owners = typeof( request.param( 'owners' ) ) != undefined ? request.param( 'owners' ) : request.room.owners;
-        request.room.isPublic = typeof( request.param( 'isPublic' ) ) != undefined ? request.param( 'isPublic' ) : true;
+        request.room.name = request.param( 'name', request.room.name );
+        request.room.description = request.param( 'description', request.room.description );
+        request.room.tags = request.param( 'tags', request.room.tags );
+        request.room.isPublic = request.param( 'isPublic', true );
+        request.room.owners = request.param( 'owners', request.room.owners );
     
         request.room.save( function( error ) {
             if ( error )

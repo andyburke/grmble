@@ -19,14 +19,19 @@ var censor = exports.censor = function ( object, fields )
 
 exports.UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, index: true },
+    hash: { type: String, unique: true, index: true },
     passwordHash: { type: String },
-    nickname: { type: String }
+    nickname: { type: String },
+    location: { type: String },
+    bio: { type: String }
 });
 exports.UserSchema.plugin( SimpleTimestamps );
 exports.User = mongoose.model( 'User', exports.UserSchema );
 
 exports.RoomSchema = new mongoose.Schema({
     name: { type: String, index: true },
+    description: { type: String },
+    tags: { type: Array, index: true },
     owners: { type: Array, index: true },
     isPublic: { type: Boolean }
 });

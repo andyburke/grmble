@@ -2,6 +2,7 @@ var models = require( './models.js' );
 var checks = require( './checks.js' );
 
 var sha1 = require( 'sha1' );
+var md5 = require( 'MD5' );
 
 exports.bind = function( app ) {
     app.post( '/api/1.0/User', function( request, response ) {
@@ -27,8 +28,11 @@ exports.bind = function( app ) {
             
             user = new models.User();
             user.email = request.param( 'email' ).trim().toLowerCase();
+            user.hash = md5( user.email );
             user.passwordHash = request.param( 'password' ) ? sha1( request.param( 'password' ) ) : null;
             user.nickname = request.param( 'nickname' );
+            user.location = request.param( 'location' );
+            user.bio = request.param( 'bio' );
             
             user.save( function( error ) {
                 if ( error )
@@ -50,9 +54,12 @@ exports.bind = function( app ) {
         function save()
         {
             models.User.findById( request.session.user._id, function( error, user ) {
-                user.email = typeof( request.param( 'email' ) ) != undefined ? request.param( 'email' ).trim().toLowerCase() : user.email;
-                user.nickname = typeof( request.param( 'nickname' ) ) != undefined ? request.param( 'nickname' ) : user.nickname;
-                user.passwordHash = typeof( request.params.password ) != undefined ? sha1( request.params.password ) : user.passwordHash;
+                user.email = request.param( 'email', user.email ).trim().toLowerCase();
+                user.hash = md5( user.email );
+                user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? sha1( request.param( 'password' ) ) : user.passwordHash;
+                user.nickname = request.param( 'nickname', user.nickname );
+                user.location = request.param( 'location' , user.location );
+                user.bio = request.param( 'bio', user.bio );
   
                 user.save( function( error ) {
                     if ( error )
@@ -112,6 +119,26 @@ exports.bind = function( app ) {
             }
             
             response.json( models.censor( user, { 'email': true, 'passwordHash': true } ) );
+        });
+    });
+
+    app.post( '/api/1.0/Users', function( request, response ) {
+        var idList = request.param( 'users' );
+        
+        models.User.find( { '_id': { $in: idList } }, function( error, users ) {
+            if ( error )
+            {
+                response.json( error, 500 );
+                return;
+            }
+            
+            var result = [];
+            for ( var index = 0; index < users.length; ++index )
+            {
+                result.push( models.censor( users[ index ], { 'email': true, 'passwordHash': true } ) );
+            }
+            
+            response.json( result );
         });
     });
 }
