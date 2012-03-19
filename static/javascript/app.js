@@ -27,7 +27,10 @@ function SetActivePage( page )
 }
 
 var g_TemplateCache = {};
+var g_InFlightTemplates = {};
 var g_RoomCache = {};
+
+var currentRoomId = null;
 
 function renderTemplate( elementSelector, template, data, callback ) {
     if ( g_TemplateCache[ template ] )
@@ -40,12 +43,23 @@ function renderTemplate( elementSelector, template, data, callback ) {
     }
     else
     {
+        if ( g_InFlightTemplates[ template ] )
+        {
+            setTimeout( function() { renderTemplate( elementSelector, template, data, callback ); }, 100 );
+            return;
+        }
+        
+        g_InFlightTemplates[ template ] = true;
         $.ajax({
             url: template,
             dataType: "text",
             success: function( contents ) {
+                delete g_InFlightTemplates[ template ];
                 g_TemplateCache[ template ] = contents;
                 renderTemplate( elementSelector, template, data, callback );
+            },
+            error: function( xhr ) {
+                // TODO: delete g_InFlightTemplates[ template ]; ??
             }
         });
     }
@@ -219,10 +233,10 @@ var app = Sammy( function() {
     this.get( '#/Room/:roomId', function () {
         $( '#main' ).spin( 'large' );
 
-        var roomId = this.params[ 'roomId' ];
+        currentRoomId = this.params[ 'roomId' ];
 
         $.ajax({
-            url: apiServer + '/api/1.0/Room/' + roomId,
+            url: apiServer + '/api/1.0/Room/' + currentRoomId,
             type: 'GET',
             dataType: 'json',
             success: function( room ) {
@@ -230,7 +244,78 @@ var app = Sammy( function() {
                 renderTemplate( '#main', '/templates/room.mustache', { 'room': room }, function () {
                     $( '#main' ).spin( false );
                     
-                    // TODO: start grabbing messages
+                    function ScrollToBottom() {
+                        $( 'html, body' ).animate({ 
+                                scrollTop: $( document ).height() - $( window ).height()
+                            }, 
+                            100,
+                            "linear"
+                        );
+                    }
+    
+                    var socket = io.connect( window.location.origin );
+                    socket.on( 'message', function( message ) {
+                        
+                        var row = $( '#chatlog tbody:last' ).append( '<tr id="' + message._id + '" class="message"></tr' );
+                        renderTemplate( '#' + message._id, '/templates/message.mustache', { 'message': message }, function () {
+                            ScrollToBottom();
+                        });
+                        $( '#submit-message' ).button( 'reset' );
+                    });
+                    
+                    socket.emit( 'message', {
+                        kind: 'join',
+                        roomId: room._id,
+                        senderId: currentUser ? currentUser._id : null,
+                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                        userHash: currentUser ? currentUser.hash : null,
+                        facebookId: currentUser ? currentUser.facebookId : null,
+                        twitterId: currentUser ? currentUser.twitterId : null,
+                        avatar: currentUser ? currentUser.avatar : null,
+                        content: null
+                    });
+                    
+                    function SendMessage() {
+
+                        var message = {
+                            kind: 'say',
+                            roomId: room._id,
+                            senderId: currentUser ? currentUser._id : null,
+                            nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                            userHash: currentUser ? currentUser.hash : null,
+                            facebookId: currentUser ? currentUser.facebookId : null,
+                            twitterId: currentUser ? currentUser.twitterId : null,
+                            avatar: currentUser ? currentUser.avatar : null,
+                            content: $( '#message-entry-content' ).val()
+                        };
+                        
+                        socket.emit( 'message', message );
+                        $( '#submit-message' ).button( 'loading' );
+                        $( '#message-entry-content' ).val( '' );
+                    }
+                    
+                    $( '#submit-message' ).unbind();
+                    $( '#submit-message' ).bind( 'click', function( event ) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        SendMessage();
+                    });
+                    
+                    $( '#message-entry-form' ).unbind();
+                    $( '#message-entry-form' ).bind( 'submit', function( event ) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        SendMessage();
+                    });
+                    
+                    $( '#message-entry-content' ).bind( 'keydown', function( event ) {
+                        if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
+                        {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            SendMessage();
+                        }
+                    });
                 });
             },
             error: function( response, status, error ) {
@@ -257,7 +342,7 @@ $(function() {
             $('.unauthenticated').show();
         }
     });
-    
+
     app.run( '#/' );
 });
 

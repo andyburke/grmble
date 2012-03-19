@@ -23,7 +23,10 @@ exports.UserSchema = new mongoose.Schema({
     passwordHash: { type: String },
     nickname: { type: String },
     location: { type: String },
-    bio: { type: String }
+    bio: { type: String },
+    facebookId: { type: String },
+    twitterId: { type: String },
+    avatar: { type: String }
 });
 exports.UserSchema.plugin( SimpleTimestamps );
 exports.User = mongoose.model( 'User', exports.UserSchema );
@@ -42,6 +45,10 @@ exports.MessageSchema = new mongoose.Schema({
     roomId: { type: mongoose.Schema.ObjectId, index: true },
     senderId: { type: mongoose.Schema.ObjectId, index: true },
     nickname: { type: String }, // just easier to toss this here than to require a lookup
+    userHash: { type: String },
+    facebookId: { type: String },
+    twitterId: { type: String },
+    avatar: { type: String },
     kind: { type: String },
     content: { type: String }
 });

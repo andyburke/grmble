@@ -11,7 +11,8 @@
     "mongoose": "2.5.x",
     "mongoose-types": "1.0.x",
     "connect-mongodb": "1.1.x",
-    "mongoose-SimpleTimestamps": "https://github.com/andyburke/mongoose-SimpleTimestamps/tarball/master"
+    "mongoose-SimpleTimestamps": "https://github.com/andyburke/mongoose-SimpleTimestamps/tarball/master",
+    "socket.io": "0.9.x"
   },
   "engine": "node >= 0.6.6"
 }
