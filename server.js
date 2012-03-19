@@ -14,6 +14,8 @@ var mongoStore = require( 'connect-mongodb' );
 
 var sessionSecret = process.env[ 'GRUMBLE_SECRET' ] != null ? sha1( process.env[ 'GRUMBLE_SECRET' ] ) : sha1( __dirname + __filename + process.env[ 'USER' ] );
 
+var Io = require('socket.io')
+
 var app = express.createServer(
     express.static( __dirname + '/static' ),
     express.bodyParser(),
@@ -25,16 +27,28 @@ var app = express.createServer(
     })
 );
 
+var io = Io.listen( app );
+io.configure( function(){ 
+    io.set( 'transports', [
+        'websocket',
+        'flashsocket',
+        'htmlfile',
+        'xhr-polling',
+        'jsonp-polling'
+    ] );
+});
+
 var apiModules = [
     require( './api/Sessions.js' ),
     require( './api/Users.js' ),
     require( './api/Rooms.js' ),
-    require( './api/Messages.js' )
+    require( './api/Messages.js' ),
+    require( './api/Socket.js' )
 ];
 
 for ( var moduleIndex = 0; moduleIndex < apiModules.length; ++moduleIndex )
 {
-    apiModules[ moduleIndex ].bind( app );
+    apiModules[ moduleIndex ].bind( app, io );
 }
 
 app.listen( process.env.TURNS_PORT || 8000 );
