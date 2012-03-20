@@ -6,7 +6,7 @@ var sha1 = require( 'sha1' );
 exports.bind = function( app ) {
     
     app.post( '/api/1.0/Session', checks.user, function( request, response ) {
-        response.json( { 'created': true } );
+        response.json( { 'created': true, 'user': models.censor( request.session.user, { 'passwordHash': true } ) } );
     });
     
     app.del( '/api/1.0/Session', checks.user, function( request, response ) {

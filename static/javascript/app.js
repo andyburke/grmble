@@ -269,7 +269,7 @@ var app = Sammy( function() {
                     var socket = io.connect( window.location.origin );
                     socket.on( 'message', function( message ) {
                         
-                        var row = $( '#chatlog tbody:last' ).append( '<tr id="' + message._id + '" class="message"></tr' );
+                        var row = $( '#chatlog tbody:last' ).append( '<tr id="' + message._id + '" class="' + message.kind + '"></tr' );
                         renderTemplate( '#' + message._id, '/templates/message.mustache', { 'message': message }, function () {
                             ScrollToBottom();
                         });
@@ -290,6 +290,13 @@ var app = Sammy( function() {
                     
                     function SendMessage() {
 
+                    
+                        if ( !currentUser )
+                        {
+                            $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
+                            return;
+                        }
+                        
                         var message = {
                             kind: 'say',
                             roomId: room._id,
@@ -385,10 +392,17 @@ function HandleAuthentication( resource, form )
             {
                 currentUser = data;
             }
+            else
+            {
+                currentUser = data.user;
+            }
+
             $('.authenticated').show();
             $('.unauthenticated').hide();
             $(form).spin( false );
+            $( '#signup-modal' ).modal( 'hide' );
             
+            /*
             var queryParams = QueryParameters();
             if ( queryParams.after )
             {
@@ -398,6 +412,7 @@ function HandleAuthentication( resource, form )
             {
                 app.setLocation( '#/MyAccount' );
             }
+            */
         },
         error: function( response, status, error ) {
             $(form).find( "input[type=password][name=password]" ).val( '' );
@@ -440,6 +455,25 @@ $('.button-signout').live( 'click', function( event ) {
             console.log( error );
         }
     });    
+});
+
+$( '#signup-modal-set-nickname' ).live( 'click', function( event ) {
+    event.preventDefault();
+    event.stopPropagation();
+    $( '#signup-modal' ).modal( 'hide' );
+    $( '#set-nickname-modal' ).modal( { 'backdrop': 'static' } );
+});
+
+$( '#set-nickname-modal-set-nickname' ).live( 'click', function( event ) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    var nickname = $( '#set-nickname-form' ).find( "input[type=text][name=nickname]" ).val();
+    if ( nickname.length )
+    {
+        currentUser = { nickname: nickname };
+        $( '#set-nickname-modal' ).modal( 'hide' );
+    }
 });
 
 $('.update-account-button').live( 'click', function( event ) {
