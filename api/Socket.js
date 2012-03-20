@@ -81,13 +81,22 @@ exports.bind = function( app, io ) {
     
                     if ( message.kind == 'join' )
                     {
+                        // TODO: the performance on this will likely be terrible as rooms grow,
+                        //       we really need a better way to get the last N messages and send
+                        //       them to the client in the proper order
+                        
                         // Send existing messages in room
+                        var numMessages = models.Message.find( { roomId: room._id } ).count();
+                        
                         var query = models.Message.find( {} );
                         
                         query.where( 'roomId', room._id );
+                        query.skip( numMessages - 100 );
                         query.limit(  100 );
-                        query.desc( 'createdAt' );
+                        query.asc( 'createdAt' );
+                        
                         var stream = query.stream();
+                        
                         stream.on( 'data', function( message ) {
                             client.json.send( message );
                         });
