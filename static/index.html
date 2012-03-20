@@ -46,6 +46,51 @@
         </div>
     </div>
 
+    <div id="signup-modal" class="modal hide">
+        <div class="modal-header">
+            <a class="close" data-dismiss="modal">x</a>
+            <h3>Sign Up! <small>(Or just set your nickname...)</small></h3>
+        </div>
+        <div class="row modal-body">
+            <div class="span3">
+                <form id="signup-form">
+                    <fieldset>
+                        <input type="text" class="pull-right" name="email" placeholder="Email" />
+                        <div class="clear"></div>
+                        <input type="password" class="pull-right" name="password" placeholder="Password" />
+                        <div class="clear"></div>
+                        <input type="submit" class="button-signup pull-right btn btn-primary" id="signup-modal-signup-button" value="Sign Up!" />
+                    </fieldset>
+                </form>
+            </div>
+            <div class="span3 extra">
+                <a href="#" id="signup-facebook"><img src="/images/social/icons/48x48/facebook.png" alt="Facebook"/> Log In Using Facebook</a>
+                <div class="clear padded"></div>
+                <a href="#" id="signup-twitter"><img src="/images/social/icons/48x48/twitter.png" alt="Twitter"/> Log In Using Twitter</a>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="btn" id="signup-modal-set-nickname">Just Set My Nickname</a>
+        </div>        
+    </div>
+    
+    <div id="set-nickname-modal" class="modal hide">
+        <div class="modal-header">
+            <a class="close" data-dismiss="modal">x</a>
+            <h3>Set Your Nickname</h3>
+        </div>
+        <div class="row modal-body">
+            <div class="centered" style="width: 360px;">
+                <form id="set-nickname-form">
+                    <fieldset>
+                        <input type="text" class="centered" name="nickname" placeholder="Nickname" />
+                        <a href="#" class="btn" id="set-nickname-modal-set-nickname">Set Nickname</a>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <div class="content" id="main">
         </div>

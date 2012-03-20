@@ -38,6 +38,27 @@ input.error
     min-width: @min-width;
 }
 
+.extra
+{
+    padding-left: 19px;
+    border-left: 1px solid #eee;
+}
+
+.clear
+{
+    clear: both;
+}
+
+.padded
+{
+    padding: 2px;
+}
+
+.centered
+{
+    margin: 0px auto;
+}
+
 .container
 {
 }
@@ -63,12 +84,6 @@ input.error
         margin: -20px -20px 20px;
     }
 
-    .extra
-    {
-        padding-left: 19px;
-        border-left: 1px solid #eee;
-    }
-
     .chatlog-wrapper
     {
         margin-right: 230px;
@@ -84,6 +99,18 @@ input.error
         {
             width: 80px;
             vertical-align: top;
+        }
+        
+        .join
+        {
+            background: #ded;
+            
+            .nickname
+            {
+                background: @background;
+                position: absolute;
+                left: -10000px;
+            }
         }
     }
     
@@ -116,7 +143,7 @@ input.error
 
 .sidebar-nav-fixed
 {
-    padding: 0px;
+    padding: 0px 0px 0px 4px;
     position: fixed;
     right: 0px;
     top: 50px;
