@@ -92,7 +92,7 @@ exports.bind = function( app, io ) {
                         
                         query.where( 'roomId', room._id );
                         query.skip( numMessages - 100 );
-                        query.limit(  100 );
+//                        query.limit(  100 );
                         query.asc( 'createdAt' );
                         
                         var stream = query.stream();
