@@ -72,10 +72,13 @@ exports.bind = function( app, io ) {
                         try
                         {
                             var otherClient = rooms[ message.roomId ][ clientIndex ];
-                            if ( otherClient != client )
+
+                            if ( newMessage.kind == 'join' && otherClient == client )
                             {
-                                otherClient.json.send( newMessage );
+                                continue;
                             }
+
+                            otherClient.json.send( newMessage );
                         }
                         catch( exception )
                         {
