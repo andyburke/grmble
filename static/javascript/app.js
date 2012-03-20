@@ -244,13 +244,26 @@ var app = Sammy( function() {
                 renderTemplate( '#main', '/templates/room.mustache', { 'room': room }, function () {
                     $( '#main' ).spin( false );
                     
+                    var scrollRequests = 0;
                     function ScrollToBottom() {
-                        $( 'html, body' ).animate({ 
-                                scrollTop: $( document ).height() - $( window ).height()
-                            }, 
-                            100,
-                            "linear"
-                        );
+                        ++scrollRequests;
+                        if ( scrollRequests == 1 )
+                        {
+                            $( 'html, body' ).animate({ 
+                                    scrollTop: $( document ).height() - $( window ).height()
+                                }, 
+                                100,
+                                "linear",
+                                function() {
+                                    var outstandingRequests = scrollRequests > 1;
+                                    scrollRequests = 0;
+                                    if ( outstandingRequests )
+                                    {
+                                        ScrollToBottom();
+                                    }
+                                }
+                            );
+                        }
                     }
     
                     var socket = io.connect( window.location.origin );
