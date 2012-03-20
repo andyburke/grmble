@@ -71,7 +71,11 @@ exports.bind = function( app, io ) {
                     {
                         try
                         {
-                            rooms[ message.roomId ][ clientIndex ].json.send( newMessage );
+                            var otherClient = rooms[ message.roomId ][ clientIndex ];
+                            if ( otherClient != client )
+                            {
+                                otherClient.json.send( newMessage );
+                            }
                         }
                         catch( exception )
                         {
@@ -86,25 +90,34 @@ exports.bind = function( app, io ) {
                         //       them to the client in the proper order
                         
                         // Send existing messages in room
-                        var numMessages = models.Message.find( { roomId: room._id } ).count();
-                        
-                        var query = models.Message.find( {} );
-                        
-                        query.where( 'roomId', room._id );
-                        query.skip( numMessages - 100 );
-//                        query.limit(  100 );
-                        query.asc( 'createdAt' );
-                        
-                        var stream = query.stream();
-                        
-                        stream.on( 'data', function( message ) {
-                            client.json.send( message );
-                        });
-                        
-                        stream.on( 'error', function( error ) {
-                            client.json.send({
-                                kind: 'error',
-                                error: error
+                        models.Message.count( { roomId: room._id }, function( error, numMessages ) {
+                            if ( error )
+                            {
+                                client.json.send({
+                                    kind: 'error',
+                                    error: error
+                                });
+                                return;
+                            }
+
+                            var query = models.Message.find( {} );
+                            
+                            query.where( 'roomId', room._id );
+                            query.skip( numMessages - 100 );
+    //                        query.limit(  100 );
+                            query.asc( 'createdAt' );
+                            
+                            var stream = query.stream();
+                            
+                            stream.on( 'data', function( message ) {
+                                client.json.send( message );
+                            });
+                            
+                            stream.on( 'error', function( error ) {
+                                client.json.send({
+                                    kind: 'error',
+                                    error: error
+                                });
                             });
                         });
                     }
