@@ -106,8 +106,11 @@ exports.bind = function( app, io ) {
                             var query = models.Message.find( {} );
                             
                             query.where( 'roomId', room._id );
-                            query.skip( numMessages - 100 );
-    //                        query.limit(  100 );
+                            if ( numMessages > 100 )
+                            {
+                                query.skip( numMessages - 100 );
+                            }
+
                             query.asc( 'createdAt' );
                             
                             var stream = query.stream();
