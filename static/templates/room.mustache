@@ -1,23 +1,31 @@
-<div class="row">
-    <div class="chatlog-wrapper span9">
-        <table class="table table-bordered chatlog" id="chatlog">
-            <tbody>
-            </tbody>
-        </table>
-    
-        <div class="message-entry-wrapper">
-            <form id="message-entry-form" class="message-entry-form">
-                <textarea id="message-entry-content" class="span8 message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
-                <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
-            </form>
+<div class="row-fluid">
+    <div class="room-wrapper">
+        <div class="chatlog-wrapper">
+            <table class="table table-bordered chatlog" id="chatlog">
+                <tbody>
+                </tbody>
+            </table>
+        
+            <div class="message-entry-wrapper">
+                <form id="message-entry-form" class="message-entry-form">
+                    <div class="row-fluid">
+                        <div class="message-entry-content-wrapper">
+                            <textarea id="message-entry-content" class="boxsizing-border message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
+                        </div>
+                        <div class="submit-message-wrapper">
+                            <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
-    
-    <div class="span3 extra" id="sidebar">
-        <h2 id="room-name">{{ room.name }} <button class="btn btn-mini btn-warning" id="leave-room">Leave</button></h2>
-        <hr/>
-        <div id="settings">
-            <a href="https://github.com/andyburke/grumble/issues" target="_blank">Bug/Feature Request</a><br>
+        
+        <div class="sidebar-nav-fixed extra" id="sidebar">
+            <h2 id="room-name">{{ room.name }} <button class="btn btn-mini btn-warning" id="leave-room">Leave</button></h2>
+            <hr/>
+            <div id="settings">
+                <a href="https://github.com/andyburke/grumble/issues" target="_blank">Bug/Feature Request</a><br>
+            </div>
         </div>
     </div>
 </div>
