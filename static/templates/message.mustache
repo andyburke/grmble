@@ -1,1 +1,11 @@
-<td class="nickname">{{message.nickname}}</td><td>{{message.content}}</td>
+<div id="{{_id}}" class="{{kind}}">
+    <div class="nickname">
+        {{nickname}}
+    </div>
+    <div class="avatar-container">
+        <img class="avatar" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" />
+    </div>
+    <div class="message-content">
+        {{content}}
+    </div>
+</div>

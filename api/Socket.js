@@ -9,12 +9,11 @@ exports.bind = function( app, io ) {
         client.on( 'disconnect', function() {
             for ( var room in rooms )
             {
-                var index = rooms[ room ].indexOf( client );
+                var index = rooms[ room ][ 'clients' ].indexOf( client );
                 if ( index != -1 )
                 {
-                    rooms[ room ].splice( index, 1 );
-                    
-                    // TODO: emit part? complicated because we need to know the user, nick, etc.
+                    rooms[ room ][ 'clients' ].splice( index, 1 );
+                    delete rooms[ room ][ 'users' ][ client.id ];
                 }
             }
         });
@@ -40,16 +39,10 @@ exports.bind = function( app, io ) {
                     return;
                 }
                 
-                if ( !rooms[ message.roomId ] )
-                {
-                    rooms[ message.roomId ] = [];
-                }
-
-                rooms[ room._id ].push( client );
-
                 var newMessage = new models.Message();
                 newMessage.roomId = message.roomId;
                 newMessage.senderId = message.senderId;
+                newMessage.clientId = client.id;
                 newMessage.nickname = message.nickname;
                 newMessage.userHash = message.userHash;
                 newMessage.facebookId = message.facebookId;
@@ -80,12 +73,20 @@ exports.bind = function( app, io ) {
                         return;
                     }
                     
+                    if ( !rooms[ message.roomId ] )
+                    {
+                        rooms[ message.roomId ] = {
+                            'users': {},
+                            'clients': []
+                        };
+                    }
+
                     // TODO: support for private messages? kind = private, need a target user id?
-                    for ( var clientIndex = 0; clientIndex < rooms[ message.roomId ].length; ++clientIndex )
+                    for ( var clientIndex = 0; clientIndex < rooms[ message.roomId ][ 'clients' ].length; ++clientIndex )
                     {
                         try
                         {
-                            var otherClient = rooms[ message.roomId ][ clientIndex ];
+                            var otherClient = rooms[ message.roomId ][ 'clients' ][ clientIndex ];
 
                             if ( newMessage.kind == 'join' && otherClient == client )
                             {
@@ -102,6 +103,25 @@ exports.bind = function( app, io ) {
     
                     if ( message.kind == 'join' )
                     {
+                        rooms[ room._id ][ 'clients' ].push( client );
+                        rooms[ room._id ][ 'users' ][ client.id ] = {
+                            clientid: client.id,
+                            userid: newMessage.senderId,
+                            nickname: newMessage.nickname,
+                            userHash: newMessage.userHash,
+                            facebookId: newMessage.facebookId,
+                            twitterId: newMessage.twitterId,
+                            avatar: newMessage.avatar
+                        };
+                        
+                        var users = [];
+                        for ( var id in rooms[ room._id ][ 'users' ] )
+                        {
+                            users.push( rooms[ room._id ][ 'users' ][ id ] );
+                        }
+
+                        client.emit( 'userlist', { users: users } );
+                        
                         // TODO: the performance on this will likely be terrible as rooms grow,
                         //       we really need a better way to get the last N messages and send
                         //       them to the client in the proper order
@@ -141,7 +161,6 @@ exports.bind = function( app, io ) {
                             });
                         });
                     }
-    
                 });
             });
         });

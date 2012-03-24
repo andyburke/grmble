@@ -32,10 +32,19 @@ var g_RoomCache = {};
 
 var currentRoomId = null;
 
-function renderTemplate( elementSelector, template, data, callback ) {
-    if ( g_TemplateCache[ template ] )
+function renderTemplate( options, callback ) {
+    if ( g_TemplateCache[ options.template ] )
     {
-        $(elementSelector).html( Mustache.to_html( g_TemplateCache[ template ], data ) );
+        var result = Mustache.to_html( g_TemplateCache[ options.template ], options.data )
+        if ( options.append )
+        {
+            $( options.selector ).append( result );
+        }
+        else
+        {
+            $( options.selector ).html( result );
+        }
+        
         if ( callback )
         {
             callback();
@@ -43,20 +52,20 @@ function renderTemplate( elementSelector, template, data, callback ) {
     }
     else
     {
-        if ( g_InFlightTemplates[ template ] )
+        if ( g_InFlightTemplates[ options.template ] )
         {
-            setTimeout( function() { renderTemplate( elementSelector, template, data, callback ); }, 100 );
+            setTimeout( function() { renderTemplate( options, callback ); }, 100 );
             return;
         }
         
-        g_InFlightTemplates[ template ] = true;
+        g_InFlightTemplates[ options.template ] = true;
         $.ajax({
-            url: template,
+            url: options.template,
             dataType: "text",
             success: function( contents ) {
-                delete g_InFlightTemplates[ template ];
-                g_TemplateCache[ template ] = contents;
-                renderTemplate( elementSelector, template, data, callback );
+                delete g_InFlightTemplates[ options.template ];
+                g_TemplateCache[ options.template ] = contents;
+                renderTemplate( options, callback );
             },
             error: function( xhr ) {
                 // TODO: delete g_InFlightTemplates[ template ]; ??
@@ -72,7 +81,10 @@ var app = Sammy( function() {
     
     this.get( '#/', function() {
         SetActivePage( 'about' );
-        renderTemplate( '#main', "/templates/home.mustache", null );
+        renderTemplate( {
+            selector: '#main',
+            template: "/templates/home.mustache"
+        });
     });
     
     this.get( '#/Rooms', function() {
@@ -83,7 +95,11 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                renderTemplate( '#main', "/templates/rooms.mustache", { 'rooms': rooms }, function() {
+                renderTemplate({
+                    selector: '#main',
+                    template: "/templates/rooms.mustache",
+                    data: { 'rooms': rooms }
+                }, function() {
                     $('#main').spin( false );
                 });
             },
@@ -96,7 +112,10 @@ var app = Sammy( function() {
     
     this.get( '#/SignUp', function() {
         SetActivePage( 'signup' );
-        renderTemplate( '#main', "/templates/signup.mustache", null );
+        renderTemplate({
+            selector: '#main',
+            template: "/templates/signup.mustache"
+        });
     });
     
     this.get( '#/MyAccount', function() {
@@ -111,7 +130,11 @@ var app = Sammy( function() {
                 success: function( data ) {
                     $('#main').spin( false );
                     currentUser = data;
-                    renderTemplate( '#main', '/templates/myaccount.mustache', currentUser );
+                    renderTemplate({
+                        selector: '#main',
+                        template: '/templates/myaccount.mustache',
+                        data: currentUser
+                    });
                 },
                 error: function( response, status, error ) {
                     $('#main').spin( false );
@@ -121,7 +144,11 @@ var app = Sammy( function() {
         }
         else
         {
-            renderTemplate( '#main', '/templates/myaccount.mustache', currentUser );
+            renderTemplate({
+                selector: '#main',
+                template: '/templates/myaccount.mustache',
+                data: currentUser
+            });
         }
     });
     
@@ -132,7 +159,11 @@ var app = Sammy( function() {
         
         function render( user )
         {
-            renderTemplate( '#main', '/templates/user.mustache', { 'user': user }, function() {
+            renderTemplate({
+                selector: '#main',
+                template: '/templates/user.mustache',
+                data: { 'user': user }
+            }, function() {
                 $( '#main' ).spin( false );
             });
         }
@@ -166,7 +197,11 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                renderTemplate( '#main', '/templates/rooms.mustache', { 'rooms': rooms }, function() {
+                renderTemplate({
+                    selector: '#main',
+                    template: '/templates/rooms.mustache',
+                    data: { 'rooms': rooms }
+                }, function() {
                     $( '#main' ).spin( false );
                 });
             },
@@ -180,7 +215,10 @@ var app = Sammy( function() {
     this.get( '#/CreateRoom', function() {
         SetActivePage( 'createroom' );
         $( '#main' ).spin( 'large' );
-        renderTemplate( '#main', '/templates/createroom.mustache', null, function () {
+        renderTemplate({
+            selector: '#main',
+            template: '/templates/createroom.mustache'
+        }, function () {
             $( '#main' ).spin( false );
         });
     });
@@ -197,11 +235,19 @@ var app = Sammy( function() {
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
                 room.joinedTags = room.tags.join( ', ' );
-                renderTemplate( '#main', '/templates/manageroom.mustache', room, function() {
+                renderTemplate({
+                    selector: '#main',
+                    template: '/templates/manageroom.mustache',
+                    data: room
+                }, function() {
                     $( '#main' ).spin( false );
                     
                     $( '#ownerlist' ).spin( 'small' );
-                    renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': room.owners, 'room': room }, function() {
+                    renderTemplate({
+                        selector: '#ownerlist',
+                        template: '/templates/ownerlist.mustache',
+                        data: { 'owners': room.owners, 'room': room }
+                    }, function() {
                         $.ajax({
                             url: apiServer + '/api/1.0/Users',
                             type: 'POST',
@@ -241,7 +287,11 @@ var app = Sammy( function() {
             dataType: 'json',
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
-                renderTemplate( '#main', '/templates/room.mustache', { 'room': room }, function () {
+                renderTemplate({
+                    selector: '#main',
+                    template: '/templates/room.mustache',
+                    data: { 'room': room }
+                }, function () {
                     $( '#main' ).spin( false );
                     
                     var scrollRequests = 0;
@@ -272,11 +322,43 @@ var app = Sammy( function() {
 
                     socket.on( 'message', function( message ) {
                         
-                        var row = $( '#chatlog tbody:last' ).append( '<tr id="' + message._id + '" class="' + message.kind + '"></tr' );
-                        renderTemplate( '#' + message._id, '/templates/message.mustache', { 'message': message }, function () {
+                        var row = $( '#chatlog' ).append( '<div id="' + message._id + '" class="' + message.kind + '"></div>' );
+                        renderTemplate({
+                            selector: '#chatlog',
+                            template: '/templates/message.mustache',
+                            data: message,
+                            append: true
+                        }, function () {
                             ScrollToBottom();
                         });
                         $( '#submit-message' ).button( 'reset' );
+                        
+                        // TODO:
+                        switch( message.kind )
+                        {
+                            case 'join':
+                                
+                        }
+                        // if type == join
+                        //   add user to user list
+                        // if type == part
+                        //   remove user from user list
+                        
+                    });
+                    
+                    socket.on( 'userlist', function( userlist ) {
+                        $( '#userlist-container' ).spin( 'medium' );
+                        for ( var index = 0; index < userlist.users.length; ++index )
+                        {
+                            renderTemplate({
+                                selector: '#userlist',
+                                template: '/templates/userlist-entry.mustache',
+                                data: userlist.users[ index ],
+                                append: true
+                            }, function() {
+                                $( '#userlist-container' ).spin( false );
+                            })
+                        }
                     });
                     
                     socket.emit( 'message', {
@@ -725,7 +807,11 @@ $('.add-room-owner-button').live( 'click', function( event ) {
             }, 2000 );            
 
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': room.owners, 'room': room }, function() {
+            renderTemplate({
+                selector: '#ownerlist',
+                template: '/templates/ownerlist.mustache',
+                data: { 'owners': room.owners, 'room': room }
+            }, function() {
                 $.ajax({
                     url: apiServer + '/api/1.0/Users',
                     type: 'POST',
@@ -765,7 +851,11 @@ $('.remove-room-owner-link').live( 'click', function( event ) {
             g_RoomCache[ room._id ] = room;
             
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate( '#ownerlist', '/templates/ownerlist.mustache', { 'owners': room.owners, 'context': room }, function() {
+            renderTemplate({
+                selector: '#ownerlist',
+                template: '/templates/ownerlist.mustache',
+                data: { 'owners': room.owners, 'context': room }
+            }, function() {
                 $.ajax({
                     url: apiServer + '/api/1.0/Users',
                     type: 'POST',
