@@ -104,13 +104,19 @@ input.error
         .join
         {
             background: #ded;
-            
-            .nickname
-            {
-                background: @background;
-                position: absolute;
-                left: -10000px;
-            }
+        }
+
+        .part
+        {
+            background: #edd;
+        }
+        
+        .join .nickname,
+        .part .nickname
+        {
+            background: @background;
+            position: absolute;
+            left: -10000px;
         }
     }
     

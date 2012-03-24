@@ -5,6 +5,20 @@ var rooms = {};
 
 exports.bind = function( app, io ) {
     io.sockets.on( 'connection', function( client ) {
+        
+        client.on( 'disconnect', function() {
+            for ( var room in rooms )
+            {
+                var index = rooms[ room ].indexOf( client );
+                if ( index != -1 )
+                {
+                    rooms[ room ].splice( index, 1 );
+                    
+                    // TODO: emit part? complicated because we need to know the user, nick, etc.
+                }
+            }
+        });
+        
         client.on( 'message', function( message ) {
     
             models.Room.findById( message.roomId, function( error, room ) {
