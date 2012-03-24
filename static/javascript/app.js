@@ -266,7 +266,10 @@ var app = Sammy( function() {
                         }
                     }
     
-                    var socket = io.connect( window.location.origin );
+                    var socket = io.connect( window.location.origin, {
+                        'sync disconnect on unload': false // we will handle disconnect ourselves
+                    });
+
                     socket.on( 'message', function( message ) {
                         
                         var row = $( '#chatlog tbody:last' ).append( '<tr id="' + message._id + '" class="' + message.kind + '"></tr' );
@@ -287,6 +290,22 @@ var app = Sammy( function() {
                         avatar: currentUser ? currentUser.avatar : null,
                         content: null
                     });
+
+                    $( window ).bind( 'unload', function() {
+                        socket.emit( 'message', {
+                            kind: 'part',
+                            roomId: room._id,
+                            senderId: currentUser ? currentUser._id : null,
+                            nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                            userHash: currentUser ? currentUser.hash : null,
+                            facebookId: currentUser ? currentUser.facebookId : null,
+                            twitterId: currentUser ? currentUser.twitterId : null,
+                            avatar: currentUser ? currentUser.avatar : null,
+                            content: null
+                        });
+
+                        socket.emit( 'disconnect', {} );
+                    });                    
                     
                     function SendMessage() {
 
