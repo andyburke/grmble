@@ -95,10 +95,34 @@ input.error
         height: auto !important;
         height: 90%;
         
+        .avatar-container
+        {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            padding: 4px;
+        }
+
+        .avatar
+        {
+            width: 32px;
+            height: 32px;
+        }
+
         .nickname
         {
-            width: 80px;
-            vertical-align: top;
+            display: inline-block;
+            text-align: right;
+            width: 60px;
+            font-weight: bold;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+        
+        .message-content
+        {
+            display: inline-block;
         }
         
         .join
@@ -114,6 +138,7 @@ input.error
         .join .nickname,
         .part .nickname
         {
+            width: 0px;
             background: @background;
             position: absolute;
             left: -10000px;
@@ -167,71 +192,10 @@ input.error
     margin-bottom: 5px;
 }
 
-.api-info
+#userlist .user
 {
-    font-size: 14px;
-    margin: 10px;
-    padding: 10px;    
-}
-
-.api-url
-{
-    background: #eef6f4;
-}
-
-.api-explanation
-{
-    margin-bottom: 10px;
-}
-
-.api-arguments
-{
-}
-
-.api-notes
-{
-}
-
-.plan-block
-{
-  position: relative;
-  padding: 10px;
-  background-color: darken( @background, 10% );
-  -webkit-border-radius: 6px;
-     -moz-border-radius: 6px;
-          border-radius: 6px;
-  -webkit-box-shadow: 0 2px 3px rgba(0,0,0,.15);
-     -moz-box-shadow: 0 2px 3px rgba(0,0,0,.15);
-          box-shadow: 0 2px 3px rgba(0,0,0,.15);
-
-
-  min-height: 200px;
-  p
-  {
-    color: #555;
-    font-size: 14px;
-  }
-  
-  h2
-  {
-    text-align: center;
-    margin-bottom: 6px;
-
-    small
-    {
-      color: #666;
-    }
-  }
-  
-  h3
-  {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    
-    small
-    {
-      color: #666;
-    }
-  }
+    display: inline-block;
+    padding: 4px;
+    width: 64px;
+    height: 64px;
 }

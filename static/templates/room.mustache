@@ -1,10 +1,8 @@
 <div class="row-fluid">
     <div class="room-wrapper">
         <div class="chatlog-wrapper">
-            <table class="table table-bordered chatlog" id="chatlog">
-                <tbody>
-                </tbody>
-            </table>
+            <div class="chatlog" id="chatlog">
+            </div>
         
             <div class="message-entry-wrapper">
                 <form id="message-entry-form" class="message-entry-form">
@@ -23,8 +21,7 @@
         <div class="sidebar-nav-fixed extra" id="sidebar">
             <h2 id="room-name">{{ room.name }} <button class="btn btn-mini btn-warning" id="leave-room">Leave</button></h2>
             <hr/>
-            <div id="settings">
-                <a href="https://github.com/andyburke/grumble/issues" target="_blank">Bug/Feature Request</a><br>
+            <div id="userlist">
             </div>
         </div>
     </div>
