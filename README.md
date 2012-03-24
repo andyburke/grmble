@@ -8,8 +8,11 @@ Grumble
  3. Clone the code: git clone git@github.com:andyburke/grumble.git
  4. cd grumble
  5. npm install
- 6. node server.js
- 7. http://localhost:8000/
+ 6. sudo npm install -g nodemon (for easy iteration)
+ 7. sudo npm install -g node-inspector (for debugging)
+ 8. run mongod
+ 9. nodemon --debug server.js
+ 10. http://localhost:8000/
 
 #### Optional, But Recommended
 
