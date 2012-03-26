@@ -118,8 +118,8 @@ var app = Sammy( function() {
         });
     });
     
-    this.get( '#/MyAccount', function() {
-        SetActivePage( 'myaccount' );
+    this.get( '#/Settings', function() {
+        SetActivePage( 'settings' );
         if ( !currentUser )
         {
             $('#main').spin( 'large' );
@@ -132,7 +132,7 @@ var app = Sammy( function() {
                     currentUser = data;
                     renderTemplate({
                         selector: '#main',
-                        template: '/templates/myaccount.mustache',
+                        template: '/templates/settings.mustache',
                         data: currentUser
                     });
                 },
@@ -146,7 +146,7 @@ var app = Sammy( function() {
         {
             renderTemplate({
                 selector: '#main',
-                template: '/templates/myaccount.mustache',
+                template: '/templates/settings.mustache',
                 data: currentUser
             });
         }

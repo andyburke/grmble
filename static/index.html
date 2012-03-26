@@ -27,21 +27,23 @@
             <div class="container-fluid">
                 <a class="brand" href="#/">Grumble</a>
                 <ul class="nav">
-                    <li class="navItem active" id="nav-about"><a href="#/">About</a></li>
-                    <li class="navItem" id="nav-rooms"><a href="#/Rooms">Rooms</a></li>
-                    <li class="navItem unauthenticated" id="nav-signup"><a href="#/SignUp">Sign Up!</a></li>
-                    <li class="navItem authenticated" id="nav-myaccount"><a href="#/MyAccount">My Account</a></li>
-                    <li class="navItem authenticated" id="nav-myrooms"><a href="#/MyRooms">My Rooms</a></li>
-                    <li class="navItem authenticated" id="nav-createroom"><a href="#/CreateRoom">Create Room</a></li>
-                    <li class="navItem" id="nav-feedback"><a href="https://github.com/andyburke/grumble/issues" target="_blank">Bug/Feature Request</a></li>
+                    <li class="navItem active" id="nav-about"><a href="#/"><i class="icon-question-sign icon-white"></i> About</a></li>
+                    <li class="navItem" id="nav-rooms"><a href="#/Rooms"><i class="icon-comment icon-white"></i> Rooms</a></li>
+                    <li class="navItem unauthenticated" id="nav-signup"><a href="#/SignUp"><i class="icon-user icon-white"></i> Sign Up!</a></li>
+                    <li class="navItem authenticated" id="nav-settings"><a href="#/Settings"><i class="icon-cog icon-white"></i> Settings</a></li>
+                    <li class="navItem authenticated" id="nav-myrooms"><a href="#/MyRooms"><i class="icon-comment icon-white"></i> My Rooms</a></li>
+                    <li class="navItem authenticated" id="nav-createroom"><a href="#/CreateRoom"><i class="icon-plus-sign icon-white"></i> Create Room</a></li>
+                </ul>
+                <ul class="nav pull-right">
+                    <li class="navItem" id="nav-feedback"><a href="https://github.com/andyburke/grumble/issues" target="_blank"><i class="icon-tag icon-white"></i> Bug/Feature Request</a></li>
                 </ul>
                 <form id="topbar-signin-form" class="navbar-form pull-right form-inline unauthenticated">
                     <input class="input-medium" type="text" name="email" placeholder="Email">
                     <input class="input-medium" type="password" name="password" placeholder="Password">
-                    <button class="btn button-signin" type="submit">Sign In</button>
+                    <button class="btn button-signin" type="submit"><i class="icon-user"></i> Sign In</button>
                 </form>
                 <form id="topbar-signout-form" class="navbar-form pull-right form-inline authenticated">
-                    <button id="topbar-signout-button" class="btn pull-right button-signout" type="submit">Sign Out</button>
+                    <button id="topbar-signout-button" class="btn pull-right button-signout" type="submit"><i class="icon-user"></i> Sign Out</button>
                 </form>
             </div>
         </div>
