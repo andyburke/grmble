@@ -302,7 +302,7 @@ var app = Sammy( function() {
                             $( 'html, body' ).animate({ 
                                     scrollTop: $( document ).height() - $( window ).height()
                                 }, 
-                                100,
+                                50,
                                 "linear",
                                 function() {
                                     var outstandingRequests = scrollRequests > 1;
