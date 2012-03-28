@@ -32,10 +32,47 @@ var g_RoomCache = {};
 
 var currentRoomId = null;
 
-function renderTemplate( options, callback ) {
-    if ( g_TemplateCache[ options.template ] )
+function GetTemplate( template, callback ) {
+    if ( g_TemplateCache[ template ] )
     {
-        var result = Mustache.to_html( g_TemplateCache[ options.template ], options.data )
+        callback( g_TemplateCache[ template ] );
+        return;
+    }
+    
+    if ( g_InFlightTemplates[ template ] )
+    {
+        setTimeout( function() { GetTemplate( template, callback ); }, 100 );
+        return;
+    }
+    
+    g_InFlightTemplates[ template ] = true;
+    $.ajax({
+        url: template,
+        dataType: "text",
+        success: function( contents ) {
+            delete g_InFlightTemplates[ template ];
+            g_TemplateCache[ template ] = contents;
+            callback( g_TemplateCache[ template ] );
+        },
+        error: function( xhr ) {
+            delete g_InFlightTemplates[ template ];
+            callback( null );
+        }
+    });
+}
+
+function RenderTemplate( options, callback ) {
+    GetTemplate( options.template, function( template ) {
+        if ( template == null )
+        {
+            if ( callback )
+            {
+                callback( false );
+            }
+            return;
+        }
+        
+        var result = Mustache.to_html( template, options.data )
         if ( options.append )
         {
             $( options.selector ).append( result );
@@ -47,31 +84,10 @@ function renderTemplate( options, callback ) {
         
         if ( callback )
         {
-            callback();
-        }
-    }
-    else
-    {
-        if ( g_InFlightTemplates[ options.template ] )
-        {
-            setTimeout( function() { renderTemplate( options, callback ); }, 100 );
-            return;
+            callback( true );
         }
         
-        g_InFlightTemplates[ options.template ] = true;
-        $.ajax({
-            url: options.template,
-            dataType: "text",
-            success: function( contents ) {
-                delete g_InFlightTemplates[ options.template ];
-                g_TemplateCache[ options.template ] = contents;
-                renderTemplate( options, callback );
-            },
-            error: function( xhr ) {
-                // TODO: delete g_InFlightTemplates[ template ]; ??
-            }
-        });
-    }
+    });
 }
 
 var currentUser = null;
@@ -81,7 +97,7 @@ var app = Sammy( function() {
     
     this.get( '#/', function() {
         SetActivePage( 'about' );
-        renderTemplate( {
+        RenderTemplate( {
             selector: '#main',
             template: "/templates/home.mustache"
         });
@@ -95,7 +111,7 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                renderTemplate({
+                RenderTemplate({
                     selector: '#main',
                     template: "/templates/rooms.mustache",
                     data: { 'rooms': rooms }
@@ -112,7 +128,7 @@ var app = Sammy( function() {
     
     this.get( '#/SignUp', function() {
         SetActivePage( 'signup' );
-        renderTemplate({
+        RenderTemplate({
             selector: '#main',
             template: "/templates/signup.mustache"
         });
@@ -130,7 +146,7 @@ var app = Sammy( function() {
                 success: function( data ) {
                     $('#main').spin( false );
                     currentUser = data;
-                    renderTemplate({
+                    RenderTemplate({
                         selector: '#main',
                         template: '/templates/settings.mustache',
                         data: currentUser
@@ -144,7 +160,7 @@ var app = Sammy( function() {
         }
         else
         {
-            renderTemplate({
+            RenderTemplate({
                 selector: '#main',
                 template: '/templates/settings.mustache',
                 data: currentUser
@@ -159,7 +175,7 @@ var app = Sammy( function() {
         
         function render( user )
         {
-            renderTemplate({
+            RenderTemplate({
                 selector: '#main',
                 template: '/templates/user.mustache',
                 data: { 'user': user }
@@ -197,7 +213,7 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                renderTemplate({
+                RenderTemplate({
                     selector: '#main',
                     template: '/templates/rooms.mustache',
                     data: { 'rooms': rooms }
@@ -215,7 +231,7 @@ var app = Sammy( function() {
     this.get( '#/CreateRoom', function() {
         SetActivePage( 'createroom' );
         $( '#main' ).spin( 'large' );
-        renderTemplate({
+        RenderTemplate({
             selector: '#main',
             template: '/templates/createroom.mustache'
         }, function () {
@@ -235,7 +251,7 @@ var app = Sammy( function() {
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
                 room.joinedTags = room.tags.join( ', ' );
-                renderTemplate({
+                RenderTemplate({
                     selector: '#main',
                     template: '/templates/manageroom.mustache',
                     data: room
@@ -243,7 +259,7 @@ var app = Sammy( function() {
                     $( '#main' ).spin( false );
                     
                     $( '#ownerlist' ).spin( 'small' );
-                    renderTemplate({
+                    RenderTemplate({
                         selector: '#ownerlist',
                         template: '/templates/ownerlist.mustache',
                         data: { 'owners': room.owners, 'room': room }
@@ -287,7 +303,7 @@ var app = Sammy( function() {
             dataType: 'json',
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
-                renderTemplate({
+                RenderTemplate({
                     selector: '#main',
                     template: '/templates/room.mustache',
                     data: { 'room': room }
@@ -322,27 +338,39 @@ var app = Sammy( function() {
 
                     socket.on( 'message', function( message ) {
                         
-                        var row = $( '#chatlog' ).append( '<div id="' + message._id + '" class="' + message.kind + '"></div>' );
-                        renderTemplate({
-                            selector: '#chatlog',
-                            template: '/templates/message.mustache',
-                            data: message,
-                            append: true
-                        }, function () {
+                        GetTemplate( '/templates/message.mustache', function( template ) {
+                            var newMessage = Mustache.to_html( template, message );
+                            
+                            var added = false;
+                            $( '#chatlog > .message' ).each( function() {
+                                if ( $(this).attr( 'time' ) > $( newMessage ).attr( 'time') )
+                                {
+                                    $( newMessage ).insertBefore( $( this ) );
+                                    added = true;
+                                    return false;
+                                }
+                                
+                                return true;
+                            });
+                            
+                            if ( !added )
+                            {
+                                $( newMessage ).appendTo( '#chatlog' );
+                            }
+                            
                             ScrollToBottom();
                         });
+
                         $( '#submit-message' ).button( 'reset' );
                         
                         // TODO:
                         switch( message.kind )
                         {
-                            case 'join':
-                                
-                        }
                         // if type == join
                         //   add user to user list
                         // if type == part
                         //   remove user from user list
+                        }
                         
                     });
                     
@@ -350,7 +378,7 @@ var app = Sammy( function() {
                         $( '#userlist-container' ).spin( 'medium' );
                         for ( var index = 0; index < userlist.users.length; ++index )
                         {
-                            renderTemplate({
+                            RenderTemplate({
                                 selector: '#userlist',
                                 template: '/templates/userlist-entry.mustache',
                                 data: userlist.users[ index ],
@@ -807,7 +835,7 @@ $('.add-room-owner-button').live( 'click', function( event ) {
             }, 2000 );            
 
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate({
+            RenderTemplate({
                 selector: '#ownerlist',
                 template: '/templates/ownerlist.mustache',
                 data: { 'owners': room.owners, 'room': room }
@@ -851,7 +879,7 @@ $('.remove-room-owner-link').live( 'click', function( event ) {
             g_RoomCache[ room._id ] = room;
             
             $( '#ownerlist' ).spin( 'medium' );
-            renderTemplate({
+            RenderTemplate({
                 selector: '#ownerlist',
                 template: '/templates/ownerlist.mustache',
                 data: { 'owners': room.owners, 'context': room }
