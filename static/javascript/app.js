@@ -664,6 +664,12 @@ $('.update-account-button').live( 'click', function( event ) {
     var form = $(this).parents( 'form:first' );
 
     var toBeUpdated = {};
+    var avatar = $(form).find( "#avatar" ).val();
+    if ( avatar != currentUser.avatar )
+    {
+        toBeUpdated.avatar = avatar;
+    }
+
     var email = $(form).find( "#email" ).val();
     if ( email != currentUser.email )
     {
@@ -737,6 +743,18 @@ $('.reset-account-button').live( 'click', function( event ) {
         $(form).find( '#' + key ).val( currentUser[ key ] );
         $(form).find( '#' + key ).html( currentUser[ key ] );
     }
+});
+
+$( '#use-avatar-gravatar' ).live( 'click', function( event ) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    var button = this;
+    var form = $(this).parents( 'form:first' );
+    var gravatar = 'http://www.gravatar.com/avatar/' + Crypto.MD5( currentUser.email ) + '?s=64';
+    
+    $(form).find( "#avatar" ).val( gravatar );
+    $(form).find( "#user-avatar-preview" ).attr( 'src', gravatar );
 });
 
 $('.button-create-room').live( 'click', function( event ) {
