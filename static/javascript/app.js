@@ -29,6 +29,7 @@ function SetActivePage( page )
 var g_TemplateCache = {};
 var g_InFlightTemplates = {};
 var g_RoomCache = {};
+var g_ReceivedUserlistAt = new Date( -10000 );
 
 var currentRoomId = null;
 
@@ -363,19 +364,32 @@ var app = Sammy( function() {
 
                         $( '#submit-message' ).button( 'reset' );
                         
-                        // TODO:
-                        switch( message.kind )
+                        var now = new Date();
+                        if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
                         {
-                        // if type == join
-                        //   add user to user list
-                        // if type == part
-                        //   remove user from user list
+                            switch( message.kind )
+                            {
+                                case 'join':
+                                    RenderTemplate({
+                                        selector: '#userlist',
+                                        template: '/templates/userlist-entry.mustache',
+                                        data: message,
+                                        append: true
+                                    });
+                                    break;
+                                
+                                case 'part':
+                                    $( '#userlist-entry-' + message.clientId ).remove();
+                                    break;
+                            }
                         }
-                        
                     });
                     
                     socket.on( 'userlist', function( userlist ) {
+                        g_ReceivedUserlistAt = new Date();
                         $( '#userlist-container' ).spin( 'medium' );
+                        $( '#userlist' ).html( '' );
+                        var rendered = 0;
                         for ( var index = 0; index < userlist.users.length; ++index )
                         {
                             RenderTemplate({
@@ -384,8 +398,11 @@ var app = Sammy( function() {
                                 data: userlist.users[ index ],
                                 append: true
                             }, function() {
-                                $( '#userlist-container' ).spin( false );
-                            })
+                                if ( ++rendered == userlist.users.length )
+                                {
+                                    $( '#userlist-container' ).spin( false );
+                                }
+                            });
                         }
                     });
                     
