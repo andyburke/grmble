@@ -60,7 +60,8 @@ exports.bind = function( app ) {
                 user.nickname = request.param( 'nickname', user.nickname );
                 user.location = request.param( 'location' , user.location );
                 user.bio = request.param( 'bio', user.bio );
-  
+                user.avatar = request.param( 'avatar', user.avatar );
+    
                 user.save( function( error ) {
                     if ( error )
                     {
