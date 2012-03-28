@@ -1,3 +1,8 @@
+// do not crash on uncuaght exceptions
+process.on( 'uncaughtException', function ( error ) {
+    console.log( error.stack );
+});
+
 var express = require( 'express' );
 var sha1 = require( 'sha1' );
 
