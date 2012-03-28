@@ -342,6 +342,9 @@ var app = Sammy( function() {
                         GetTemplate( '/templates/message.mustache', function( template ) {
                             var newMessage = Mustache.to_html( template, message );
                             
+                            // TODO: move this to a handler
+                            newMessage = linkify( newMessage );
+                            
                             var added = false;
                             $( '#chatlog > .message' ).each( function() {
                                 if ( $(this).attr( 'time' ) > $( newMessage ).attr( 'time') )
