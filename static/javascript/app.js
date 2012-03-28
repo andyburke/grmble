@@ -350,7 +350,7 @@ var app = Sammy( function() {
                                 callback: function( text, href ) {
                                     if ( href )
                                     {
-                                        if ( href.match( /[png|gif|jpg]$/i ) )
+                                        if ( href.match( /(?:png|gif|jpg)$/i ) )
                                         {
                                             return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
                                         }
