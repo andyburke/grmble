@@ -105,7 +105,7 @@ exports.bind = function( app, io ) {
                     {
                         rooms[ room._id ][ 'clients' ].push( client );
                         rooms[ room._id ][ 'users' ][ client.id ] = {
-                            clientid: client.id,
+                            clientId: client.id,
                             userid: newMessage.senderId,
                             nickname: newMessage.nickname,
                             userHash: newMessage.userHash,
