@@ -4,6 +4,8 @@
 
 @min-width: 760px;
 
+@message-margin-top: 12px;
+
 body
 {
     min-width: @min-width;
@@ -103,9 +105,16 @@ select.menu-icon option
         height: 90%;
         margin-bottom: 60px;
         
+        .message
+        {
+            margin: 2px;
+            border-bottom: 1px solid #EEE;
+        }
+        
         .avatar-container
         {
             display: inline-block;
+            vertical-align: top;
             width: 32px;
             height: 32px;
             padding: 4px;
@@ -121,6 +130,8 @@ select.menu-icon option
         {
             display: inline-block;
             text-align: right;
+            vertical-align: top;
+            margin-top: @message-margin-top;
             width: 60px;
             font-weight: bold;
             white-space: nowrap;
@@ -131,16 +142,17 @@ select.menu-icon option
         .message-content
         {
             display: inline-block;
+            margin-top: @message-margin-top;
         }
         
         .join
         {
-            background: #ded;
+            color: #7d7;
         }
 
         .part
         {
-            background: #edd;
+            color: #d77;
         }
         
         .join .nickname,
@@ -156,6 +168,7 @@ select.menu-icon option
     .message-entry-wrapper
     {
         position: fixed;
+        z-index: 10000;
         bottom: 0px;
         height: 60px;
         width: 86%;

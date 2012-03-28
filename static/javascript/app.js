@@ -340,10 +340,43 @@ var app = Sammy( function() {
                     socket.on( 'message', function( message ) {
                         
                         GetTemplate( '/templates/message.mustache', function( template ) {
-                            var newMessage = Mustache.to_html( template, message );
+                            
+                            function escapeHTML( text ) {
+                                return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+                            }
                             
                             // TODO: move this to a handler
-                            newMessage = linkify( newMessage );
+                            message.processed = linkify( message.content,  {
+                                callback: function( text, href ) {
+                                    if ( href )
+                                    {
+                                        if ( href.match( /[png|gif|jpg]$/i ) )
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                        }
+                                        else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
+                                        {
+                                            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                            if ( matched && matched.length == 2 )
+                                            {
+                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                            }
+                                            else
+                                            {
+                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                            }
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    
+                                    return escapeHTML( text );
+                                }
+                            });
+
+                            var newMessage = Mustache.to_html( template, message );
                             
                             var added = false;
                             $( '#chatlog > .message' ).each( function() {
