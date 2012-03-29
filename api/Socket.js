@@ -55,11 +55,11 @@ exports.bind = function( app, io ) {
                 {
                     if ( newMessage.kind == 'join' )
                     {
-                        newMessage.content = newMessage.nickname + ' joined the room.';
+                        newMessage.content = 'Joined the room.';
                     }
                     else if ( newMessage.kind == 'part' )
                     {
-                        newMessage.content = newMessage.nickname + ' left the room.';
+                        newMessage.content = 'Left the room.';
                     }
                 }
     
