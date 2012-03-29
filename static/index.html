@@ -15,11 +15,336 @@
     <script src="/javascript/lib/spin.min.js" type="text/javascript"></script>
     <script src="/javascript/lib/sammy-latest.min.js" type="text/javascript"></script>
     <script src="/javascript/lib/mustache.js" type="text/javascript"></script>
+    <script src="/javascript/lib/ICanHaz-no-mustache.min.js" type="text/javascript"></script>
     <script src="/javascript/lib/less.js" type="text/javascript"></script>
     <script src="/javascript/lib/ba-linkify.min.js" type="text/javascript"></script>
     <script src="/javascript/app.js" type="text/javascript"></script>
 
     <script src="/socket.io/socket.io.js"></script>
+
+    <!-- template time -->
+
+<script id="createroom" type="text/html">
+    <div class="page-header">
+        <h1>Create Room</h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span9">
+            <form class="form-horizontal">
+                <fieldset>
+                    <div class="control-group">
+                        <label class="control-label" for="name">Name</label>
+                        <div class="controls">
+                            <input class="span7" id="name" name="name" size="30" type="text" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="description">Description</label>
+                        <div class="controls">
+                            <textarea class="span7" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="tags">Tags</label>
+                        <div class="controls">
+                            <input class="span7" id="tags" name="tags" size="30" type="text" placeholder="eg: cats, robots, llamas" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="protection">Visibility</label>
+                        <div class="controls">
+                            <select id="protection">
+                                <option selected>Public</option>
+                                <option>Private</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <input type="submit" class="btn primary button-create-room" value="Create">
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+        <div class="extra span3">
+            <h2>Create a Room</h2>
+            <p>
+                You can create your own chat room!
+            </p>
+        </div>
+    </div>
+</script>
+
+<script id="home" type="text/html">
+    <div class="page-header">
+        <h1>Grumble <small>An Open Node.js Chat Service</small></h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span8">
+            <h2>What is Grumble?</h2>
+            <p>
+                Grumble is an open chat service using node.js.
+            </p>
+        </div>
+    </div>    
+</script>
+
+<script id="manageroom" type="text/html">
+    <div class="page-header">
+        <h1>{{name}}</h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span7">
+            <form class="form">
+                <fieldset>
+                    <div class="control-group">
+                        <label class="control-label" for="id">Unique ID</label>
+                        <div class="controls">
+                            <input class="input-xlarge disabled" id="id" name="id" type="text" value="{{_id}}" disabled />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="name">Name</label>
+                        <div class="controls">
+                            <input class="input-xlarge" id="name" name="name" type="text" value="{{name}}" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="textarea">Description</label>
+                        <div class="controls">
+                            <textarea class="input-xlarge" id="description" name="description" rows="3">{{description}}</textarea>
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="tags">Tags</label>
+                        <div class="controls">
+                            <input class="input-xlarge" id="tags" name="tags" type="text" value="{{joinedTags}}" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="protection">Visibility</label>
+                        <div class="controls">
+                            <select id="protection">
+                                <option {{#isPublic}}selected{{/isPublic}}>Public</option>
+                                <option {{^isPublic}}selected{{/isPublic}}>Private</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary update-room-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-room-button">Reset</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+        <div class="span4">
+            <h2>Owners</h2>
+            <div id="ownerlist">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="message" type="text/html">
+    <div id="{{_id}}" time="{{createdAt}}" class="message {{kind}}">
+        <div class="nickname">
+            {{nickname}}
+        </div>
+        <div class="avatar-container">
+            <img class="avatar" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" />
+        </div>
+        <div class="message-content">
+            {{^processed}}{{content}}{{/processed}}{{{processed}}}
+        </div>
+    </div>
+</script>
+
+<script id="ownerlist" type="text/html">
+    <table class="table table-bordered table-striped">
+        {{#owners}}
+            <tr>
+                <td><a href="#/User/{{.}}"><span id="{{.}}-nickname">(no nickname)</span><br/>{{.}}</a></td>
+                <td><a href="/api/1.0/Room/{{room._id}}/owners/{{.}}" class="remove-room-owner-link">[remove]</a></td>
+            </tr>
+        {{/owners}}
+    </table>
+    
+    <div class="pull-right">
+        <form class="form-horizontal">
+            <input type="hidden" id="roomId" name="roomId" value="{{room._id}}"/>
+            <input class="input-large" type="test" id="newowner" name="newowner" placeholder="Add Owner by Entering an Email"/>
+            <button class="btn btn-primary add-room-owner-button" data-loading-text="Adding..." data-complete-text="Added!">Add</button>
+        </form>
+    </div>
+</script>
+
+<script id="room" type="text/html">
+    <div class="row-fluid">
+        <div class="room-wrapper">
+            <div class="chatlog-wrapper">
+                <div class="chatlog" id="chatlog">
+                </div>
+            </div>
+    
+            <div class="sidebar-nav-fixed extra" id="sidebar">
+                <h2 id="room-name">{{ room.name }} <button class="btn btn-mini btn-warning" id="leave-room">Leave</button></h2>
+                <hr/>
+                <div id="userlist">
+                </div>
+            </div>
+        </div>
+    
+        <div class="message-entry-wrapper">
+            <form id="message-entry-form" class="message-entry-form">
+                <div class="row-fluid">
+                    <div class="message-entry-content-wrapper">
+                        <textarea id="message-entry-content" class="boxsizing-border message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
+                    </div>
+                    <div class="submit-message-wrapper">
+                        <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</script>
+
+<script id="rooms" type="text/html">
+    <div class="page-header">
+        <h1>Rooms <small>All public rooms.</small></h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span8">
+            <table class="zebra-striped">
+                <tr>
+                    <th>Room</th>
+                    <th>Description</tH>
+                </tr>
+                {{#rooms}}
+                    <tr>
+                        <td><a href="#/Room/{{_id}}">{{name}}</a></td>
+                        <td>{{description}}</td>
+                    </tr>
+                {{/rooms}}
+            </table>
+        </div>
+    </div>
+</script>
+
+<script id="settings" type="text/html">
+    <div class="page-header">
+        <h1>Settings <small><a href="/#/User/{{_id}}">Public Profile &gt;&gt;</a></small></h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span8">
+            <form class="form-horizontal">
+              <fieldset>
+                <div class="control-group">
+                    <div class="controls">
+                        <img id="user-avatar-preview" width="64" height="64" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}">
+                    </div>
+                </div>
+                <div class="control-group">
+                  <label class="control-label" for="avatar">Avatar URL</label>
+                  <div class="controls">
+                    <input class="input-xlarge" id="avatar" name="avatar" type="text" value="{{avatar}}" />
+                  </div>
+                    <div class="controls">
+                        <button class="btn btn-small" id="use-avatar-none">None</button>
+                        <button class="btn btn-small" id="use-avatar-facebook"><img src="/images/social/icons/24x24/facebook.png" alt="Facebook Avatar"></button>
+                        <button class="btn btn-small" id="use-avatar-twitter"><img src="/images/social/icons/24x24/twitter.png" alt="Twitter Avatar"></button>
+                        <button class="btn btn-small" id="use-avatar-gravatar" {{^email}}disabled{{/email}}><img src="/images/social/icons/24x24/gravatar.png" alt="Gravatar Avatar"></button>
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                  <label class="control-label" for="email">Email</label>
+                  <div class="controls">
+                    <input class="input-xlarge" id="email" name="email" type="text" value="{{ email }}" />
+                  </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                  <label class="control-label" for="password">New Password</label>
+                  <div class="controls">
+                    <input class="input-xlarge" id="password" name="password" type="password" value="" />
+                    <div class="help-block">
+                        Only enter a password here if you want to change your current password.
+                    </div>
+                  </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                  <label class="control-label" for="nickname">Nickname</label>
+                  <div class="controls">
+                    <input class="input-xlarge" id="nickname" name="nickname" type="text" value="{{ nickname }}" />
+                  </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                  <label class="control-label" for="location">Location</label>
+                  <div class="controls">
+                    <input class="input-xlarge" id="location" name="location" type="text" value="{{ location }}" placeholder="eg: Los Angeles, CA" />
+                  </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                  <label class="control-label" for="textarea">Bio</label>
+                  <div class="controls">
+                    <textarea class="input-xlarge" id="bio" name="bio" rows="3">{{ bio }}</textarea>
+                    <div class="help-block">
+                      Enter a short bio if you please.
+                    </div>
+                  </div>
+                </div><!-- /clearfix -->
+                <div class="form-actions">
+                    <button class="btn btn-primary update-account-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-account-button">Reset</button>
+                </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</script>
+
+<script id="signup" type="text/html">
+    <div class="page-header">
+        <h1>Sign Up <small>Chat with people about cats and robots!</small></h1>
+    </div>
+    <div class="row-fluid">
+        <div class="span7">
+            <form class="form-horizontal">
+                <fieldset>
+                    <div class="control-group">
+                        <label class="control-label" for="email">Email</label>
+                        <div class="controls">
+                            <input class="xlarge" id="email" name="email" size="30" type="text" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="control-group">
+                        <label class="control-label" for="password">Password</label>
+                        <div class="controls">
+                            <input class="xlarge" id="password" name="password" size="30" type="password" />
+                        </div>
+                    </div><!-- /clearfix -->
+                    <div class="form-actions">
+                        <input type="submit" class="btn btn-primary button-signup" value="Sign Up!">
+                    </div>
+                </fieldset>
+            </form>
+            Already have an account? Sign in using the navbar above!        
+        </div>
+        <div class="extra span5">
+            <h2>Get into chat!</h2>
+            <p>
+                You can also use your account to create Rooms and access the
+                API!
+            </p>
+        </div>
+    </div>
+</script>
+
+<script id="userlist_entry" type="text/html">
+    <div class="user" id="userlist-entry-{{clientId}}">
+        <img class="user-avatar" id="userlist-entry-avatar-{{clientId}}" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" title="{{nickname}}" />
+        <div class="userlist-entry-nickname">
+            {{nickname}}
+        </div>
+    </div>
+</script>
+
 </head>
 
 <body>

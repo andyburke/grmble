@@ -26,70 +26,10 @@ function SetActivePage( page )
     $(activeItem).parents( '.dropdown' ).addClass( 'active' );
 }
 
-var g_TemplateCache = {};
-var g_InFlightTemplates = {};
 var g_RoomCache = {};
 var g_ReceivedUserlistAt = new Date( -10000 );
 
 var currentRoomId = null;
-
-function GetTemplate( template, callback ) {
-    if ( g_TemplateCache[ template ] )
-    {
-        callback( g_TemplateCache[ template ] );
-        return;
-    }
-    
-    if ( g_InFlightTemplates[ template ] )
-    {
-        setTimeout( function() { GetTemplate( template, callback ); }, 100 );
-        return;
-    }
-    
-    g_InFlightTemplates[ template ] = true;
-    $.ajax({
-        url: template,
-        dataType: "text",
-        success: function( contents ) {
-            delete g_InFlightTemplates[ template ];
-            g_TemplateCache[ template ] = contents;
-            callback( g_TemplateCache[ template ] );
-        },
-        error: function( xhr ) {
-            delete g_InFlightTemplates[ template ];
-            callback( null );
-        }
-    });
-}
-
-function RenderTemplate( options, callback ) {
-    GetTemplate( options.template, function( template ) {
-        if ( template == null )
-        {
-            if ( callback )
-            {
-                callback( false );
-            }
-            return;
-        }
-        
-        var result = Mustache.to_html( template, options.data )
-        if ( options.append )
-        {
-            $( options.selector ).append( result );
-        }
-        else
-        {
-            $( options.selector ).html( result );
-        }
-        
-        if ( callback )
-        {
-            callback( true );
-        }
-        
-    });
-}
 
 var currentUser = null;
 
@@ -98,10 +38,7 @@ var app = Sammy( function() {
     
     this.get( '#/', function() {
         SetActivePage( 'about' );
-        RenderTemplate( {
-            selector: '#main',
-            template: "/templates/home.mustache"
-        });
+        $( '#main' ).html( ich.home() );
     });
     
     this.get( '#/Rooms', function() {
@@ -112,13 +49,8 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                RenderTemplate({
-                    selector: '#main',
-                    template: "/templates/rooms.mustache",
-                    data: { 'rooms': rooms }
-                }, function() {
-                    $('#main').spin( false );
-                });
+                $( '#main' ).html( ich.rooms( { 'rooms': rooms } ) );
+                $('#main').spin( false );
             },
             error: function( response, status, error ) {
                 $('#main').spin( false );
@@ -129,10 +61,7 @@ var app = Sammy( function() {
     
     this.get( '#/SignUp', function() {
         SetActivePage( 'signup' );
-        RenderTemplate({
-            selector: '#main',
-            template: "/templates/signup.mustache"
-        });
+        $( '#main' ).html( ich.signup() );
     });
     
     this.get( '#/Settings', function() {
@@ -145,13 +74,9 @@ var app = Sammy( function() {
                 type: 'GET',
                 dataType: 'json',
                 success: function( data ) {
-                    $('#main').spin( false );
                     currentUser = data;
-                    RenderTemplate({
-                        selector: '#main',
-                        template: '/templates/settings.mustache',
-                        data: currentUser
-                    });
+                    $( '#main' ).html( ich.settings( currentUser ) );
+                    $('#main').spin( false );
                 },
                 error: function( response, status, error ) {
                     $('#main').spin( false );
@@ -161,11 +86,7 @@ var app = Sammy( function() {
         }
         else
         {
-            RenderTemplate({
-                selector: '#main',
-                template: '/templates/settings.mustache',
-                data: currentUser
-            });
+            $( '#main' ).html( ich.settings( currentUser ) );
         }
     });
     
@@ -176,13 +97,8 @@ var app = Sammy( function() {
         
         function render( user )
         {
-            RenderTemplate({
-                selector: '#main',
-                template: '/templates/user.mustache',
-                data: { 'user': user }
-            }, function() {
-                $( '#main' ).spin( false );
-            });
+            $( '#main' ).html( ich.user( { 'user': user } ) );
+            $( '#main' ).spin( false );
         }
         
         $.ajax({
@@ -214,13 +130,8 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( rooms ) {
-                RenderTemplate({
-                    selector: '#main',
-                    template: '/templates/rooms.mustache',
-                    data: { 'rooms': rooms }
-                }, function() {
-                    $( '#main' ).spin( false );
-                });
+                $( '#main' ).html( ich.rooms( { 'rooms': rooms } ) );
+                $( '#main' ).spin( false );
             },
             error: function( response, status, error ) {
                 $( '#main' ).spin( false );
@@ -231,13 +142,7 @@ var app = Sammy( function() {
 
     this.get( '#/CreateRoom', function() {
         SetActivePage( 'createroom' );
-        $( '#main' ).spin( 'large' );
-        RenderTemplate({
-            selector: '#main',
-            template: '/templates/createroom.mustache'
-        }, function () {
-            $( '#main' ).spin( false );
-        });
+        $( '#main' ).html( ich.createroom() );
     });
     
     this.get( '#/ManageRoom/:roomId', function () {
@@ -252,38 +157,28 @@ var app = Sammy( function() {
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
                 room.joinedTags = room.tags.join( ', ' );
-                RenderTemplate({
-                    selector: '#main',
-                    template: '/templates/manageroom.mustache',
-                    data: room
-                }, function() {
-                    $( '#main' ).spin( false );
-                    
-                    $( '#ownerlist' ).spin( 'small' );
-                    RenderTemplate({
-                        selector: '#ownerlist',
-                        template: '/templates/ownerlist.mustache',
-                        data: { 'owners': room.owners, 'room': room }
-                    }, function() {
-                        $.ajax({
-                            url: apiServer + '/api/1.0/Users',
-                            type: 'POST',
-                            data: JSON.stringify( { 'users': room.owners } ),
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function( owners ) {
-                                for ( var index = 0; index < owners.length; ++index )
-                                {
-                                    $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                                }
-                                $( '#ownerlist' ).spin( false ); 
-                            },
-                            error: function( response, status, error ) {
-                                $( '#ownerlist' ).spin( false );
-                                console.log( error );
-                            }
-                        });
-                    });
+                $( '#main' ).html( ich.manageroom( room ) );
+
+                $( '#ownerlist' ).spin( 'medium' );
+                $( '#ownerlist' ).html( ich.ownerlist( { 'owners': room.owners, 'room': room } ) );
+
+                $.ajax({
+                    url: apiServer + '/api/1.0/Users',
+                    type: 'POST',
+                    data: JSON.stringify( { 'users': room.owners } ),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function( owners ) {
+                        for ( var index = 0; index < owners.length; ++index )
+                        {
+                            $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
+                        }
+                        $( '#ownerlist' ).spin( false ); 
+                    },
+                    error: function( response, status, error ) {
+                        $( '#ownerlist' ).spin( false );
+                        console.log( error );
+                    }
                 });
             },
             error: function( response, status, error ) {
@@ -304,146 +199,124 @@ var app = Sammy( function() {
             dataType: 'json',
             success: function( room ) {
                 g_RoomCache[ room._id ] = room;
-                RenderTemplate({
-                    selector: '#main',
-                    template: '/templates/room.mustache',
-                    data: { 'room': room }
-                }, function () {
-                    $( '#main' ).spin( false );
+                $( '#main' ).html( ich.room( { 'room': room } ) );
+                $( '#main' ).spin( false );
+
+                g_ReceivedUserlistAt = new Date(); // reset because we just joined this room
+
+                var scrollRequests = 0;
+                function ScrollToBottom() {
+                    ++scrollRequests;
+                    if ( scrollRequests == 1 )
+                    {
+                        $( 'html, body' ).animate({ 
+                                scrollTop: $( document ).height() - $( window ).height()
+                            }, 
+                            50,
+                            "linear",
+                            function() {
+                                var outstandingRequests = scrollRequests > 1;
+                                scrollRequests = 0;
+                                if ( outstandingRequests )
+                                {
+                                    ScrollToBottom();
+                                }
+                            }
+                        );
+                    }
+                }
+
+                var socket = io.connect( window.location.origin, {
+                    'sync disconnect on unload': false // we will handle disconnect ourselves
+                });
+
+                socket.on( 'message', function( message ) {
                     
-                    var scrollRequests = 0;
-                    function ScrollToBottom() {
-                        ++scrollRequests;
-                        if ( scrollRequests == 1 )
-                        {
-                            $( 'html, body' ).animate({ 
-                                    scrollTop: $( document ).height() - $( window ).height()
-                                }, 
-                                50,
-                                "linear",
-                                function() {
-                                    var outstandingRequests = scrollRequests > 1;
-                                    scrollRequests = 0;
-                                    if ( outstandingRequests )
+                    function escapeHTML( text ) {
+                        return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+                    }
+                    
+                    // TODO: move this to a handler
+                    message.processed = linkify( message.content,  {
+                        callback: function( text, href ) {
+                            if ( href )
+                            {
+                                if ( href.match( /(?:png|gif|jpg)$/i ) )
+                                {
+                                    return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                }
+                                else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
+                                {
+                                    var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                    if ( matched && matched.length == 2 )
                                     {
-                                        ScrollToBottom();
+                                        return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                    }
+                                    else
+                                    {
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
                                     }
                                 }
-                            );
+                                else
+                                {
+                                    return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                }
+                            }
+                            
+                            return escapeHTML( text );
+                        }
+                    });
+
+                    var newMessage = ich.message( message );
+                    $( newMessage ).appendTo( '#chatlog' );
+                    
+                    ScrollToBottom();
+
+                    $( '#submit-message' ).button( 'reset' );
+                    
+                    var now = new Date();
+                    if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
+                    {
+                        switch( message.kind )
+                        {
+                            case 'join':
+                                $( '#userlist' ).append( ich.userlist_entry( message ) );
+                                break;
+                            
+                            case 'part':
+                                $( '#userlist-entry-' + message.clientId ).remove();
+                                break;
                         }
                     }
-    
-                    var socket = io.connect( window.location.origin, {
-                        'sync disconnect on unload': false // we will handle disconnect ourselves
-                    });
+                });
+                
+                socket.on( 'userlist', function( userlist ) {
+                    g_ReceivedUserlistAt = new Date();
+                    $( '#userlist-container' ).spin( 'medium' );
+                    $( '#userlist' ).html( '' );
+                    var rendered = 0;
+                    for ( var index = 0; index < userlist.users.length; ++index )
+                    {
+                        $( '#userlist' ).append( ich.userlist_entry( userlist.users[ index ] ) );
+                    }
+                    $( '#userlist-container' ).spin( false );
+                });
+                
+                socket.emit( 'message', {
+                    kind: 'join',
+                    roomId: room._id,
+                    senderId: currentUser ? currentUser._id : null,
+                    nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                    userHash: currentUser ? currentUser.hash : null,
+                    facebookId: currentUser ? currentUser.facebookId : null,
+                    twitterId: currentUser ? currentUser.twitterId : null,
+                    avatar: currentUser ? currentUser.avatar : null,
+                    content: null
+                });
 
-                    socket.on( 'message', function( message ) {
-                        
-                        GetTemplate( '/templates/message.mustache', function( template ) {
-                            
-                            function escapeHTML( text ) {
-                                return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
-                            }
-                            
-                            // TODO: move this to a handler
-                            message.processed = linkify( message.content,  {
-                                callback: function( text, href ) {
-                                    if ( href )
-                                    {
-                                        if ( href.match( /(?:png|gif|jpg)$/i ) )
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                        }
-                                        else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
-                                        {
-                                            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                            if ( matched && matched.length == 2 )
-                                            {
-                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                            }
-                                            else
-                                            {
-                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                            }
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    
-                                    return escapeHTML( text );
-                                }
-                            });
-
-                            var newMessage = Mustache.to_html( template, message );
-                            
-                            var added = false;
-                            $( '#chatlog > .message' ).each( function() {
-                                if ( $(this).attr( 'time' ) > $( newMessage ).attr( 'time') )
-                                {
-                                    $( newMessage ).insertBefore( $( this ) );
-                                    added = true;
-                                    return false;
-                                }
-                                
-                                return true;
-                            });
-                            
-                            if ( !added )
-                            {
-                                $( newMessage ).appendTo( '#chatlog' );
-                            }
-                            
-                            ScrollToBottom();
-                        });
-
-                        $( '#submit-message' ).button( 'reset' );
-                        
-                        var now = new Date();
-                        if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
-                        {
-                            switch( message.kind )
-                            {
-                                case 'join':
-                                    RenderTemplate({
-                                        selector: '#userlist',
-                                        template: '/templates/userlist-entry.mustache',
-                                        data: message,
-                                        append: true
-                                    });
-                                    break;
-                                
-                                case 'part':
-                                    $( '#userlist-entry-' + message.clientId ).remove();
-                                    break;
-                            }
-                        }
-                    });
-                    
-                    socket.on( 'userlist', function( userlist ) {
-                        g_ReceivedUserlistAt = new Date();
-                        $( '#userlist-container' ).spin( 'medium' );
-                        $( '#userlist' ).html( '' );
-                        var rendered = 0;
-                        for ( var index = 0; index < userlist.users.length; ++index )
-                        {
-                            RenderTemplate({
-                                selector: '#userlist',
-                                template: '/templates/userlist-entry.mustache',
-                                data: userlist.users[ index ],
-                                append: true
-                            }, function() {
-                                if ( ++rendered == userlist.users.length )
-                                {
-                                    $( '#userlist-container' ).spin( false );
-                                }
-                            });
-                        }
-                    });
-                    
+                $( window ).bind( 'unload', function() {
                     socket.emit( 'message', {
-                        kind: 'join',
+                        kind: 'part',
                         roomId: room._id,
                         senderId: currentUser ? currentUser._id : null,
                         nickname: currentUser ? currentUser.nickname : 'Anonymous',
@@ -454,70 +327,56 @@ var app = Sammy( function() {
                         content: null
                     });
 
-                    $( window ).bind( 'unload', function() {
-                        socket.emit( 'message', {
-                            kind: 'part',
-                            roomId: room._id,
-                            senderId: currentUser ? currentUser._id : null,
-                            nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                            userHash: currentUser ? currentUser.hash : null,
-                            facebookId: currentUser ? currentUser.facebookId : null,
-                            twitterId: currentUser ? currentUser.twitterId : null,
-                            avatar: currentUser ? currentUser.avatar : null,
-                            content: null
-                        });
+                    socket.emit( 'disconnect', {} );
+                });                    
+                
+                function SendMessage() {
 
-                        socket.emit( 'disconnect', {} );
-                    });                    
-                    
-                    function SendMessage() {
-
-                    
-                        if ( !currentUser )
-                        {
-                            $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
-                            return;
-                        }
-                        
-                        var message = {
-                            kind: 'say',
-                            roomId: room._id,
-                            senderId: currentUser ? currentUser._id : null,
-                            nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                            userHash: currentUser ? currentUser.hash : null,
-                            facebookId: currentUser ? currentUser.facebookId : null,
-                            twitterId: currentUser ? currentUser.twitterId : null,
-                            avatar: currentUser ? currentUser.avatar : null,
-                            content: $( '#message-entry-content' ).val()
-                        };
-                        
-                        socket.emit( 'message', message );
-                        $( '#submit-message' ).button( 'loading' );
-                        $( '#message-entry-content' ).val( '' );
+                
+                    if ( !currentUser )
+                    {
+                        $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
+                        return;
                     }
                     
-                    $( '#submit-message' ).unbind();
-                    $( '#submit-message' ).bind( 'click', function( event ) {
+                    var message = {
+                        kind: 'say',
+                        roomId: room._id,
+                        senderId: currentUser ? currentUser._id : null,
+                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                        userHash: currentUser ? currentUser.hash : null,
+                        facebookId: currentUser ? currentUser.facebookId : null,
+                        twitterId: currentUser ? currentUser.twitterId : null,
+                        avatar: currentUser ? currentUser.avatar : null,
+                        content: $( '#message-entry-content' ).val()
+                    };
+                    
+                    socket.emit( 'message', message );
+                    $( '#submit-message' ).button( 'loading' );
+                    $( '#message-entry-content' ).val( '' );
+                }
+                
+                $( '#submit-message' ).unbind();
+                $( '#submit-message' ).bind( 'click', function( event ) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    SendMessage();
+                });
+                
+                $( '#message-entry-form' ).unbind();
+                $( '#message-entry-form' ).bind( 'submit', function( event ) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    SendMessage();
+                });
+                
+                $( '#message-entry-content' ).bind( 'keydown', function( event ) {
+                    if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
+                    {
                         event.preventDefault();
                         event.stopPropagation();
                         SendMessage();
-                    });
-                    
-                    $( '#message-entry-form' ).unbind();
-                    $( '#message-entry-form' ).bind( 'submit', function( event ) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        SendMessage();
-                    });
-                    
-                    $( '#message-entry-content' ).bind( 'keydown', function( event ) {
-                        if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
-                        {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            SendMessage();
-                        }
-                    });
+                    }
                 });
             },
             error: function( response, status, error ) {
@@ -906,29 +765,25 @@ $('.add-room-owner-button').live( 'click', function( event ) {
             }, 2000 );            
 
             $( '#ownerlist' ).spin( 'medium' );
-            RenderTemplate({
-                selector: '#ownerlist',
-                template: '/templates/ownerlist.mustache',
-                data: { 'owners': room.owners, 'room': room }
-            }, function() {
-                $.ajax({
-                    url: apiServer + '/api/1.0/Users',
-                    type: 'POST',
-                    data: JSON.stringify( { 'users': room.owners } ),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function( owners ) {
-                        for ( var index = 0; index < owners.length; ++index )
-                        {
-                            $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                        }
-                        $( '#ownerlist' ).spin( false ); 
-                    },
-                    error: function( response, status, error ) {
-                        $( '#ownerlist' ).spin( false );
-                        console.log( error );
+            $( '#ownerlist' ).html( ich.ownerlist( { 'owners': room.owners, 'room': room } ) );
+
+            $.ajax({
+                url: apiServer + '/api/1.0/Users',
+                type: 'POST',
+                data: JSON.stringify( { 'users': room.owners } ),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function( owners ) {
+                    for ( var index = 0; index < owners.length; ++index )
+                    {
+                        $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
                     }
-                });
+                    $( '#ownerlist' ).spin( false ); 
+                },
+                error: function( response, status, error ) {
+                    $( '#ownerlist' ).spin( false );
+                    console.log( error );
+                }
             });
         },
         error: function( response, status, error ) {
@@ -950,29 +805,25 @@ $('.remove-room-owner-link').live( 'click', function( event ) {
             g_RoomCache[ room._id ] = room;
             
             $( '#ownerlist' ).spin( 'medium' );
-            RenderTemplate({
-                selector: '#ownerlist',
-                template: '/templates/ownerlist.mustache',
-                data: { 'owners': room.owners, 'context': room }
-            }, function() {
-                $.ajax({
-                    url: apiServer + '/api/1.0/Users',
-                    type: 'POST',
-                    data: JSON.stringify( { 'users': room.owners } ),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function( owners ) {
-                        for ( var index = 0; index < owners.length; ++index )
-                        {
-                            $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                        }
-                        $( '#ownerlist' ).spin( false ); 
-                    },
-                    error: function( response, status, error ) {
-                        $( '#ownerlist' ).spin( false );
-                        console.log( error );
+            $( '#ownerlist' ).html( ich.ownerlist( { 'owners': room.owners, 'context': room } ) );
+
+            $.ajax({
+                url: apiServer + '/api/1.0/Users',
+                type: 'POST',
+                data: JSON.stringify( { 'users': room.owners } ),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function( owners ) {
+                    for ( var index = 0; index < owners.length; ++index )
+                    {
+                        $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
                     }
-                });
+                    $( '#ownerlist' ).spin( false ); 
+                },
+                error: function( response, status, error ) {
+                    $( '#ownerlist' ).spin( false );
+                    console.log( error );
+                }
             });
         },
         error: function( response, status, error ) {
