@@ -107,13 +107,16 @@ select.menu-icon option
         
         .message
         {
+            position: relative;
             margin: 2px;
             border-bottom: 1px solid #EEE;
+            clear: both;
+            min-height: 40px;
         }
         
         .avatar-container
         {
-            display: inline-block;
+            float: left;
             vertical-align: top;
             width: 32px;
             height: 32px;
@@ -128,7 +131,7 @@ select.menu-icon option
 
         .nickname
         {
-            display: inline-block;
+            float: left;
             text-align: right;
             vertical-align: top;
             margin-top: @message-margin-top;
@@ -142,8 +145,8 @@ select.menu-icon option
         
         .message-content
         {
-            display: inline-block;
-            margin-top: @message-margin-top;
+            padding-top: @message-margin-top;
+            margin-left: 104px;
         }
         
         .join
