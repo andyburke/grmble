@@ -26,22 +26,50 @@ function SetActivePage( page )
     $(activeItem).parents( '.dropdown' ).addClass( 'active' );
 }
 
+var g_IdleTimeout = 1000 * 60 * 2;
+
 var g_RoomCache = {};
 var g_ReceivedUserlistAt = new Date( -10000 );
+var g_Socket = null;
+var g_Room = null;
+var g_UnreadMessages = 0;
 
 var currentRoomId = null;
 
 var currentUser = null;
 
-var app = Sammy( function() {
-    this.debug = true;
+function LeaveRoom() {
+    if ( g_Socket && g_Room )
+    {
+        g_Socket.emit( 'message', {
+            kind: 'leave',
+            roomId: g_Room._id,
+            senderId: currentUser ? currentUser._id : null,
+            nickname: currentUser ? currentUser.nickname : 'Anonymous',
+            userHash: currentUser ? currentUser.hash : null,
+            facebookId: currentUser ? currentUser.facebookId : null,
+            twitterId: currentUser ? currentUser.twitterId : null,
+            avatar: currentUser ? currentUser.avatar : null,
+            content: null
+        });
     
-    this.get( '#/', function() {
+        g_Socket.emit( 'disconnect', {} );    
+    }
+
+    g_Socket = null;
+    g_Room = null;
+}
+
+var app = Sammy( function() {
+    var theApp = this;
+    theApp.debug = true;
+    
+    theApp.get( '#/', function() {
         SetActivePage( 'about' );
         $( '#main' ).html( ich.home() );
     });
     
-    this.get( '#/Rooms', function() {
+    theApp.get( '#/Rooms', function() {
         SetActivePage( 'rooms' );
         $( '#main' ).spin( 'large' );
         $.ajax({
@@ -59,12 +87,12 @@ var app = Sammy( function() {
         });
     });
     
-    this.get( '#/SignUp', function() {
+    theApp.get( '#/SignUp', function() {
         SetActivePage( 'signup' );
         $( '#main' ).html( ich.signup() );
     });
     
-    this.get( '#/Settings', function() {
+    theApp.get( '#/Settings', function() {
         SetActivePage( 'settings' );
         if ( !currentUser )
         {
@@ -90,7 +118,7 @@ var app = Sammy( function() {
         }
     });
     
-    this.get( '#/User/:hash', function() {
+    theApp.get( '#/User/:hash', function() {
         $('#main').spin( 'large' );
 
         var userHash = this.params[ 'hash' ];
@@ -122,7 +150,7 @@ var app = Sammy( function() {
         });
     });
 
-    this.get( '#/MyRooms', function() {
+    theApp.get( '#/MyRooms', function() {
         SetActivePage( 'myrooms' );
         $( '#main' ).spin( 'large' );
         $.ajax({
@@ -140,12 +168,12 @@ var app = Sammy( function() {
         });
     });
 
-    this.get( '#/CreateRoom', function() {
+    theApp.get( '#/CreateRoom', function() {
         SetActivePage( 'createroom' );
         $( '#main' ).html( ich.createroom() );
     });
     
-    this.get( '#/ManageRoom/:roomId', function () {
+    theApp.get( '#/ManageRoom/:roomId', function () {
         $( '#main' ).spin( 'large' );
         
         var roomId = this.params[ 'roomId' ];
@@ -188,7 +216,7 @@ var app = Sammy( function() {
         });
     });
 
-    this.get( '#/Room/:roomId', function () {
+    theApp.get( '#/Room/:roomId', function () {
         $( '#main' ).spin( 'large' );
 
         currentRoomId = this.params[ 'roomId' ];
@@ -198,12 +226,25 @@ var app = Sammy( function() {
             type: 'GET',
             dataType: 'json',
             success: function( room ) {
-                g_RoomCache[ room._id ] = room;
-                $( '#main' ).html( ich.room( { 'room': room } ) );
+
+                /* I am not a fan of Sammy anymore, based on how heinous it's been trying to get this to work (which it doesn't):
+                theApp.bind( 'location-changed', function() {
+                    LeaveRoom();
+                    theApp._unlisten( 'location-changed', this ); // this is dirty, why doesn't sammy have .unbind?
+                });
+                */
+                
+                g_RoomCache[ room._id ] = g_Room = room;
+                
+                document.title = room.name + ' on Grmble';
+                
+                $( '#main' ).html( ich.room( { 'room': g_Room } ) );
                 $( '#main' ).spin( false );
 
                 g_ReceivedUserlistAt = new Date(); // reset because we just joined this room
 
+                g_UnreadMessages = 0;
+                
                 var scrollRequests = 0;
                 function ScrollToBottom() {
                     ++scrollRequests;
@@ -226,18 +267,28 @@ var app = Sammy( function() {
                     }
                 }
 
-                var socket = io.connect( window.location.origin, {
+                g_Socket = io.connect( window.location.origin, {
                     'sync disconnect on unload': false // we will handle disconnect ourselves
                 });
 
-                socket.on( 'message', function( message ) {
+                g_Socket.on( 'message', function( message ) {
+                    
+                    switch( message.kind )
+                    {
+                        case 'idle':
+                            $( '#userlist-entry-' + message.clientId ).fadeTo( 'slow', 0.3 );
+                            return;
+                        case 'active':
+                            $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
+                            return;
+                    }
                     
                     function escapeHTML( text ) {
                         return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
                     }
                     
                     // TODO: move this to a handler
-                    message.processed = linkify( message.content,  {
+                    message.processed = message.content == null ? null : linkify( message.content,  {
                         callback: function( text, href ) {
                             if ( href )
                             {
@@ -283,14 +334,22 @@ var app = Sammy( function() {
                                 $( '#userlist' ).append( ich.userlist_entry( message ) );
                                 break;
                             
-                            case 'part':
+                            case 'leave':
                                 $( '#userlist-entry-' + message.clientId ).remove();
                                 break;
                         }
                     }
+                    
+                    if ( $.data( document, 'idleTimer' ) == 'idle' )
+                    {
+                        $( '#message-sound' )[ 0 ].play();
+                        
+                        ++g_UnreadMessages;
+                        document.title = '(' + g_UnreadMessages + ') ' + room.name + ' on Grmble';
+                    }
                 });
                 
-                socket.on( 'userlist', function( userlist ) {
+                g_Socket.on( 'userlist', function( userlist ) {
                     g_ReceivedUserlistAt = new Date();
                     $( '#userlist-container' ).spin( 'medium' );
                     $( '#userlist' ).html( '' );
@@ -302,9 +361,9 @@ var app = Sammy( function() {
                     $( '#userlist-container' ).spin( false );
                 });
                 
-                socket.emit( 'message', {
+                g_Socket.emit( 'message', {
                     kind: 'join',
-                    roomId: room._id,
+                    roomId: g_Room._id,
                     senderId: currentUser ? currentUser._id : null,
                     nickname: currentUser ? currentUser.nickname : 'Anonymous',
                     userHash: currentUser ? currentUser.hash : null,
@@ -314,22 +373,6 @@ var app = Sammy( function() {
                     content: null
                 });
 
-                $( window ).bind( 'unload', function() {
-                    socket.emit( 'message', {
-                        kind: 'part',
-                        roomId: room._id,
-                        senderId: currentUser ? currentUser._id : null,
-                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                        userHash: currentUser ? currentUser.hash : null,
-                        facebookId: currentUser ? currentUser.facebookId : null,
-                        twitterId: currentUser ? currentUser.twitterId : null,
-                        avatar: currentUser ? currentUser.avatar : null,
-                        content: null
-                    });
-
-                    socket.emit( 'disconnect', {} );
-                });                    
-                
                 function SendMessage() {
 
                 
@@ -351,7 +394,7 @@ var app = Sammy( function() {
                         content: $( '#message-entry-content' ).val()
                     };
                     
-                    socket.emit( 'message', message );
+                    g_Socket.emit( 'message', message );
                     $( '#submit-message' ).button( 'loading' );
                     $( '#message-entry-content' ).val( '' );
                 }
@@ -404,6 +447,50 @@ $(function() {
         }
     });
 
+    $( window ).bind( 'unload', LeaveRoom );                    
+
+    $.idleTimer( g_IdleTimeout, document, {
+        events: 'mousemove keydown mousewheel mousedown touchstart touchmove' // DOMMouseScroll, nope, scroll to bottom emits this
+    });
+
+    $( document ).bind( 'idle.idleTimer', function() {
+        if ( g_Socket && g_Room )
+        {
+            g_Socket.emit( 'message', {
+                kind: 'idle',
+                roomId: g_Room._id,
+                senderId: currentUser ? currentUser._id : null,
+                nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                userHash: currentUser ? currentUser.hash : null,
+                facebookId: currentUser ? currentUser.facebookId : null,
+                twitterId: currentUser ? currentUser.twitterId : null,
+                avatar: currentUser ? currentUser.avatar : null,
+                content: null
+            });
+        }
+    });
+    
+    
+    $( document ).bind( 'active.idleTimer', function() {
+        if ( g_Socket && g_Room )
+        {
+            g_UnreadMessages = 0;
+            document.title = g_Room.name + ' on Grmble';
+            
+            g_Socket.emit( 'message', {
+                kind: 'active',
+                roomId: g_Room._id,
+                senderId: currentUser ? currentUser._id : null,
+                nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                userHash: currentUser ? currentUser.hash : null,
+                facebookId: currentUser ? currentUser.facebookId : null,
+                twitterId: currentUser ? currentUser.twitterId : null,
+                avatar: currentUser ? currentUser.avatar : null,
+                content: null
+            });
+        }
+    });
+    
     app.run( '#/' );
 });
 

@@ -57,7 +57,7 @@ exports.bind = function( app, io ) {
                     {
                         newMessage.content = 'Joined the room.';
                     }
-                    else if ( newMessage.kind == 'part' )
+                    else if ( newMessage.kind == 'leave' )
                     {
                         newMessage.content = 'Left the room.';
                     }
@@ -97,7 +97,7 @@ exports.bind = function( app, io ) {
                         }
                         catch( exception )
                         {
-                            // TODO: drop this connection, possibly create a 'part' message?
+                            // TODO: drop this connection, possibly create a 'leave' message?
                         }
                     }
     
@@ -166,7 +166,7 @@ exports.bind = function( app, io ) {
         });
 
         client.on( 'disconnect', function() {
-            // TODO: find all the rooms that contain this client and send a 'part'?
+            // TODO: find all the rooms that contain this client and send a 'leave'?
         });
     });
 }
