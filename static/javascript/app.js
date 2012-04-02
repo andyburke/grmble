@@ -36,7 +36,18 @@ var g_UnreadMessages = 0;
 
 var currentRoomId = null;
 
-var currentUser = null;
+var g_InitialUserCheckComplete = false;
+var g_CurrentUser = null;
+
+function GetCurrentUser( callback ) {
+    if ( !g_InitialUserCheckComplete )
+    {
+        setTimeout( function() { GetCurrentUser( callback ); }, 100 );
+        return;
+    }
+
+    callback( g_CurrentUser );
+}
 
 function LeaveRoom() {
     if ( g_Socket && g_Room )
@@ -44,12 +55,12 @@ function LeaveRoom() {
         g_Socket.emit( 'message', {
             kind: 'leave',
             roomId: g_Room._id,
-            senderId: currentUser ? currentUser._id : null,
-            nickname: currentUser ? currentUser.nickname : 'Anonymous',
-            userHash: currentUser ? currentUser.hash : null,
-            facebookId: currentUser ? currentUser.facebookId : null,
-            twitterId: currentUser ? currentUser.twitterId : null,
-            avatar: currentUser ? currentUser.avatar : null,
+            senderId: g_CurrentUser ? g_CurrentUser._id : null,
+            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
             content: null
         });
     
@@ -94,7 +105,7 @@ var app = Sammy( function() {
     
     theApp.get( '#/Settings', function() {
         SetActivePage( 'settings' );
-        if ( !currentUser )
+        if ( !g_CurrentUser )
         {
             $('#main').spin( 'large' );
             $.ajax({
@@ -102,8 +113,8 @@ var app = Sammy( function() {
                 type: 'GET',
                 dataType: 'json',
                 success: function( data ) {
-                    currentUser = data;
-                    $( '#main' ).html( ich.settings( currentUser ) );
+                    g_CurrentUser = data;
+                    $( '#main' ).html( ich.settings( g_CurrentUser ) );
                     $('#main').spin( false );
                 },
                 error: function( response, status, error ) {
@@ -114,7 +125,7 @@ var app = Sammy( function() {
         }
         else
         {
-            $( '#main' ).html( ich.settings( currentUser ) );
+            $( '#main' ).html( ich.settings( g_CurrentUser ) );
         }
     });
     
@@ -221,259 +232,267 @@ var app = Sammy( function() {
 
         currentRoomId = this.params[ 'roomId' ];
 
-        $.ajax({
-            url: apiServer + '/api/1.0/Room/' + currentRoomId,
-            type: 'GET',
-            dataType: 'json',
-            success: function( room ) {
-
-                /* I am not a fan of Sammy anymore, based on how heinous it's been trying to get this to work (which it doesn't):
-                theApp.bind( 'location-changed', function() {
-                    LeaveRoom();
-                    theApp._unlisten( 'location-changed', this ); // this is dirty, why doesn't sammy have .unbind?
-                });
-                */
-                
-                g_RoomCache[ room._id ] = g_Room = room;
-                
-                document.title = room.name + ' on Grmble';
-                
-                $( '#main' ).html( ich.room( { 'room': g_Room } ) );
-                $( '#main' ).spin( false );
-
-                g_ReceivedUserlistAt = new Date(); // reset because we just joined this room
-
-                g_UnreadMessages = 0;
-                
-                var scrollRequests = 0;
-                function ScrollToBottom() {
-                    ++scrollRequests;
-                    if ( scrollRequests == 1 )
-                    {
-                        $( 'html, body' ).animate({ 
-                                scrollTop: $( document ).height() - $( window ).height()
-                            }, 
-                            50,
-                            "linear",
-                            function() {
-                                var outstandingRequests = scrollRequests > 1;
-                                scrollRequests = 0;
-                                if ( outstandingRequests )
-                                {
-                                    ScrollToBottom();
-                                }
-                            }
-                        );
-                    }
-                }
-
-                g_Socket = io.connect( window.location.origin, {
-                    'sync disconnect on unload': false, // we will handle disconnect ourselves
-                    'reconnect': true,
-                    'reconnection limit': 10000,
-                    'max reconnection attempts': 30
-                });
-                
-                var connected = false;
-                g_Socket.on( 'connect', function() {
-                    connected = true;
-                    
-                    $( '#server-connection-status' ).attr( 'class', 'icon-signal' );
-                    
-                    g_Socket.emit( 'message', {
-                        kind: 'join',
-                        roomId: g_Room._id,
-                        senderId: currentUser ? currentUser._id : null,
-                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                        userHash: currentUser ? currentUser.hash : null,
-                        facebookId: currentUser ? currentUser.facebookId : null,
-                        twitterId: currentUser ? currentUser.twitterId : null,
-                        avatar: currentUser ? currentUser.avatar : null,
-                        content: null
+        GetCurrentUser( function( currentUser ) {
+            if ( !currentUser )
+            {
+                $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
+                return;
+            }
+            
+            $.ajax({
+                url: apiServer + '/api/1.0/Room/' + currentRoomId,
+                type: 'GET',
+                dataType: 'json',
+                success: function( room ) {
+    
+                    /* I am not a fan of Sammy anymore, based on how heinous it's been trying to get this to work (which it doesn't):
+                    theApp.bind( 'location-changed', function() {
+                        LeaveRoom();
+                        theApp._unlisten( 'location-changed', this ); // this is dirty, why doesn't sammy have .unbind?
                     });
-                });
-                
-                function IndicateDisconnected() {
-                    if ( connected == true )
+                    */
+                    
+                    g_RoomCache[ room._id ] = g_Room = room;
+                    
+                    document.title = room.name + ' on Grmble';
+                    
+                    $( '#main' ).html( ich.room( { 'room': g_Room } ) );
+                    $( '#main' ).spin( false );
+    
+                    g_ReceivedUserlistAt = new Date(); // reset because we just joined this room
+    
+                    g_UnreadMessages = 0;
+                    
+                    var scrollRequests = 0;
+                    function ScrollToBottom() {
+                        ++scrollRequests;
+                        if ( scrollRequests == 1 )
+                        {
+                            $( 'html, body' ).animate({ 
+                                    scrollTop: $( document ).height() - $( window ).height()
+                                }, 
+                                50,
+                                "linear",
+                                function() {
+                                    var outstandingRequests = scrollRequests > 1;
+                                    scrollRequests = 0;
+                                    if ( outstandingRequests )
+                                    {
+                                        ScrollToBottom();
+                                    }
+                                }
+                            );
+                        }
+                    }
+    
+                    if ( g_Socket )
                     {
-                        return;
+                        // TODO: eh, is this right?
+                        g_Socket.disconnect();
+                        g_Socket = null;
                     }
                     
-                    $( '#server-connection-status' ).animate( { opacity: 0.2 }, 500, function() {
-                        $( '#server-connection-status' ).animate( { opacity: 1.0 }, 500, function() {
-                            IndicateDisconnected();
+                    g_Socket = io.connect( window.location.origin, {
+                        'sync disconnect on unload': false, // we will handle disconnect ourselves
+                        'reconnect': true,
+                        'reconnection limit': 10000,
+                        'max reconnection attempts': 30
+                    });
+                    
+                    var connected = false;
+                    g_Socket.on( 'connect', function() {
+                        connected = true;
+                        
+                        $( '#server-connection-status' ).attr( 'class', 'icon-signal' );
+                        
+                        g_Socket.emit( 'message', {
+                            kind: 'join',
+                            roomId: g_Room._id,
+                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+                            content: null
                         });
                     });
-                }
-                
-                g_Socket.on( 'disconnect', function() {
-                    $( '#server-connection-status' ).attr( 'class', 'icon-ban-circle' );
-                    wasDisconnected = true;
-                    connected = false;
-                    IndicateDisconnected();
-                });
-                
-                g_Socket.on( 'reconnect_failed', function() {
-                    alert( 'Could not reconnect to the server.  Maybe try reloading?' ); 
-                });
-
-                // FIXME: ugh, just require accounts
-                var myNicknameRegex = new RegExp( currentUser != null ? currentUser.nickname : 'Anonymous', "ig" );
-                g_Socket.on( 'message', function( message ) {
                     
-                    switch( message.kind )
-                    {
-                        case 'idle':
-                            $( '#userlist-entry-' + message.clientId ).fadeTo( 'slow', 0.3 );
+                    function IndicateDisconnected() {
+                        if ( connected == true )
+                        {
                             return;
-                        case 'active':
-                            $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
-                            return;
-                    }
-
-                    // avoid duplicates
-                    if ( $( '#' + message._id ).length == 0 ) {
-                    
-                        function escapeHTML( text ) {
-                            return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
                         }
                         
-                        // TODO: move this to a handler
-                        message.processed = message.content == null ? null : linkify( message.content,  {
-                            callback: function( text, href ) {
-                                if ( href )
-                                {
-                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
+                        $( '#server-connection-status' ).animate( { opacity: 0.2 }, 500, function() {
+                            $( '#server-connection-status' ).animate( { opacity: 1.0 }, 500, function() {
+                                IndicateDisconnected();
+                            });
+                        });
+                    }
+                    
+                    g_Socket.on( 'disconnect', function() {
+                        $( '#server-connection-status' ).attr( 'class', 'icon-ban-circle' );
+                        wasDisconnected = true;
+                        connected = false;
+                        IndicateDisconnected();
+                    });
+                    
+                    g_Socket.on( 'reconnect_failed', function() {
+                        alert( 'Could not reconnect to the server.  Maybe try reloading?' ); 
+                    });
+    
+                    // FIXME: ugh, just require accounts
+                    var myNicknameRegex = new RegExp( g_CurrentUser != null ? g_CurrentUser.nickname : 'Anonymous', "ig" );
+                    g_Socket.on( 'message', function( message ) {
+                        
+                        switch( message.kind )
+                        {
+                            case 'idle':
+                                $( '#userlist-entry-' + message.clientId ).fadeTo( 'slow', 0.3 );
+                                return;
+                            case 'active':
+                                $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
+                                return;
+                        }
+    
+                        // avoid duplicates
+                        if ( $( '#' + message._id ).length == 0 ) {
+                        
+                            function escapeHTML( text ) {
+                                return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+                            }
+                            
+                            // TODO: move this to a handler
+                            message.processed = message.content == null ? null : linkify( message.content,  {
+                                callback: function( text, href ) {
+                                    if ( href )
                                     {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
-                                    {
-                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                        if ( matched && matched.length == 2 )
+                                        if ( href.match( /(?:png|gif|jpg)$/i ) )
                                         {
-                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                        }
+                                        else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
+                                        {
+                                            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                            if ( matched && matched.length == 2 )
+                                            {
+                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                            }
+                                            else
+                                            {
+                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                            }
                                         }
                                         else
                                         {
                                             return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
                                         }
                                     }
-                                    else
-                                    {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                    }
+                                    
+                                    return escapeHTML( text );
                                 }
-                                
-                                return escapeHTML( text );
-                            }
-                        });
-
-                        var newMessage = ich.message( message );
-                        
-                        if ( message.content.match( myNicknameRegex ) )
-                        {
-                            $( newMessage ).addClass( 'message-references-me' );
-                        }
-                        
-                        $( newMessage ).appendTo( '#chatlog' );
-                        
-                        ScrollToBottom();
-
-                        $( '#submit-message' ).button( 'reset' );
-                        
-                        var now = new Date();
-                        if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
-                        {
-                            switch( message.kind )
-                            {
-                                case 'join':
-                                    if ( $( 'userlist-entry-' + message.clientid ).length == 0 )
-                                    {
-                                        $( '#userlist' ).append( ich.userlist_entry( message ) );
-                                    }
-                                    break;
-                                
-                                case 'leave':
-                                    $( '#userlist-entry-' + message.clientId ).remove();
-                                    break;
-                            }
-                        }
-                        
-                        if ( $.data( document, 'idleTimer' ) == 'idle' )
-                        {
-                            $( '#message-sound' )[ 0 ].play();
+                            });
+    
+                            var newMessage = ich.message( message );
                             
-                            ++g_UnreadMessages;
-                            document.title = '(' + g_UnreadMessages + ') ' + room.name + ' on Grmble';
+                            if ( message.content.match( myNicknameRegex ) )
+                            {
+                                $( newMessage ).addClass( 'message-references-me' );
+                            }
+                            
+                            $( newMessage ).appendTo( '#chatlog' );
+                            
+                            ScrollToBottom();
+    
+                            $( '#submit-message' ).button( 'reset' );
+                            
+                            var now = new Date();
+                            if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
+                            {
+                                switch( message.kind )
+                                {
+                                    case 'join':
+                                        if ( $( 'userlist-entry-' + message.clientid ).length == 0 )
+                                        {
+                                            $( '#userlist' ).append( ich.userlist_entry( message ) );
+                                        }
+                                        break;
+                                    
+                                    case 'leave':
+                                        $( '#userlist-entry-' + message.clientId ).remove();
+                                        break;
+                                }
+                            }
+                            
+                            if ( $.data( document, 'idleTimer' ) == 'idle' )
+                            {
+                                $( '#message-sound' )[ 0 ].play();
+                                
+                                ++g_UnreadMessages;
+                                document.title = '(' + g_UnreadMessages + ') ' + room.name + ' on Grmble';
+                            }
                         }
-                    }
-                });
-                
-                g_Socket.on( 'userlist', function( userlist ) {
-                    g_ReceivedUserlistAt = new Date();
-                    $( '#userlist-container' ).spin( 'medium' );
-                    $( '#userlist' ).html( '' );
-                    for ( var index = 0; index < userlist.users.length; ++index )
-                    {
-                        $( '#userlist' ).append( ich.userlist_entry( userlist.users[ index ] ) );
-                    }
-                    $( '#userlist-container' ).spin( false );
-                });
-                
-                function SendMessage() {
-
-                
-                    if ( !currentUser )
-                    {
-                        $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
-                        return;
+                    });
+                    
+                    g_Socket.on( 'userlist', function( userlist ) {
+                        g_ReceivedUserlistAt = new Date();
+                        $( '#userlist-container' ).spin( 'medium' );
+                        $( '#userlist' ).html( '' );
+                        for ( var index = 0; index < userlist.users.length; ++index )
+                        {
+                            $( '#userlist' ).append( ich.userlist_entry( userlist.users[ index ] ) );
+                        }
+                        $( '#userlist-container' ).spin( false );
+                    });
+                    
+                    function SendMessage() {
+    
+                        var message = {
+                            kind: 'say',
+                            roomId: room._id,
+                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+                            content: $( '#message-entry-content' ).val()
+                        };
+                        
+                        g_Socket.emit( 'message', message );
+                        $( '#submit-message' ).button( 'loading' );
+                        $( '#message-entry-content' ).val( '' );
                     }
                     
-                    var message = {
-                        kind: 'say',
-                        roomId: room._id,
-                        senderId: currentUser ? currentUser._id : null,
-                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                        userHash: currentUser ? currentUser.hash : null,
-                        facebookId: currentUser ? currentUser.facebookId : null,
-                        twitterId: currentUser ? currentUser.twitterId : null,
-                        avatar: currentUser ? currentUser.avatar : null,
-                        content: $( '#message-entry-content' ).val()
-                    };
-                    
-                    g_Socket.emit( 'message', message );
-                    $( '#submit-message' ).button( 'loading' );
-                    $( '#message-entry-content' ).val( '' );
-                }
-                
-                $( '#submit-message' ).unbind();
-                $( '#submit-message' ).bind( 'click', function( event ) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    SendMessage();
-                });
-                
-                $( '#message-entry-form' ).unbind();
-                $( '#message-entry-form' ).bind( 'submit', function( event ) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    SendMessage();
-                });
-                
-                $( '#message-entry-content' ).bind( 'keydown', function( event ) {
-                    if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
-                    {
+                    $( '#submit-message' ).unbind();
+                    $( '#submit-message' ).bind( 'click', function( event ) {
                         event.preventDefault();
                         event.stopPropagation();
                         SendMessage();
-                    }
-                });
-            },
-            error: function( response, status, error ) {
-                $( '#main' ).spin( false );
-                console.log( error );
-            }
+                    });
+                    
+                    $( '#message-entry-form' ).unbind();
+                    $( '#message-entry-form' ).bind( 'submit', function( event ) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        SendMessage();
+                    });
+                    
+                    $( '#message-entry-content' ).bind( 'keydown', function( event ) {
+                        if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
+                        {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            SendMessage();
+                        }
+                    });
+                },
+                error: function( response, status, error ) {
+                    $( '#main' ).spin( false );
+                    console.log( error );
+                }
+            });
         });
     });
 
@@ -485,13 +504,15 @@ $(function() {
         type: 'GET',
         dataType: 'json',
         success: function( data ) {
-            currentUser = data;
+            g_CurrentUser = data;
             $('.authenticated').show();
             $('.unauthenticated').hide();
+            g_InitialUserCheckComplete = true;
         },
         error: function( response, status, error ) {
             $('.authenticated').hide();
             $('.unauthenticated').show();
+            g_InitialUserCheckComplete = true;
         }
     });
 
@@ -507,12 +528,12 @@ $(function() {
             g_Socket.emit( 'message', {
                 kind: 'idle',
                 roomId: g_Room._id,
-                senderId: currentUser ? currentUser._id : null,
-                nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                userHash: currentUser ? currentUser.hash : null,
-                facebookId: currentUser ? currentUser.facebookId : null,
-                twitterId: currentUser ? currentUser.twitterId : null,
-                avatar: currentUser ? currentUser.avatar : null,
+                senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
                 content: null
             });
         }
@@ -528,12 +549,12 @@ $(function() {
             g_Socket.emit( 'message', {
                 kind: 'active',
                 roomId: g_Room._id,
-                senderId: currentUser ? currentUser._id : null,
-                nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                userHash: currentUser ? currentUser.hash : null,
-                facebookId: currentUser ? currentUser.facebookId : null,
-                twitterId: currentUser ? currentUser.twitterId : null,
-                avatar: currentUser ? currentUser.avatar : null,
+                senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
                 content: null
             });
         }
@@ -544,15 +565,22 @@ $(function() {
 
 function HandleAuthentication( resource, form )
 {
+    var nickname = $(form).find( "input[type=text][name=nickname]" ).val();
     var email = $(form).find( "input[type=text][name=email]" ).val();
     var password = $(form).find( "input[type=password][name=password]" ).val();
 
+    if ( !email.length || !password.length )
+    {
+        // TODO: show error
+    }
+    
     $(form).spin( 'small' );
     
     $.ajax({
         url: apiServer + '/api/1.0/' + resource,
         type: 'POST',
         data: JSON.stringify({
+            'nickname': nickname,
             'email': email,
             'password': password
         }),
@@ -560,35 +588,19 @@ function HandleAuthentication( resource, form )
         contentType: 'application/json',
         cache: false,
         success: function( data ) {
+            $(form).find( "input[type=text][name=nickname]" ).val( '' );
             $(form).find( "input[type=text][name=email]" ).val( '' );
             $(form).find( "input[type=password][name=password]" ).val( '' );
             $(form).find( "input[type=password][name=password]" ).removeClass( 'error' );
 
-            if ( resource == 'User' )
-            {
-                currentUser = data;
-            }
-            else
-            {
-                currentUser = data.user;
-            }
+            g_CurrentUser = data.user || data;
 
             $('.authenticated').show();
             $('.unauthenticated').hide();
             $(form).spin( false );
             $( '#signup-modal' ).modal( 'hide' );
             
-            /*
-            var queryParams = QueryParameters();
-            if ( queryParams.after )
-            {
-                app.setLocation( queryParams.after );
-            }
-            else
-            {
-                app.setLocation( '#/MyAccount' );
-            }
-            */
+            app.refresh();
         },
         error: function( response, status, error ) {
             $(form).find( "input[type=password][name=password]" ).val( '' );
@@ -622,7 +634,7 @@ $('.button-signout').live( 'click', function( event ) {
         url: apiServer + '/api/1.0/Session',
         type: 'DELETE',
         success: function( data ) {
-            currentUser = null;
+            g_CurrentUser = null;
             $('.authenticated').hide();
             $('.unauthenticated').show();
             app.setLocation( '#/' );
@@ -647,7 +659,7 @@ $( '#set-nickname-modal-set-nickname' ).live( 'click', function( event ) {
     var nickname = $( '#set-nickname-form' ).find( "input[type=text][name=nickname]" ).val();
     if ( nickname.length )
     {
-        currentUser = { nickname: nickname };
+        g_CurrentUser = { nickname: nickname };
         $( '#set-nickname-modal' ).modal( 'hide' );
     }
 });
@@ -659,13 +671,13 @@ $('.update-account-button').live( 'click', function( event ) {
 
     var toBeUpdated = {};
     var avatar = $(form).find( "#avatar" ).val();
-    if ( avatar != currentUser.avatar )
+    if ( avatar != g_CurrentUser.avatar )
     {
         toBeUpdated.avatar = avatar;
     }
 
     var email = $(form).find( "#email" ).val();
-    if ( email != currentUser.email )
+    if ( email != g_CurrentUser.email )
     {
         toBeUpdated.email = email;
     }
@@ -677,19 +689,19 @@ $('.update-account-button').live( 'click', function( event ) {
     }
     
     var nickname = $(form).find( "#nickname" ).val();
-    if ( nickname != currentUser.nickname )
+    if ( nickname != g_CurrentUser.nickname )
     {
         toBeUpdated.nickname = nickname;
     }
     
     var location = $(form).find( "#location" ).val();
-    if ( location != currentUser.location )
+    if ( location != g_CurrentUser.location )
     {
         toBeUpdated.location = location;
     }
 
     var bio = $(form).find( "#bio" ).val();
-    if ( bio != currentUser.bio )
+    if ( bio != g_CurrentUser.bio )
     {
         toBeUpdated.bio = bio;
     }
@@ -707,7 +719,7 @@ $('.update-account-button').live( 'click', function( event ) {
             dataType: 'json',
             contentType: 'application/json',
             success: function( data ) {
-                currentUser = data;
+                g_CurrentUser = data;
                 $(form).find( '#password' ).val( '' );
                 $(form).spin( false );
                 $(button).button( 'complete' );
@@ -732,10 +744,10 @@ $('.reset-account-button').live( 'click', function( event ) {
 
     // TODO: prompt for confirmation, maybe use bootstrap-modal.js?
     
-    for ( var key in currentUser )
+    for ( var key in g_CurrentUser )
     {
-        $(form).find( '#' + key ).val( currentUser[ key ] );
-        $(form).find( '#' + key ).html( currentUser[ key ] );
+        $(form).find( '#' + key ).val( g_CurrentUser[ key ] );
+        $(form).find( '#' + key ).html( g_CurrentUser[ key ] );
     }
 });
 
@@ -745,7 +757,7 @@ $( '#use-avatar-gravatar' ).live( 'click', function( event ) {
     
     var button = this;
     var form = $(this).parents( 'form:first' );
-    var gravatar = 'http://www.gravatar.com/avatar/' + Crypto.MD5( currentUser.email ) + '?s=64';
+    var gravatar = 'http://www.gravatar.com/avatar/' + Crypto.MD5( g_CurrentUser.email ) + '?s=64';
     
     $(form).find( "#avatar" ).val( gravatar );
     $(form).find( "#user-avatar-preview" ).attr( 'src', gravatar );

@@ -256,8 +256,8 @@
                   </div>
                     <div class="controls">
                         <button class="btn btn-small" id="use-avatar-none">None</button>
-                        <button class="btn btn-small" id="use-avatar-facebook"><img src="/images/social/icons/24x24/facebook.png" alt="Facebook Avatar"></button>
-                        <button class="btn btn-small" id="use-avatar-twitter"><img src="/images/social/icons/24x24/twitter.png" alt="Twitter Avatar"></button>
+                        <!-- <button class="btn btn-small" id="use-avatar-facebook"><img src="/images/social/icons/24x24/facebook.png" alt="Facebook Avatar"></button -->
+                        <!-- <button class="btn btn-small" id="use-avatar-twitter"><img src="/images/social/icons/24x24/twitter.png" alt="Twitter Avatar"></button> -->
                         <button class="btn btn-small" id="use-avatar-gravatar" {{^email}}disabled{{/email}}><img src="/images/social/icons/24x24/gravatar.png" alt="Gravatar Avatar"></button>
                     </div>
                 </div><!-- /clearfix -->
@@ -311,7 +311,7 @@
         <h1>Sign Up <small>Chat with people about cats and robots!</small></h1>
     </div>
     <div class="row-fluid">
-        <div class="span7">
+        <div class="span3">
             <form class="form-horizontal">
                 <fieldset>
                     <div class="control-group">
@@ -387,12 +387,14 @@
     <div id="signup-modal" class="modal hide">
         <div class="modal-header">
             <a class="close" data-dismiss="modal">x</a>
-            <h3>Sign Up! <small>(Or just set your nickname...)</small></h3>
+            <h3>Sign Up! <!-- <small>(Or just set your nickname...)</small> --></h3>
         </div>
         <div class="row modal-body">
             <div class="span3">
                 <form id="signup-form">
                     <fieldset>
+                        <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
+                        <div class="clear"></div>
                         <input type="text" class="pull-right" name="email" placeholder="Email" />
                         <div class="clear"></div>
                         <input type="password" class="pull-right" name="password" placeholder="Password" />
@@ -402,14 +404,25 @@
                 </form>
             </div>
             <div class="span3 extra">
+                <h3>Sign Up To Enter Rooms!</h3>
+                When you sign up, you can set your nickname and avatar!
+                <p/>
+                <p/>
+                We'll never reveal your email address to a third party.  Ever.
+            </div>
+            <!--
+            <div class="span3 extra">
                 <a href="#" id="signup-facebook"><img src="/images/social/icons/48x48/facebook.png" alt="Facebook"/> Log In Using Facebook</a>
                 <div class="clear padded"></div>
                 <a href="#" id="signup-twitter"><img src="/images/social/icons/48x48/twitter.png" alt="Twitter"/> Log In Using Twitter</a>
             </div>
+            -->
         </div>
+        <!--
         <div class="modal-footer">
             <a href="#" class="btn" id="signup-modal-set-nickname">Just Set My Nickname</a>
-        </div>        
+        </div>
+        -->
     </div>
     
     <div id="set-nickname-modal" class="modal hide">
