@@ -317,6 +317,8 @@ var app = Sammy( function() {
                     alert( 'Could not reconnect to the server.  Maybe try reloading?' ); 
                 });
 
+                // FIXME: ugh, just require accounts
+                var myNicknameRegex = new RegExp( currentUser != null ? currentUser.nickname : 'Anonymous', "ig" );
                 g_Socket.on( 'message', function( message ) {
                     
                     switch( message.kind )
@@ -368,6 +370,11 @@ var app = Sammy( function() {
                         });
 
                         var newMessage = ich.message( message );
+                        
+                        if ( message.content.match( myNicknameRegex ) )
+                        {
+                            $( newMessage ).addClass( 'message-references-me' );
+                        }
                         
                         $( newMessage ).appendTo( '#chatlog' );
                         
