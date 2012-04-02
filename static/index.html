@@ -186,7 +186,11 @@
             </div>
     
             <div class="sidebar-nav-fixed extra" id="sidebar">
-                <h2 id="room-name">{{ room.name }} <button class="btn btn-mini btn-warning" id="leave-room">Leave</button></h2>
+                <div class="sidebar-room-name-wrapper">
+                    <div id="room-name" class="room-name">{{ room.name }}</div>
+                    <i id="server-connection-status" class=""></i>
+                    <!-- <button class="btn btn-mini btn-warning" id="leave-room">Leave</button> -->
+                </div>
                 <hr/>
                 <div id="userlist">
                 </div>
@@ -200,7 +204,9 @@
                         <textarea id="message-entry-content" class="boxsizing-border message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
                     </div>
                     <div class="submit-message-wrapper">
-                        <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
+                        <div class="submit-message-button-wrapper">
+                            <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
+                        </div>
                     </div>
                 </div>
             </form>
