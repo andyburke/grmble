@@ -381,7 +381,10 @@ var app = Sammy( function() {
                             switch( message.kind )
                             {
                                 case 'join':
-                                    $( '#userlist' ).append( ich.userlist_entry( message ) );
+                                    if ( $( 'userlist-entry-' + message.clientid ).length == 0 )
+                                    {
+                                        $( '#userlist' ).append( ich.userlist_entry( message ) );
+                                    }
                                     break;
                                 
                                 case 'leave':
@@ -404,7 +407,6 @@ var app = Sammy( function() {
                     g_ReceivedUserlistAt = new Date();
                     $( '#userlist-container' ).spin( 'medium' );
                     $( '#userlist' ).html( '' );
-                    var rendered = 0;
                     for ( var index = 0; index < userlist.users.length; ++index )
                     {
                         $( '#userlist' ).append( ich.userlist_entry( userlist.users[ index ] ) );
