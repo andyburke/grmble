@@ -6,6 +6,15 @@
 
 @message-margin-top: 12px;
 
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  box-shadow:         @style @c;
+  -webkit-box-shadow: @style @c;
+  -moz-box-shadow:    @style @c;
+}
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(0, 0, 0, @alpha));
+}
+
 body
 {
     min-width: @min-width;
@@ -147,6 +156,15 @@ select.menu-icon option
         {
             padding-top: @message-margin-top;
             margin-left: 104px;
+            min-height: 26px;
+        }
+        
+        .message-references-me
+        {
+            .message-content
+            {
+                background-color: #f8f8ff;
+            }
         }
         
         .join

@@ -164,9 +164,5 @@ exports.bind = function( app, io ) {
                 });
             });
         });
-
-        client.on( 'disconnect', function() {
-            // TODO: find all the rooms that contain this client and send a 'leave'?
-        });
     });
 }
