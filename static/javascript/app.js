@@ -268,7 +268,53 @@ var app = Sammy( function() {
                 }
 
                 g_Socket = io.connect( window.location.origin, {
-                    'sync disconnect on unload': false // we will handle disconnect ourselves
+                    'sync disconnect on unload': false, // we will handle disconnect ourselves
+                    'reconnect': true,
+                    'reconnection limit': 10000,
+                    'max reconnection attempts': 30
+                });
+                
+                var connected = false;
+                g_Socket.on( 'connect', function() {
+                    connected = true;
+                    
+                    $( '#server-connection-status' ).attr( 'class', 'icon-signal' );
+                    
+                    g_Socket.emit( 'message', {
+                        kind: 'join',
+                        roomId: g_Room._id,
+                        senderId: currentUser ? currentUser._id : null,
+                        nickname: currentUser ? currentUser.nickname : 'Anonymous',
+                        userHash: currentUser ? currentUser.hash : null,
+                        facebookId: currentUser ? currentUser.facebookId : null,
+                        twitterId: currentUser ? currentUser.twitterId : null,
+                        avatar: currentUser ? currentUser.avatar : null,
+                        content: null
+                    });
+                });
+                
+                function IndicateDisconnected() {
+                    if ( connected == true )
+                    {
+                        return;
+                    }
+                    
+                    $( '#server-connection-status' ).animate( { opacity: 0.2 }, 500, function() {
+                        $( '#server-connection-status' ).animate( { opacity: 1.0 }, 500, function() {
+                            IndicateDisconnected();
+                        });
+                    });
+                }
+                
+                g_Socket.on( 'disconnect', function() {
+                    $( '#server-connection-status' ).attr( 'class', 'icon-ban-circle' );
+                    wasDisconnected = true;
+                    connected = false;
+                    IndicateDisconnected();
+                });
+                
+                g_Socket.on( 'reconnect_failed', function() {
+                    alert( 'Could not reconnect to the server.  Maybe try reloading?' ); 
                 });
 
                 g_Socket.on( 'message', function( message ) {
@@ -282,70 +328,75 @@ var app = Sammy( function() {
                             $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                             return;
                     }
+
+                    // avoid duplicates
+                    if ( $( '#' + message._id ).length == 0 ) {
                     
-                    function escapeHTML( text ) {
-                        return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
-                    }
-                    
-                    // TODO: move this to a handler
-                    message.processed = message.content == null ? null : linkify( message.content,  {
-                        callback: function( text, href ) {
-                            if ( href )
-                            {
-                                if ( href.match( /(?:png|gif|jpg)$/i ) )
+                        function escapeHTML( text ) {
+                            return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+                        }
+                        
+                        // TODO: move this to a handler
+                        message.processed = message.content == null ? null : linkify( message.content,  {
+                            callback: function( text, href ) {
+                                if ( href )
                                 {
-                                    return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                }
-                                else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
-                                {
-                                    var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                    if ( matched && matched.length == 2 )
+                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
                                     {
-                                        return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                    }
+                                    else if ( href.match( /(?:https?:\/\/)(?:www\.)youtube\.com\/watch\?.*?v=\S+/i ) )
+                                    {
+                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                        if ( matched && matched.length == 2 )
+                                        {
+                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
                                     }
                                     else
                                     {
                                         return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
                                     }
                                 }
-                                else
-                                {
-                                    return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                }
+                                
+                                return escapeHTML( text );
                             }
-                            
-                            return escapeHTML( text );
-                        }
-                    });
+                        });
 
-                    var newMessage = ich.message( message );
-                    $( newMessage ).appendTo( '#chatlog' );
-                    
-                    ScrollToBottom();
-
-                    $( '#submit-message' ).button( 'reset' );
-                    
-                    var now = new Date();
-                    if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
-                    {
-                        switch( message.kind )
-                        {
-                            case 'join':
-                                $( '#userlist' ).append( ich.userlist_entry( message ) );
-                                break;
-                            
-                            case 'leave':
-                                $( '#userlist-entry-' + message.clientId ).remove();
-                                break;
-                        }
-                    }
-                    
-                    if ( $.data( document, 'idleTimer' ) == 'idle' )
-                    {
-                        $( '#message-sound' )[ 0 ].play();
+                        var newMessage = ich.message( message );
                         
-                        ++g_UnreadMessages;
-                        document.title = '(' + g_UnreadMessages + ') ' + room.name + ' on Grmble';
+                        $( newMessage ).appendTo( '#chatlog' );
+                        
+                        ScrollToBottom();
+
+                        $( '#submit-message' ).button( 'reset' );
+                        
+                        var now = new Date();
+                        if ( now.getTime() - g_ReceivedUserlistAt.getTime() > 5000 )
+                        {
+                            switch( message.kind )
+                            {
+                                case 'join':
+                                    $( '#userlist' ).append( ich.userlist_entry( message ) );
+                                    break;
+                                
+                                case 'leave':
+                                    $( '#userlist-entry-' + message.clientId ).remove();
+                                    break;
+                            }
+                        }
+                        
+                        if ( $.data( document, 'idleTimer' ) == 'idle' )
+                        {
+                            $( '#message-sound' )[ 0 ].play();
+                            
+                            ++g_UnreadMessages;
+                            document.title = '(' + g_UnreadMessages + ') ' + room.name + ' on Grmble';
+                        }
                     }
                 });
                 
@@ -361,18 +412,6 @@ var app = Sammy( function() {
                     $( '#userlist-container' ).spin( false );
                 });
                 
-                g_Socket.emit( 'message', {
-                    kind: 'join',
-                    roomId: g_Room._id,
-                    senderId: currentUser ? currentUser._id : null,
-                    nickname: currentUser ? currentUser.nickname : 'Anonymous',
-                    userHash: currentUser ? currentUser.hash : null,
-                    facebookId: currentUser ? currentUser.facebookId : null,
-                    twitterId: currentUser ? currentUser.twitterId : null,
-                    avatar: currentUser ? currentUser.avatar : null,
-                    content: null
-                });
-
                 function SendMessage() {
 
                 
