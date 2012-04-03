@@ -53,18 +53,6 @@ function GetCurrentUser( callback ) {
 function LeaveRoom() {
     if ( g_Socket && g_Room )
     {
-        g_Socket.emit( 'message', {
-            kind: 'leave',
-            roomId: g_Room._id,
-            senderId: g_CurrentUser ? g_CurrentUser._id : null,
-            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
-            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
-            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
-            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
-            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-            content: null
-        });
-    
         g_Socket.emit( 'disconnect', {} );    
     }
 
