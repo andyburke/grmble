@@ -1012,7 +1012,7 @@ $( '#load-more-button' ).live( 'click', function( event ) {
 
                 var toBeInserted = '';
                 var myNicknameRegex = new RegExp( g_CurrentUser != null ? g_CurrentUser.nickname : 'Anonymous', "ig" );
-                for ( var index = 0; index < messages.length; ++index )
+                for ( var index = messages.length - 1; index >= 0; --index )
                 {
                     var message = messages[ index ];
                     
