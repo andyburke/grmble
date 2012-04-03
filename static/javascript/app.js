@@ -990,3 +990,109 @@ $('.remove-room-owner-link').live( 'click', function( event ) {
         }
     });
 });
+
+$( '#load-more-button' ).live( 'click', function( event ) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if ( g_Room )
+    {
+        $( '#load-more-button' ).button( 'loading' );
+        
+        var oldestMessageDate = $( '#chatlog' ).find( '.message:first' ).attr( 'time' );
+        $.ajax({
+            url: '/api/1.0/Room/' + g_Room._id + '/Messages/',
+            type: 'GET',
+            data: {
+                sort: 'desc',
+                before: oldestMessageDate
+            },
+            dataType: 'json',
+            success: function( messages ) {
+
+                var toBeInserted = '';
+                var myNicknameRegex = new RegExp( g_CurrentUser != null ? g_CurrentUser.nickname : 'Anonymous', "ig" );
+                for ( var index = 0; index < messages.length; ++index )
+                {
+                    var message = messages[ index ];
+                    
+                    // FIXME: so dirty, cut and paste
+                    if ( message.kind == 'idle' || message.kind == 'active' )
+                    {
+                        continue;
+                    }
+                    
+                    // avoid duplicates
+                    if ( $( '#' + message._id ).length == 0 ) {
+                        
+                        function escapeHTML( text ) {
+                            return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+                        }
+                        
+                        // TODO: move this to a handler
+                        message.processed = message.content == null ? null : linkify( message.content,  {
+                            callback: function( text, href ) {
+                                if ( href )
+                                {
+                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
+                                    {
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                    }
+                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
+                                    {
+                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                        if ( matched && matched.length == 2 )
+                                        {
+                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
+                                    {
+                                        var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
+                                        if ( matched && matched.length == 2 )
+                                        {
+                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    else
+                                    {
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                    }
+                                }
+                                
+                                return escapeHTML( text );
+                            }
+                        });
+    
+                        if ( message.content && message.content.match( myNicknameRegex ) )
+                        {
+                            message.referencesMe = true;
+                        }                    
+    
+                        var newMessage = ich.message( message, true ); // true = raw
+                    
+                        toBeInserted += newMessage + "\n";
+                    }
+                }
+                
+                if ( toBeInserted.length )
+                {
+                    $( '#chatlog' ).prepend( toBeInserted );
+                }
+
+                $( '#load-more-button' ).button( 'reset' );
+            },
+            error: function( xhr ) {
+                $( '#load-more-button' ).button( 'reset' );
+            }
+        });
+    }
+});

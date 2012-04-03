@@ -145,7 +145,7 @@
 </script>
 
 <script id="message" type="text/html">
-    <div id="{{_id}}" time="{{createdAt}}" class="message {{kind}}">
+    <div id="{{_id}}" time="{{createdAt}}" class="message {{kind}} {{#referencesMe}}message-references-me{{/referencesMe}}">
         <div class="nickname">
             {{nickname}}
         </div>
@@ -181,6 +181,9 @@
     <div class="row-fluid">
         <div class="room-wrapper">
             <div class="chatlog-wrapper">
+                <div class="load-more-wrapper">
+                    <button id="load-more-button" class="btn" data-loading-text="Loading Older Messages...">Load Older Messages</button>
+                </div>
                 <div class="chatlog" id="chatlog">
                 </div>
             </div>

@@ -35,16 +35,28 @@ exports.bind = function( app ) {
         
         if ( typeof( request.param( 'since' ) ) != 'undefined' )
         {
-            query.$gte( 'createdAt', request.param( 'since' ) );
+            query.$gt( 'createdAt', request.param( 'since' ) );
         }
         
-        if ( typeof( request.param( 'until' ) ) != 'undefined' )
+        if ( typeof( request.param( 'before' ) ) != 'undefined' )
         {
-            query.$lte( 'createdAt', request.param( 'until' ) );
+            query.$lt( 'createdAt', request.param( 'before' ) );
         }
 
-        query.desc( 'createdAt' );
-
+        var sort = request.param( 'sort', 'asc' );
+        switch( sort )
+        {
+            case 'asc':
+                query.asc( 'createdAt' );
+                break;
+            case 'desc':
+                query.desc( 'createdAt' );
+                break;
+            default:
+                response.json( 'Sort order must be \'asc\' or \'desc\'.', 400 );
+                return;
+        }
+        
         query.exec( function( error, messages ) {
             if ( error )
             {
