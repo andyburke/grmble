@@ -33,6 +33,7 @@ var g_ReceivedUserlistAt = new Date( -10000 );
 var g_Socket = null;
 var g_Room = null;
 var g_UnreadMessages = 0;
+var g_NearBottom = true;
 
 var currentRoomId = null;
 
@@ -265,23 +266,45 @@ var app = Sammy( function() {
                     
                     var scrollRequests = 0;
                     function ScrollToBottom() {
-                        ++scrollRequests;
-                        if ( scrollRequests == 1 )
+                        if ( g_NearBottom )
                         {
-                            $( 'html, body' ).animate({ 
-                                    scrollTop: $( document ).height() - $( window ).height()
-                                }, 
-                                50,
-                                "linear",
-                                function() {
-                                    var outstandingRequests = scrollRequests > 1;
-                                    scrollRequests = 0;
-                                    if ( outstandingRequests )
-                                    {
-                                        ScrollToBottom();
+                            ++scrollRequests;
+                            if ( scrollRequests == 1 )
+                            {
+                                $( 'html, body' ).animate({ 
+                                        scrollTop: $( document ).height() - $( window ).height()
+                                    }, 
+                                    50,
+                                    "linear",
+                                    function() {
+                                        var outstandingRequests = scrollRequests > 1;
+                                        scrollRequests = 0;
+                                        if ( outstandingRequests )
+                                        {
+                                            ScrollToBottom();
+                                        }
                                     }
+                                );
+                            }
+                        }
+                        else
+                        {
+                            function IndicateNewMessages() {
+                                if ( g_NearBottom )
+                                {
+                                    $( '#new-messages-indicator' ).addClass( 'hide' );
+                                    return;
                                 }
-                            );
+                                
+                                $( '#new-messages-indicator' ).removeClass( 'hide' );
+                                $( '#new-messages-indicator' ).animate( { opacity: 0.2 }, 500, function() {
+                                    $( '#new-messages-indicator' ).animate( { opacity: 1.0 }, 500, function() {
+                                        IndicateNewMessages();
+                                    });
+                                });
+                            }
+                            
+                            IndicateNewMessages();
                         }
                     }
     
@@ -529,6 +552,10 @@ $(function() {
     });
 
     $( window ).bind( 'unload', LeaveRoom );                    
+
+    $( window ).scroll( function() {
+        g_NearBottom = ( ( $( window ).scrollTop() + $( window ).height() ) > ( $( document ).height() - 80 ) );
+    });    
 
     $.idleTimer( g_IdleTimeout, document, {
         events: 'mousemove keydown mousewheel mousedown touchstart touchmove' // DOMMouseScroll, nope, scroll to bottom emits this
