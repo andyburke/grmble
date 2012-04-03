@@ -13,7 +13,46 @@ exports.bind = function( app, io ) {
                 if ( index != -1 )
                 {
                     rooms[ room ][ 'clients' ].splice( index, 1 );
+                    var user = rooms[ room ][ 'users' ][ client.id ];
                     delete rooms[ room ][ 'users' ][ client.id ];
+
+                    // we could handle quick rejoins here by using setTimeout and checking if the
+                    // user is back in the room's client list.  However, we'd then have to start
+                    // handling joins on the server as well, and see if they had left recently.
+                    // Overall, not worth it right now.
+                    
+                    var newMessage = new models.Message();
+                    newMessage.roomId = room;
+                    newMessage.senderId = user._id;
+                    newMessage.clientId = client.id;
+                    newMessage.nickname = user.nickname;
+                    newMessage.userHash = user.userHash;
+                    newMessage.facebookId = user.facebookId;
+                    newMessage.twitterId = user.twitterId;
+                    newMessage.avatar = user.avatar;
+                    newMessage.kind = 'leave';
+                    newMessage.content = 'Left the room.';
+    
+                    newMessage.save( function( error ) {
+                        if ( error )
+                        {
+                            console.log( error );
+                            return;
+                        }
+
+                        for ( var clientIndex = 0; clientIndex < rooms[ room ][ 'clients' ].length; ++clientIndex )
+                        {
+                            try
+                            {
+                                var otherClient = rooms[ room ][ 'clients' ][ clientIndex ];
+                                otherClient.json.send( newMessage );
+                            }
+                            catch( exception )
+                            {
+                                // TODO: drop this connection, possibly create a 'leave' message?
+                            }
+                        }
+                    });
                 }
             }
         });
