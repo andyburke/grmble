@@ -40,11 +40,12 @@ exports.bind = function( app, io ) {
                             return;
                         }
 
-                        for ( var clientIndex = 0; clientIndex < rooms[ room ][ 'clients' ].length; ++clientIndex )
+                        // NOTE: use the newMessage.roomId to avoid scope issues
+                        for ( var clientIndex = 0; clientIndex < rooms[ newMessage.roomId ][ 'clients' ].length; ++clientIndex )
                         {
                             try
                             {
-                                var otherClient = rooms[ room ][ 'clients' ][ clientIndex ];
+                                var otherClient = rooms[ newMessage.roomId ][ 'clients' ][ clientIndex ];
                                 otherClient.json.send( newMessage );
                             }
                             catch( exception )
@@ -112,20 +113,20 @@ exports.bind = function( app, io ) {
                         return;
                     }
                     
-                    if ( !rooms[ message.roomId ] )
+                    if ( !rooms[ room._id ] )
                     {
-                        rooms[ message.roomId ] = {
+                        rooms[ room._id ] = {
                             'users': {},
                             'clients': []
                         };
                     }
 
                     // TODO: support for private messages? kind = private, need a target user id?
-                    for ( var clientIndex = 0; clientIndex < rooms[ message.roomId ][ 'clients' ].length; ++clientIndex )
+                    for ( var clientIndex = 0; clientIndex < rooms[ room._id ][ 'clients' ].length; ++clientIndex )
                     {
                         try
                         {
-                            var otherClient = rooms[ message.roomId ][ 'clients' ][ clientIndex ];
+                            var otherClient = rooms[ room._id ][ 'clients' ][ clientIndex ];
 
                             if ( newMessage.kind == 'join' && otherClient == client )
                             {
