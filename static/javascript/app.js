@@ -4,7 +4,26 @@ var App = function() {
     self.router = new Backbone.Router();
 
     self.Start = function() {
-        Backbone.history.start();
+
+        // TODO: get the api first
+        
+        JSONRequest({
+            url: '/api/1.0/User',
+            type: 'GET',
+            success: function( data ) {
+                $('.authenticated').show();
+                $('.unauthenticated').hide();
+            },
+            error: function( response, status, error ) {
+                $('.authenticated').hide();
+                $('.unauthenticated').show();
+            }
+        });
+
+        if ( Backbone.history )
+        {
+            Backbone.history.start();
+        }
     }
 }
 
