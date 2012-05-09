@@ -1,7 +1,11 @@
-var app = function() {
+var App = function() {
     var self = this;
     
+    self.router = new Backbone.Router();
+
     self.Start = function() {
-        // do it.
+        Backbone.history.start();
     }
 }
+
+var theApp = new App();
