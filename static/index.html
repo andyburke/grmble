@@ -26,11 +26,11 @@
             .script("http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.3/bootstrap.min.js")
             .script("/socket.io/socket.io.js")
 
-            .script("/javascript/models/message.js")
             .script("/javascript/models/room.js")
-            .script("/javascript/models/user.js")
+            .script("/javascript/models/app.js")
 
             .wait( function() {
+                app.Start();
             });
         </script>
         
