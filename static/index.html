@@ -15,7 +15,7 @@
             .script("http://crypto-js.googlecode.com/files/2.3.0-crypto-md5.js")
             .script("http://ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js")
             .script("http://ajax.cdnjs.com/ajax/libs/underscore.js/1.1.6/underscore-min.js")
-            .script("http://ajax.cdnjs.com/ajax/libs/backbone.js/0.3.3/backbone-min.js")
+            .script("http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js")
 
             .script("http://cdnjs.cloudflare.com/ajax/libs/spin.js/1.2.4/spin.min.js")
             .script("http://cdnjs.cloudflare.com/ajax/libs/mustache.js/0.4.2/mustache.min.js")
@@ -26,6 +26,9 @@
             .script("http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.3/bootstrap.min.js")
             .script("/socket.io/socket.io.js")
 
+            .wait() // wait for all our stock libs to be downloaded
+            
+            .script("/javascript/utils.js")
             .script("/javascript/models.js")
             .script("/javascript/app.js")
 
