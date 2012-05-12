@@ -470,23 +470,49 @@ var app = Sammy( function() {
                     });
                     
                     function SendMessage() {
-    
-                        var message = {
-                            kind: 'say',
-                            roomId: room._id,
-                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
-                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
-                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
-                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
-                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
-                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-                            content: $( '#message-entry-content' ).val()
-                        };
-                        
-                        g_Socket.emit( 'message', message );
-                        $( '#submit-message' ).button( 'loading' );
-                        $( '#message-entry-content' ).val( '' );
+						if ($.trim($( '#message-entry-content' ).val()).length > 0)
+						{
+							var message = {
+	                            kind: 'say',
+	                            roomId: room._id,
+	                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
+	                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+	                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+	                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+	                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+	                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+	                            content: $( '#message-entry-content' ).val()
+	                        };
+
+	                        g_Socket.emit( 'message', message );
+	                        $( '#submit-message' ).button( 'loading' );
+	                        $( '#message-entry-content' ).val( '' );
+							SendIsUserTyping(false);
+						}
                     }
+
+					function SendIsUserTyping(status) {
+						if (typeof g_CurrentUser.typingStatus === "undefined"
+							|| g_CurrentUser.typingStatus === null
+							|| g_CurrentUser.typingStatus !== status)
+						{
+							g_CurrentUser.typingStatus = status;
+							
+							var message = {
+								kind: 'typingStatus',
+								roomId: room._id,
+								senderId: g_CurrentUser ? g_CurrentUser._id : null,
+	                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+	                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+	                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+	                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+	                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+	                            content: g_CurrentUser.typingStatus
+							};
+						
+							g_Socket.emit( 'message', message );
+						}
+					}
                     
                     $( '#submit-message' ).unbind();
                     $( '#submit-message' ).bind( 'click', function( event ) {
@@ -509,7 +535,26 @@ var app = Sammy( function() {
                             event.stopPropagation();
                             SendMessage();
                         }
+						else if ($.trim($( '#message-entry-content' ).val()).length > 0)
+						{
+							SendIsUserTyping(true);
+						}
+						else 
+						{
+							SendIsUserTyping(false);
+						}
                     });
+					
+					$( '#message-entry-content' ).bind( 'change', function( event ) {
+						if ($.trim($( '#message-entry-content' ).val()).length > 0)
+						{
+							SendIsUserTyping(true);
+						}
+						else
+						{
+							SendIsUserTyping(false);
+						}
+					});
                 },
                 error: function( response, status, error ) {
                     $( '#main' ).spin( false );

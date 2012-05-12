@@ -201,6 +201,10 @@ exports.bind = function( app, io ) {
                             });
                         });
                     }
+					else ( message.kind == 'typingStatus')
+					{
+						console.log(client.id + ' - ' + message.content);
+					}
                 });
             });
         });
