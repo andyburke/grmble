@@ -529,13 +529,16 @@ var app = Sammy( function() {
                     });
                     
                     $( '#message-entry-content' ).bind( 'keydown', function( event ) {
-                        if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
+						if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
                         {
                             event.preventDefault();
                             event.stopPropagation();
                             SendMessage();
                         }
-						else if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                    });
+
+					$( '#message-entry-content' ).bind( 'keyup', function( event ) {
+						if ($.trim($( '#message-entry-content' ).val()).length > 0)
 						{
 							SendIsUserTyping(true);
 						}
