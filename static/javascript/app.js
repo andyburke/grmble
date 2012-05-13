@@ -27,6 +27,7 @@ function SetActivePage( page )
 }
 
 var g_IdleTimeout = 1000 * 60 * 2;
+var g_typingTimeout = 1000 * 10;
 
 var g_RoomCache = {};
 var g_ReceivedUserlistAt = new Date( -10000 );
@@ -365,13 +366,15 @@ var app = Sammy( function() {
                             case 'active':
                                 $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                                 return;
-							case 'isTyping':
-								$( '#userlist-entry-typingstatus-' + message.clientId ).text('...');	
-							 
-								return;
-							case 'isNotTyping':
-								$( '#userlist-entry-typingstatus-' + message.clientId ).text('');
-								return;
+                            case 'startedTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('---');    
+                                return;
+                            case 'stoppedTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
+                                return;
+                            case 'cancelledTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('');
+                                return;
                         }
     
                         // avoid duplicates
@@ -477,55 +480,42 @@ var app = Sammy( function() {
                     });
                     
                     function SendMessage() {
-						if ($.trim($( '#message-entry-content' ).val()).length > 0)
-						{
-							var message = {
-	                            kind: 'say',
-	                            roomId: room._id,
-	                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
-	                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
-	                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
-	                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
-	                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
-	                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-	                            content: $( '#message-entry-content' ).val()
-	                        };
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            var message = {
+                                kind: 'say',
+                                roomId: room._id,
+                                senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                                nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                                userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                                facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                                twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                                avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+                                content: $( '#message-entry-content' ).val()
+                            };
 
-	                        g_Socket.emit( 'message', message );
-	                        $( '#submit-message' ).button( 'loading' );
-	                        $( '#message-entry-content' ).val( '' );
-							SendIsUserTyping(false);
-						}
+                            g_Socket.emit( 'message', message );
+                            $( '#submit-message' ).button( 'loading' );
+                            $( '#message-entry-content' ).val( '' );
+                            SendIsUserTyping(false);
+                        }
                     }
 
-					function SendIsUserTyping(status) {
-						if (typeof g_CurrentUser.typingStatus === "undefined"
-							|| g_CurrentUser.typingStatus === null
-							|| g_CurrentUser.typingStatus !== status)
-						{
-							g_CurrentUser.typingStatus = status;
-							
-							var message = {
-								kind: null,
-								roomId: room._id,
-								senderId: g_CurrentUser ? g_CurrentUser._id : null,
-	                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
-	                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
-	                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
-	                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
-	                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-	                            content: null
-							};
-							
-							if (!status) {
-								message.kind = 'isNotTyping';
-							} else {
-								message.kind = 'isTyping';
-							}
-						
-							g_Socket.emit( 'message', message );
-						}
-					}
+                    function SendUserTypingStatus(status) {
+                        var message = {
+                            kind: status,
+                            roomId: room._id,
+                            senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                            userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+                            content: null
+                        };
+                    
+                        g_Socket.emit( 'message', message );
+                    }
                     
                     $( '#submit-message' ).unbind();
                     $( '#submit-message' ).bind( 'click', function( event ) {
@@ -542,7 +532,7 @@ var app = Sammy( function() {
                     });
                     
                     $( '#message-entry-content' ).bind( 'keydown', function( event ) {
-						if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
+                        if ( event.which == 13 && !( event.shiftKey || event.ctrlKey || event.altKey ) )
                         {
                             event.preventDefault();
                             event.stopPropagation();
@@ -550,27 +540,38 @@ var app = Sammy( function() {
                         }
                     });
 
-					$( '#message-entry-content' ).bind( 'keyup', function( event ) {
-						if ($.trim($( '#message-entry-content' ).val()).length > 0)
-						{
-							SendIsUserTyping(true);
-						}
-						else 
-						{
-							SendIsUserTyping(false);
-						}
+                    $( '#message-entry-content' ).bind( 'keyup', function( event ) {
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            SendUserTypingStatus('startedTyping');
+                            if (typeof g_CurrentUser.typingTimeout !== 'undefined')
+                            {
+                                clearTimeout(g_CurrentUser.typingTimeout);
+                            }
+                            g_CurrentUser.typingTimeout = setTimeout( function() { 
+                                SendUserTypingStatus('stoppedTyping');
+                            }, g_typingTimeout );
+                        }
+                        else 
+                        {
+                            SendUserTypingStatus('cancelledTyping');
+                            if (typeof g_CurrentUser.typingTimeout !== 'undefined')
+                            {
+                                clearTimeout(g_CurrentUser.typingTimeout);
+                            }
+                        }
                     });
-					
-					$( '#message-entry-content' ).bind( 'change', function( event ) {
-						if ($.trim($( '#message-entry-content' ).val()).length > 0)
-						{
-							SendIsUserTyping(true);
-						}
-						else
-						{
-							SendIsUserTyping(false);
-						}
-					});
+                    
+                    $( '#message-entry-content' ).bind( 'change', function( event ) {
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            SendIsUserTyping(true);
+                        }
+                        else
+                        {
+                            SendIsUserTyping(false);
+                        }
+                    });
                 },
                 error: function( response, status, error ) {
                     $( '#main' ).spin( false );
