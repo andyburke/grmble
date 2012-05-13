@@ -365,6 +365,12 @@ var app = Sammy( function() {
                             case 'active':
                                 $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                                 return;
+							case 'isTyping':
+								
+								return;
+							case 'isNotTyping':
+								
+								return;
                         }
     
                         // avoid duplicates
