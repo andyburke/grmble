@@ -366,10 +366,11 @@ var app = Sammy( function() {
                                 $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                                 return;
 							case 'isTyping':
-								
+								$( '#userlist-entry-typingstatus-' + message.clientId ).text('...');	
+							 
 								return;
 							case 'isNotTyping':
-								
+								$( '#userlist-entry-typingstatus-' + message.clientId ).text('');
 								return;
                         }
     
@@ -505,7 +506,7 @@ var app = Sammy( function() {
 							g_CurrentUser.typingStatus = status;
 							
 							var message = {
-								kind: 'typingStatus',
+								kind: null,
 								roomId: room._id,
 								senderId: g_CurrentUser ? g_CurrentUser._id : null,
 	                            nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
@@ -513,8 +514,14 @@ var app = Sammy( function() {
 	                            facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
 	                            twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
 	                            avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-	                            content: g_CurrentUser.typingStatus
+	                            content: null
 							};
+							
+							if (!status) {
+								message.kind = 'isNotTyping';
+							} else {
+								message.kind = 'isTyping';
+							}
 						
 							g_Socket.emit( 'message', message );
 						}
@@ -619,7 +626,6 @@ $(function() {
             });
         }
     });
-    
     
     $( document ).bind( 'active.idleTimer', function() {
         if ( g_Socket && g_Room )
