@@ -132,11 +132,6 @@ exports.bind = function( app, io ) {
                             {
                                 continue;
                             }
-							else if ( newMessage.kind == 'typingStatus')
-							{
-								
-								continue;
-							}
 							
                             otherClient.json.send( newMessage );
                         }
