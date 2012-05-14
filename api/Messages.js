@@ -26,6 +26,9 @@ exports.bind = function( app ) {
         var query = models.Message.find( {} );
         
         query.where( 'roomId', request.params.roomId );
+        query.notEqualTo('kind', 'stoppedTyping');
+        query.notEqualTo('kind', 'startedTyping');
+        query.notEqualTo('kind', 'cancelledTyping');
 		
         query.limit( request.param( 'limit', 100 ) );
 
