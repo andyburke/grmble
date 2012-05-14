@@ -26,7 +26,17 @@ function SetActivePage( page )
     $(activeItem).parents( '.dropdown' ).addClass( 'active' );
 }
 
+function Timeout(fn, interval) {
+    var id = setTimeout(fn, interval);
+    this.cleared = false;
+    this.clear = function () {
+        this.cleared = true;
+        clearTimeout(id);
+    };
+}
+
 var g_IdleTimeout = 1000 * 60 * 2;
+var g_typingTimeout = 1000 * 5;
 
 var g_RoomCache = {};
 var g_ReceivedUserlistAt = new Date( -10000 );
@@ -365,6 +375,20 @@ var app = Sammy( function() {
                             case 'active':
                                 $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                                 return;
+                            case 'startedTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('typing');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('stoppedTyping');
+                                return;
+                            case 'stoppedTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('stoppedTyping');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('typing');
+                                
+                                return;
+                            case 'cancelledTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('');
+                                return;
                         }
     
                         // avoid duplicates
@@ -470,9 +494,30 @@ var app = Sammy( function() {
                     });
                     
                     function SendMessage() {
-    
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            var message = {
+                                kind: 'say',
+                                roomId: room._id,
+                                senderId: g_CurrentUser ? g_CurrentUser._id : null,
+                                nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
+                                userHash: g_CurrentUser ? g_CurrentUser.hash : null,
+                                facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
+                                twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
+                                avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
+                                content: $( '#message-entry-content' ).val()
+                            };
+
+                            g_Socket.emit( 'message', message );
+                            $( '#submit-message' ).button( 'loading' );
+                            $( '#message-entry-content' ).val( '' );
+                            SendUserTypingStatus('cancelledTyping');
+                        }
+                    }
+
+                    function SendUserTypingStatus(status) {
                         var message = {
-                            kind: 'say',
+                            kind: status,
                             roomId: room._id,
                             senderId: g_CurrentUser ? g_CurrentUser._id : null,
                             nickname: g_CurrentUser ? g_CurrentUser.nickname : 'Anonymous',
@@ -480,12 +525,10 @@ var app = Sammy( function() {
                             facebookId: g_CurrentUser ? g_CurrentUser.facebookId : null,
                             twitterId: g_CurrentUser ? g_CurrentUser.twitterId : null,
                             avatar: g_CurrentUser ? g_CurrentUser.avatar : null,
-                            content: $( '#message-entry-content' ).val()
+                            content: null
                         };
-                        
+                    
                         g_Socket.emit( 'message', message );
-                        $( '#submit-message' ).button( 'loading' );
-                        $( '#message-entry-content' ).val( '' );
                     }
                     
                     $( '#submit-message' ).unbind();
@@ -508,6 +551,39 @@ var app = Sammy( function() {
                             event.preventDefault();
                             event.stopPropagation();
                             SendMessage();
+                        }
+                    });
+
+                    $( '#message-entry-content' ).bind( 'keyup', function( event ) {
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            if (g_CurrentUser.typingTimeout !== 'undefined' && g_CurrentUser.typingTimeout instanceof Timeout)
+                            {
+                                g_CurrentUser.typingTimeout.clear();
+                            }
+                            g_CurrentUser.typingTimeout = new Timeout( function() { 
+                                SendUserTypingStatus('stoppedTyping');
+                            }, g_typingTimeout );
+                            SendUserTypingStatus('startedTyping');
+                        }
+                        else 
+                        {
+                            if (g_CurrentUser.typingTimeout !== 'undefined' && g_CurrentUser.typingTimeout instanceof Timeout)
+                            {
+                                g_CurrentUser.typingTimeout.clear();
+                            }
+                            SendUserTypingStatus('cancelledTyping');
+                        }
+                    });
+                    
+                    $( '#message-entry-content' ).bind( 'change', function( event ) {
+                        if ($.trim($( '#message-entry-content' ).val()).length > 0)
+                        {
+                            SendUserTypingStatus('startedTyping');
+                        }
+                        else
+                        {
+                            SendUserTypingStatus('cancelledTyping');
                         }
                     });
                 },
@@ -565,7 +641,6 @@ $(function() {
             });
         }
     });
-    
     
     $( document ).bind( 'active.idleTimer', function() {
         if ( g_Socket && g_Room )
