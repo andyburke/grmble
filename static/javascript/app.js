@@ -387,7 +387,6 @@ var app = Sammy( function() {
                                 
                                 return;
                             case 'cancelledTyping':
-                                $( '#userlist-entry-typingstatus-' + message.clientId ).animatedEllipsis('stop');
                                 $( '#userlist-entry-typingstatus-' + message.clientId ).text('');
                                 return;
                         }
