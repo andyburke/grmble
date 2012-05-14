@@ -26,8 +26,17 @@ function SetActivePage( page )
     $(activeItem).parents( '.dropdown' ).addClass( 'active' );
 }
 
+function Timeout(fn, interval) {
+    var id = setTimeout(fn, interval);
+    this.cleared = false;
+    this.clear = function () {
+        this.cleared = true;
+        clearTimeout(id);
+    };
+}
+
 var g_IdleTimeout = 1000 * 60 * 2;
-var g_typingTimeout = 1000 * 10;
+var g_typingTimeout = 1000 * 5;
 
 var g_RoomCache = {};
 var g_ReceivedUserlistAt = new Date( -10000 );
@@ -367,12 +376,18 @@ var app = Sammy( function() {
                                 $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
                                 return;
                             case 'startedTyping':
-                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('---');    
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('typing');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('stoppedTyping');
                                 return;
                             case 'stoppedTyping':
                                 $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('stoppedTyping');
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('typing');
+                                
                                 return;
                             case 'cancelledTyping':
+                                $( '#userlist-entry-typingstatus-' + message.clientId ).animatedEllipsis('stop');
                                 $( '#userlist-entry-typingstatus-' + message.clientId ).text('');
                                 return;
                         }
@@ -497,7 +512,7 @@ var app = Sammy( function() {
                             g_Socket.emit( 'message', message );
                             $( '#submit-message' ).button( 'loading' );
                             $( '#message-entry-content' ).val( '' );
-                            SendIsUserTyping(false);
+                            SendUserTypingStatus('cancelledTyping');
                         }
                     }
 
@@ -543,33 +558,33 @@ var app = Sammy( function() {
                     $( '#message-entry-content' ).bind( 'keyup', function( event ) {
                         if ($.trim($( '#message-entry-content' ).val()).length > 0)
                         {
-                            SendUserTypingStatus('startedTyping');
-                            if (typeof g_CurrentUser.typingTimeout !== 'undefined')
+                            if (g_CurrentUser.typingTimeout !== 'undefined' && g_CurrentUser.typingTimeout instanceof Timeout)
                             {
-                                clearTimeout(g_CurrentUser.typingTimeout);
+                                g_CurrentUser.typingTimeout.clear();
                             }
-                            g_CurrentUser.typingTimeout = setTimeout( function() { 
+                            g_CurrentUser.typingTimeout = new Timeout( function() { 
                                 SendUserTypingStatus('stoppedTyping');
                             }, g_typingTimeout );
+                            SendUserTypingStatus('startedTyping');
                         }
                         else 
                         {
-                            SendUserTypingStatus('cancelledTyping');
-                            if (typeof g_CurrentUser.typingTimeout !== 'undefined')
+                            if (g_CurrentUser.typingTimeout !== 'undefined' && g_CurrentUser.typingTimeout instanceof Timeout)
                             {
-                                clearTimeout(g_CurrentUser.typingTimeout);
+                                g_CurrentUser.typingTimeout.clear();
                             }
+                            SendUserTypingStatus('cancelledTyping');
                         }
                     });
                     
                     $( '#message-entry-content' ).bind( 'change', function( event ) {
                         if ($.trim($( '#message-entry-content' ).val()).length > 0)
                         {
-                            SendIsUserTyping(true);
+                            SendUserTypingStatus('startedTyping');
                         }
                         else
                         {
-                            SendIsUserTyping(false);
+                            SendUserTypingStatus('cancelledTyping');
                         }
                     });
                 },
