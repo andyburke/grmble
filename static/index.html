@@ -353,8 +353,9 @@
 <script id="userlist_entry" type="text/html">
     <div class="user" id="userlist-entry-{{clientId}}">
         <img class="user-avatar" id="userlist-entry-avatar-{{clientId}}" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" title="{{nickname}}" />
-        <div class="userlist-entry-nickname">
+        <div class="userlist-entry-nickname" id="userlist-entry-nickname-{{clientId}}">
             {{nickname}}
+			<span class="userlist-entry-typingstatus-normal" id="userlist-entry-typingstatus-{{clientId}}"></span>
         </div>
     </div>
 </script>

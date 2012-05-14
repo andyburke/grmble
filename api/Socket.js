@@ -124,7 +124,7 @@ exports.bind = function( app, io ) {
                     // TODO: support for private messages? kind = private, need a target user id?
                     for ( var clientIndex = 0; clientIndex < rooms[ room._id ][ 'clients' ].length; ++clientIndex )
                     {
-                        try
+						try
                         {
                             var otherClient = rooms[ room._id ][ 'clients' ][ clientIndex ];
 
@@ -132,7 +132,7 @@ exports.bind = function( app, io ) {
                             {
                                 continue;
                             }
-
+							
                             otherClient.json.send( newMessage );
                         }
                         catch( exception )
