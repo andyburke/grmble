@@ -26,6 +26,10 @@ exports.bind = function( app ) {
         var query = models.Message.find( {} );
         
         query.where( 'roomId', request.params.roomId );
+        query.notEqualTo('kind', 'stoppedTyping');
+        query.notEqualTo('kind', 'startedTyping');
+        query.notEqualTo('kind', 'cancelledTyping');
+		
         query.limit( request.param( 'limit', 100 ) );
 
         if ( typeof( request.param( 'skip' ) ) != 'undefined' )
@@ -63,7 +67,6 @@ exports.bind = function( app ) {
                 response.json( error.message ? error.message : error, 500 );
                 return;
             }
-            
             response.json( messages );
         });
     });
