@@ -26,8 +26,10 @@ exports.bind = function( app ) {
         var query = models.Message.find( {} );
         
         query.where( 'roomId', request.params.roomId );
-        query.where( 'kind' ).in(['say', 'join', 'leave']);
-        
+        query.notEqualTo('kind', 'stoppedTyping');
+        query.notEqualTo('kind', 'startedTyping');
+        query.notEqualTo('kind', 'cancelledTyping');
+		
         query.limit( request.param( 'limit', 100 ) );
 
         if ( typeof( request.param( 'skip' ) ) != 'undefined' )
