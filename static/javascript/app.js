@@ -1106,6 +1106,12 @@ $( '#load-more-button' ).live( 'click', function( event ) {
                 {
                     var message = messages[ index ];
                     
+                    // FIXME: so dirty, cut and paste
+                    if ( message.kind == 'idle' || message.kind == 'active' )
+                    {
+                        continue;
+                    }
+                    
                     // avoid duplicates
                     if ( $( '#' + message._id ).length == 0 ) {
                         
