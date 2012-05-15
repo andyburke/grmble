@@ -1,5 +1,20 @@
 var apiServer = '';
 
+var g_IdleTimeout = 1000 * 60 * 2;
+var g_typingTimeout = 1000 * 5;
+
+var g_RoomCache = {};
+var g_ReceivedUserlistAt = new Date( -10000 );
+var g_Socket = null;
+var g_Room = null;
+var g_UnreadMessages = 0;
+var g_NearBottom = true;
+
+var currentRoomId = null;
+
+var g_InitialUserCheckComplete = false;
+var g_CurrentUser = null;
+
 function QueryParameters()
 {
     var result = {};
@@ -91,21 +106,6 @@ function processTextHref(text, href) {
 
     return escapeHTML( text );
 }
-
-var g_IdleTimeout = 1000 * 60 * 2;
-var g_typingTimeout = 1000 * 5;
-
-var g_RoomCache = {};
-var g_ReceivedUserlistAt = new Date( -10000 );
-var g_Socket = null;
-var g_Room = null;
-var g_UnreadMessages = 0;
-var g_NearBottom = true;
-
-var currentRoomId = null;
-
-var g_InitialUserCheckComplete = false;
-var g_CurrentUser = null;
 
 function GetCurrentUser( callback ) {
     if ( !g_InitialUserCheckComplete )
