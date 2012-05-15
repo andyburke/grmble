@@ -23,13 +23,17 @@ exports.bind = function( app ) {
     });
     
     app.get( '/api/1.0/Room/:roomId/Messages', checks.user, function( request, response ) {
-        var query = models.Message.find( {} );
+        var criteria = {
+            roomId: request.params.roomId
+        };
         
-        query.where( 'roomId', request.params.roomId );
-        query.notEqualTo('kind', 'stoppedTyping');
-        query.notEqualTo('kind', 'startedTyping');
-        query.notEqualTo('kind', 'cancelledTyping');
-		
+        if ( request.param( 'kinds' ) )
+        {
+            criteria[ 'kind' ] = { $in: request.param( 'kinds' ).split( ',' ) };
+        }
+        
+        var query = models.Message.find( criteria );
+        
         query.limit( request.param( 'limit', 100 ) );
 
         if ( typeof( request.param( 'skip' ) ) != 'undefined' )
