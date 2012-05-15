@@ -35,6 +35,63 @@ function Timeout(fn, interval) {
     };
 }
 
+function escapeHTML( text ) {
+    return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+}
+
+function processTextHref(text, href) {
+    if ( href )
+    {
+        if ( href.match( /(?:png|gif|jpg)$/i ) )
+        {
+            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+        }
+        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
+        {
+            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+            if ( matched && matched.length == 2 )
+            {
+                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+            }
+            else
+            {
+                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+            }
+        }
+        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
+        {
+            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
+            if ( matched && matched.length == 2 )
+            {
+                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+            }
+            else
+            {
+                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+            }
+        }
+        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/.*?/i ) )
+        {
+            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\w[\w|-]*)/i);
+            if ( matched && matched.length == 2 )
+            {
+                return '<iframe src="http://player.vimeo.com/video/' + matched[1] + '?autoplay=0&amp;api=1" width="640" height="360" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
+            }
+            else
+            {
+                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+            }
+
+        }
+        else
+        {
+            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+        }
+    }
+
+    return escapeHTML( text );
+}
+
 var g_IdleTimeout = 1000 * 60 * 2;
 var g_typingTimeout = 1000 * 5;
 
@@ -394,50 +451,10 @@ var app = Sammy( function() {
                         // avoid duplicates
                         if ( $( '#' + message._id ).length == 0 ) {
                         
-                            function escapeHTML( text ) {
-                                return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
-                            }
-                            
                             // TODO: move this to a handler
                             message.processed = message.content == null ? null : linkify( message.content,  {
-                                callback: function( text, href ) {
-                                    if ( href )
-                                    {
-                                        if ( href.match( /(?:png|gif|jpg)$/i ) )
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                        }
-                                        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
-                                        {
-                                            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                            if ( matched && matched.length == 2 )
-                                            {
-                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                            }
-                                            else
-                                            {
-                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                            }
-                                        }
-                                        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
-                                        {
-                                            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
-                                            if ( matched && matched.length == 2 )
-                                            {
-                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                            }
-                                            else
-                                            {
-                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                            }
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    
-                                    return escapeHTML( text );
+                                callback: function(text, href) {
+                                    return processTextHref(text, href);
                                 }
                             });
     
@@ -1095,7 +1112,8 @@ $( '#load-more-button' ).live( 'click', function( event ) {
             type: 'GET',
             data: {
                 sort: 'desc',
-                before: oldestMessageDate
+                before: oldestMessageDate,
+                kinds: 'join,say,leave'
             },
             dataType: 'json',
             success: function( messages ) {
@@ -1106,59 +1124,13 @@ $( '#load-more-button' ).live( 'click', function( event ) {
                 {
                     var message = messages[ index ];
                     
-                    // FIXME: so dirty, cut and paste
-                    if ( message.kind == 'idle' || message.kind == 'active' )
-                    {
-                        continue;
-                    }
-                    
                     // avoid duplicates
                     if ( $( '#' + message._id ).length == 0 ) {
                         
-                        function escapeHTML( text ) {
-                            return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
-                        }
-                        
                         // TODO: move this to a handler
                         message.processed = message.content == null ? null : linkify( message.content,  {
-                            callback: function( text, href ) {
-                                if ( href )
-                                {
-                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
-                                    {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
-                                    {
-                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                        if ( matched && matched.length == 2 )
-                                        {
-                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
-                                    {
-                                        var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
-                                        if ( matched && matched.length == 2 )
-                                        {
-                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    else
-                                    {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                    }
-                                }
-                                
-                                return escapeHTML( text );
+                            callback: function (text, href) {
+                                return processTextHref(text, href);
                             }
                         });
     
