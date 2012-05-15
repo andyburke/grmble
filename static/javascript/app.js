@@ -1095,7 +1095,8 @@ $( '#load-more-button' ).live( 'click', function( event ) {
             type: 'GET',
             data: {
                 sort: 'desc',
-                before: oldestMessageDate
+                before: oldestMessageDate,
+                kinds: 'join,say,leave'
             },
             dataType: 'json',
             success: function( messages ) {
