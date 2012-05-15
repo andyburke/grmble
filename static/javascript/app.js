@@ -398,64 +398,46 @@ var app = Sammy( function() {
                                 return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
                             }
                             
-                            function processTextHref(text, href) {
-                                if ( href )
-                                {
-                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
-                                    {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
-                                    {
-                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-                                        if ( matched && matched.length == 2 )
-                                        {
-                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
-                                    {
-                                        var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
-                                        if ( matched && matched.length == 2 )
-                                        {
-                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-                                        }
-                                        else
-                                        {
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-                                    }
-                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/.*?/i ) )
-                                    {
-                                        var matched = href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\w[\w|-]*)/i);
-                                        if ( matched && matched.length == 2 )
-                                        {
-                                            return '<iframe src="http://player.vimeo.com/video/' + matched[1] + '?autoplay=0&amp;api=1" width="640" height="360" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
-                                        }
-                                        else
-                                        {
-                                            alert('hi');
-                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-                                    }
-                                }
-
-                                return escapeHTML( text );
-                            }
-                            
                             // TODO: move this to a handler
                             message.processed = message.content == null ? null : linkify( message.content,  {
-                                callback: function(text, href) {
-                                    return processTextHref(text, href);
+                                callback: function( text, href ) {
+                                    if ( href )
+                                    {
+                                        if ( href.match( /(?:png|gif|jpg)$/i ) )
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                        }
+                                        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
+                                        {
+                                            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                            if ( matched && matched.length == 2 )
+                                            {
+                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                            }
+                                            else
+                                            {
+                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                            }
+                                        }
+                                        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
+                                        {
+                                            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
+                                            if ( matched && matched.length == 2 )
+                                            {
+                                                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                            }
+                                            else
+                                            {
+                                                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                            }
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    
+                                    return escapeHTML( text );
                                 }
                             });
     
@@ -1133,8 +1115,44 @@ $( '#load-more-button' ).live( 'click', function( event ) {
                         
                         // TODO: move this to a handler
                         message.processed = message.content == null ? null : linkify( message.content,  {
-                            callback: function (text, href) {
-                                return processTextHref(text, href);
+                            callback: function( text, href ) {
+                                if ( href )
+                                {
+                                    if ( href.match( /(?:png|gif|jpg)$/i ) )
+                                    {
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+                                    }
+                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
+                                    {
+                                        var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
+                                        if ( matched && matched.length == 2 )
+                                        {
+                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
+                                    {
+                                        var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
+                                        if ( matched && matched.length == 2 )
+                                        {
+                                            return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
+                                        }
+                                        else
+                                        {
+                                            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                        }
+                                    }
+                                    else
+                                    {
+                                        return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                                    }
+                                }
+                                
+                                return escapeHTML( text );
                             }
                         });
     
