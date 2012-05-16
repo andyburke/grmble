@@ -300,7 +300,10 @@ var app = Sammy( function() {
                 type: 'GET',
                 dataType: 'json',
                 success: function( room ) {
-    
+                    // currently an empty array on start .. might want to fill it with historical messages
+                    var message_history = [],
+                        current_message_index = 0;
+                    
                     /* I am not a fan of Sammy anymore, based on how heinous it's been trying to get this to work (which it doesn't):
                     theApp.bind( 'location-changed', function() {
                         LeaveRoom();
@@ -527,8 +530,9 @@ var app = Sammy( function() {
 
                             g_Socket.emit( 'message', message );
                             $( '#submit-message' ).button( 'loading' );
-                            $( '#message-entry-content' ).val( '' );
                             SendUserTypingStatus('cancelledTyping');
+                            addSentMessageToHistory($.trim($( '#message-entry-content' ).val()));
+                            $( '#message-entry-content' ).val( '' );
                         }
                     }
 
@@ -546,6 +550,36 @@ var app = Sammy( function() {
                         };
                     
                         g_Socket.emit( 'message', message );
+                    }
+                    
+                    function addSentMessageToHistory(message) {
+                        message_history[message_history.length] = message;
+                        current_message_index = message_history.length + 1;
+                    }    
+                        
+                    function setToPreviousMessage() {
+                        if (current_message_index > 0)
+                        {
+                            current_message_index--;
+                            $( '#message-entry-content' ).val(message_history[current_message_index]);
+                        }
+                    }
+                    
+                    function setToNextMessage() {
+                        if (current_message_index < message_history.length - 1)
+                        {
+                            current_message_index++;
+                            $( '#message-entry-content' ).val(message_history[current_message_index]);
+                        }
+                    }
+                    
+                    function setCurrentMessage() {
+                        current_message_index = message_history.length - 1;
+                        if (current_message_index < 0)
+                        {
+                            current_message_index = 0;
+                        }
+                        message_history[current_message_index] = $( '#message-entry-content' ).val();
                     }
                     
                     $( '#submit-message' ).unbind();
@@ -572,6 +606,21 @@ var app = Sammy( function() {
                     });
 
                     $( '#message-entry-content' ).bind( 'keyup', function( event ) {
+                        var keyCode = event.keyCode || event.which,
+                              arrow = {left: 37, up: 38, right: 39, down: 40 };
+                        if (keyCode === arrow.up) 
+                        {
+                            setToPreviousMessage();
+                        } 
+                        else if (keyCode === arrow.down)
+                        {
+                            setToNextMessage();
+                        } 
+                        else 
+                        {
+                            setCurrentMessage();
+                        }
+                        
                         if ($.trim($( '#message-entry-content' ).val()).length > 0)
                         {
                             if (g_CurrentUser.typingTimeout !== 'undefined' && g_CurrentUser.typingTimeout instanceof Timeout)
