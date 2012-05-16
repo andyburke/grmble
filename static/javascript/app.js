@@ -374,6 +374,7 @@ var app = Sammy( function() {
                     }
                     
                     g_Socket = io.connect( window.location.origin, {
+                        'connect timeout': 1000, // this timeout might be a bit low... we'll see
                         'sync disconnect on unload': false, // we will handle disconnect ourselves
                         'reconnect': true,
                         'reconnection limit': 10000,
