@@ -124,7 +124,7 @@ exports.bind = function( app, io ) {
                     // TODO: support for private messages? kind = private, need a target user id?
                     for ( var clientIndex = 0; clientIndex < rooms[ room._id ][ 'clients' ].length; ++clientIndex )
                     {
-                        try
+						try
                         {
                             var otherClient = rooms[ room._id ][ 'clients' ][ clientIndex ];
 
@@ -132,7 +132,7 @@ exports.bind = function( app, io ) {
                             {
                                 continue;
                             }
-
+							
                             otherClient.json.send( newMessage );
                         }
                         catch( exception )
@@ -167,7 +167,8 @@ exports.bind = function( app, io ) {
                         //       them to the client in the proper order
                         
                         // Send existing messages in room
-                        models.Message.count( { roomId: room._id }, function( error, numMessages ) {
+                        var kinds = [ 'say', 'join', 'leave' ];
+                        models.Message.count( { roomId: room._id, kind: { $in: kinds } }, function( error, numMessages ) {
                             if ( error )
                             {
                                 client.json.send({
@@ -177,9 +178,11 @@ exports.bind = function( app, io ) {
                                 return;
                             }
 
-                            var query = models.Message.find( {} );
+                            var query = models.Message.find({
+                                roomId: room._id,
+                                kind: { $in: kinds }
+                            });
                             
-                            query.where( 'roomId', room._id );
                             if ( numMessages > 100 )
                             {
                                 query.skip( numMessages - 100 );
