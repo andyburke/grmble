@@ -1,8 +1,6 @@
 var models = require( './models.js' );
 var checks = require( './checks.js' );
-
-var sha1 = require( 'sha1' );
-var md5 = require( 'MD5' );
+var passwordHash = require( 'password-hash' );
 
 exports.bind = function( app ) {
     app.post( '/api/1.0/User', function( request, response ) {
@@ -29,7 +27,8 @@ exports.bind = function( app ) {
             user = new models.User();
             user.email = request.param( 'email' ).trim().toLowerCase();
             user.hash = md5( user.email );
-            user.passwordHash = request.param( 'password' ) ? sha1( request.param( 'password' ) ) : null;
+            
+            user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? passwordHash.generate( request.param( 'password' ) ) : null;
             user.nickname = request.param( 'nickname' );
             user.location = request.param( 'location' );
             user.bio = request.param( 'bio' );
@@ -56,7 +55,7 @@ exports.bind = function( app ) {
             models.User.findById( request.session.user._id, function( error, user ) {
                 user.email = request.param( 'email', user.email ).trim().toLowerCase();
                 user.hash = md5( user.email );
-                user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? sha1( request.param( 'password' ) ) : user.passwordHash;
+                user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? passwordHash.generate( request.param( 'password' ) ) : user.passwordHash;
                 user.nickname = request.param( 'nickname', user.nickname );
                 user.location = request.param( 'location' , user.location );
                 user.bio = request.param( 'bio', user.bio );
