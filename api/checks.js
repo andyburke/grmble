@@ -1,6 +1,6 @@
 var models = require( './models.js' );
-
-var sha1 = require( 'sha1' );
+var passwordHash = require( 'password-hash' );
+var sha1 = require( 'sha1' ); // LEGACY
 
 exports.user = function( request, response, next )
 {
@@ -54,10 +54,25 @@ exports.user = function( request, response, next )
             return;
         }
         
-        if ( user.passwordHash && user.passwordHash != sha1( password ) )
+        if ( user.passwordHash )
         {
-            response.json( 'Invalid password.', 403 );
-            return;
+            // LEGACY SUPPORT
+            if ( !passwordHash.isHashed( user.passwordHash ) )
+            {
+                if ( user.passwordHash != sha1( password ) )
+                {
+                    response.json( 'Invalid password.', 403 );
+                    return;
+                }
+            }
+            else
+            {
+                if ( !passwordHash.verify( password, user.passwordHash ) )
+                {
+                    response.json( 'Invalid password.', 403 );
+                    return;
+                }
+            }
         }
         
         request.session.user = user;
