@@ -14,12 +14,11 @@ var GetQueryParams = function() {
     return result;
 }
 
-var JSONRequest = function( options ) {
+var jsonCall = function( options ) {
     var opts = $.extend({
-            dataType: 'json'
+            dataType: 'application/json'
         },
         options,
-        ( ( typeof( options.data ) != 'undefined' ) ? { data: JSON.stringify( options.data ), contentType: 'application/json' } : {} ) );
-
+        ( ( typeof( options.data ) != 'undefined' && options.type && options.type.toLowerCase() != 'get' ) ? { data: JSON.stringify( options.data ), contentType: 'application/json' } : {} ));
     $.ajax( opts );
 }
