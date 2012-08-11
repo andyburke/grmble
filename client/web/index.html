@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>Grumble</title>
 
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/lib/bootstrap.min.css">
         <link rel="stylesheet/less" type="text/css" href="/css/main.less">
 
         <script src="http://cdnjs.cloudflare.com/ajax/libs/labjs/2.0.3/LAB.min.js"></script>
@@ -206,9 +206,9 @@
                 <div class="span3">
                     <form id="signup-form">
                         <fieldset>
-                            <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
-                            <div class="clear"></div>
                             <input type="text" class="pull-right" name="email" placeholder="Email" />
+                            <div class="clear"></div>
+                            <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
                             <div class="clear"></div>
                             <input type="password" class="pull-right" name="password" placeholder="Password" />
                             <div class="clear"></div>
@@ -222,6 +222,18 @@
                     <p/>
                     <p/>
                     We'll never reveal your email address to a third party.  Ever.
+                </div>
+            </div>
+        </div>
+
+        <div id="signup-thanks" class="modal hide">
+            <div class="modal-header">
+                <a class="close" data-dismiss="modal">x</a>
+                <h3>Thanks for signing up!</h3>
+            </div>
+            <div class="row modal-body">
+                <div class="span6">
+                    Now that you've signed up, you can get to chatting!
                 </div>
             </div>
         </div>

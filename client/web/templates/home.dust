@@ -1,11 +1,48 @@
 <div class="page-header">
     <h1>Grumble <small>An Open Node.js Chat Service</small></h1>
 </div>
-<div class="row-fluid">
-    <div class="span8">
-        <h2>What is Grumble?</h2>
-        <p>
-            Grumble is an open chat service using node.js.
-        </p>
+<div id="welcome" class="unauthenticated">
+    <div class="row-fluid">
+        <div class="span8">
+            Chat with your friends!
+        </div>
+        <div class="span4">
+            <div class="row-fluid">
+                <div class="span4">
+                    <form id="signin-form">
+                        <fieldset>
+                            <input type="text" class="pull-right" name="email" placeholder="Email" />
+                            <div class="clear"></div>
+                            <input type="password" class="pull-right" name="password" placeholder="Password" />
+                            <div class="clear"></div>
+                            <input type="submit" class="button-signup pull-right btn btn-primary" id="signup-modal-signup-button" value="Sign In" />
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row-fluid">
+                <div class="span4">
+                    <div class="row">
+                        <div class="span4">
+                            Need an account? Sign up here:
+                        </div>
+                    </div>
+                    <div class="row-fluid">
+                        <form id="signup-form">
+                            <fieldset>
+                                <input type="text" class="pull-right" name="email" placeholder="Email" />
+                                <div class="clear"></div>
+                                <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
+                                <div class="clear"></div>
+                                <input type="password" class="pull-right" name="password" placeholder="Password" />
+                                <div class="clear"></div>
+                                <input type="submit" class="button-signup pull-right btn btn-primary" id="signup-modal-signup-button" value="Sign Up!" />
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>  
+</div>

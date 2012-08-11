@@ -61,7 +61,14 @@ var SignUp = function() {
                         self.app.events.emit( 'logged in', self.app.user );
             
                         $(form).spin( false );
-                        window.location.hash = '/Settings';
+                        $( '#signup-modal' ).modal( 'hide' );
+                        $( '#signup-thanks' ).modal( { 'backdrop': 'static' } );
+
+                        // cause a 'reload'
+                        var lastHash = window.location.hash;
+                        window.location.hash = '';
+                        window.location.hash = lastHash;
+                        
                         mixpanel.track( "SignUp: Success" );
                         mixpanel.identify( self.app.user._id );
                         mixpanel.name_tag( self.app.user.email );
