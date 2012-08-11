@@ -78,9 +78,12 @@ var TabCompletion = function() {
                         }
                     }
                 }
+            
+                return false;
+
             }
             
-            return false;
+            return true;
         });
     }
 }
