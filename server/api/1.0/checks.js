@@ -79,10 +79,13 @@ exports.user = function( request, response, next )
                     }
                     
                     // LEGACY SUPPORT
-                    if ( !passwordHash.isHashed( user.passwordHash ) && crypto.createHash( 'sha1' ).update( password ).digest( "hex" ) != user.passwordHash )
+                    if ( !passwordHash.isHashed( user.passwordHash ) )
                     {
-                        response.json( 'Invalid password.', 403 );
-                        return;
+                        if ( crypto.createHash( 'sha1' ).update( password ).digest( "hex" ) != user.passwordHash )
+                        {
+                            response.json( 'Invalid password.', 403 );
+                            return;
+                        }
                     }
                     else if ( !passwordHash.verify( password, user.passwordHash ) )
                     {
