@@ -97,6 +97,9 @@ var Room = function() {
                 self.app.events.emit( 'message sent', message );
                 $( '#submit-message' ).button( 'loading' );
                 $( '#message-entry-content' ).val( '' );
+                mixpanel.track( "Message: Sent", {
+                    roomId: roomId
+                });
             });
         }
     }
