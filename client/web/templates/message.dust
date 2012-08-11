@@ -6,6 +6,6 @@
         <img class="avatar" src="{^avatar}/images/icons/user_64x64.png{/avatar}{avatar}" />
     </div>
     <div class="message-content">
-        {^processed}{content}{/processed}{processed}
+        {^processed}{content}{/processed}{processed|s}
     </div>
 </div>
