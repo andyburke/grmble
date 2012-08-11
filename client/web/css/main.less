@@ -1,3 +1,5 @@
+@import "lib/elements.less";
+
 @foreground-light: #888;
 @foreground-dark: #111313;
 @background: #f4f4f8;
@@ -6,13 +8,13 @@
 
 @message-margin-top: 12px;
 
-.box-shadow(@style, @c) when (iscolor(@c)) {
-  box-shadow:         @style @c;
-  -webkit-box-shadow: @style @c;
-  -moz-box-shadow:    @style @c;
+.selectSprite ( @gridsize, @x, @y ) {
+    background-position: -(@x*@gridsize) -(@y*@gridsize);
 }
-.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
-  .box-shadow(@style, rgba(0, 0, 0, @alpha));
+
+.colorize_bg ( @color: #fff, @alpha: 1 ) {
+    background: @color; // for old browsers
+    background: hsla( hue( @color ), saturation( @color ), lightness( @color ), @alpha );
 }
 
 body
@@ -34,6 +36,18 @@ a
 input.error
 {
     background: #ffeeee;
+}
+
+#welcome
+{
+    background: #EEEEF4;
+    .rounded( 4px );
+    .drop-shadow(0, 1px, 2px, 0.2);
+    height: 400px;
+    width: 800px;
+    padding: 20px;
+    position: relative;
+    margin: 100px auto;
 }
 
 .boxsizing-border

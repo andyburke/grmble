@@ -48,7 +48,8 @@ var App = function( apiURL ) {
                 }
                 else
                 {
-                    self.events.emit( 'logged out', null );
+                    $('.authenticated').hide();
+                    $('.unauthenticated').show();
                 }
             });
         });
