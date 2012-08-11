@@ -1,0 +1,40 @@
+<div class="row-fluid">
+    <div class="room-wrapper">
+        <div class="chatlog-wrapper">
+            <div class="load-more-wrapper">
+                <button id="load-more-button" class="btn" data-loading-text="Loading Older Messages...">Load Older Messages</button>
+            </div>
+            <div class="chatlog" id="chatlog">
+            </div>
+        </div>
+
+        <div class="sidebar-nav-fixed extra" id="sidebar">
+            <div class="sidebar-room-name-wrapper">
+                <div id="room-name" class="room-name">{room.name}</div>
+                <!-- <button class="btn btn-mini btn-warning" id="leave-room">Leave</button> -->
+            </div>
+            <hr/>
+            <div id="userlist">
+            </div>
+        </div>
+    </div>
+
+    <div class="new-messages-indicator-wrapper">
+        <i id="new-messages-indicator" class="icon-chevron-down hide"></i>
+    </div>
+
+    <div class="message-entry-wrapper">
+        <form id="message-entry-form" class="message-entry-form">
+            <div class="row-fluid">
+                <div class="message-entry-content-wrapper">
+                    <textarea id="message-entry-content" class="boxsizing-border message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
+                </div>
+                <div class="submit-message-wrapper">
+                    <div class="submit-message-button-wrapper">
+                        <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

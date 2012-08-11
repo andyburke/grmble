@@ -1,20 +1,27 @@
-var ScrollHandler = function( app ) {
+var ScrollHandler = function() {
     var self = this;
     
-    self.app = app;
+    self.app = null;
     self.nearBottom = true;
-    
-    $( window ).scroll( function() {
-        self.nearBottom = ( ( $( window ).scrollTop() + $( window ).height() ) > ( $( document ).height() - 80 ) );
-    });
-    
     self.scrollRequests = 0;
-
-    function ScrollToBottom() {
+    
+    self.Bind = function( app ) {
+        self.app = app;
+        
+        $( window ).scroll( function() {
+            self.nearBottom = ( ( $( window ).scrollTop() + $( window ).height() ) > ( $( document ).height() - 80 ) );
+        });
+        
+        self.app.events.addListener( 'message rendered', function() {
+            self.ScrollToBottom();
+        });
+    }
+    
+    self.ScrollToBottom = function() {
         if ( self.nearBottom )
         {
-            ++scrollRequests;
-            if ( scrollRequests == 1 )
+            ++self.scrollRequests;
+            if ( self.scrollRequests == 1 )
             {
                 $( 'html, body' ).animate({ 
                         scrollTop: $( document ).height() - $( window ).height()
@@ -22,11 +29,11 @@ var ScrollHandler = function( app ) {
                     50,
                     "linear",
                     function() {
-                        var outstandingRequests = scrollRequests > 1;
-                        scrollRequests = 0;
+                        var outstandingRequests = self.scrollRequests > 1;
+                        self.scrollRequests = 0;
                         if ( outstandingRequests )
                         {
-                            ScrollToBottom();
+                            self.ScrollToBottom();
                         }
                     }
                 );
@@ -52,8 +59,4 @@ var ScrollHandler = function( app ) {
             IndicateNewMessages();
         }
     }
-
-    self.app.events.addListener( 'message rendered', function() {
-        ScrollToBottom(); 
-    });
 }

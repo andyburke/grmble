@@ -16,7 +16,7 @@ var GetQueryParams = function() {
 
 var jsonCall = function( options ) {
     var opts = $.extend({
-            dataType: 'application/json'
+            dataType: 'json'
         },
         options,
         ( ( typeof( options.data ) != 'undefined' && options.type && options.type.toLowerCase() != 'get' ) ? { data: JSON.stringify( options.data ), contentType: 'application/json' } : {} ));

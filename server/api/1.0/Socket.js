@@ -10,14 +10,14 @@ var Socket = function() {
 	io.sockets.on( 'connection', function( client ) {
 	    
 	    client.on( 'disconnect', function() {
-		for ( var room in rooms )
+		for ( var room in self.rooms )
 		{
-		    var index = rooms[ room ][ 'clients' ].indexOf( client );
+		    var index = self.rooms[ room ][ 'clients' ].indexOf( client );
 		    if ( index != -1 )
 		    {
-			rooms[ room ][ 'clients' ].splice( index, 1 );
-			var user = rooms[ room ][ 'users' ][ client.id ];
-			delete rooms[ room ][ 'users' ][ client.id ];
+			self.rooms[ room ][ 'clients' ].splice( index, 1 );
+			var user = self.rooms[ room ][ 'users' ][ client.id ];
+			delete self.rooms[ room ][ 'users' ][ client.id ];
     
 			// we could handle quick rejoins here by using setTimeout and checking if the
 			// user is back in the room's client list.  However, we'd then have to start
@@ -44,11 +44,11 @@ var Socket = function() {
 			    }
     
 			    // NOTE: use the newMessage.roomId to avoid scope issues
-			    for ( var clientIndex = 0; clientIndex < rooms[ newMessage.roomId ][ 'clients' ].length; ++clientIndex )
+			    for ( var clientIndex = 0; clientIndex < self.rooms[ newMessage.roomId ][ 'clients' ].length; ++clientIndex )
 			    {
 				try
 				{
-				    var otherClient = rooms[ newMessage.roomId ][ 'clients' ][ clientIndex ];
+				    var otherClient = self.rooms[ newMessage.roomId ][ 'clients' ][ clientIndex ];
 				    otherClient.json.send( newMessage );
 				}
 				catch( exception )
@@ -116,20 +116,20 @@ var Socket = function() {
 			    return;
 			}
 			
-			if ( !rooms[ room._id ] )
+			if ( !self.rooms[ room._id ] )
 			{
-			    rooms[ room._id ] = {
+			    self.rooms[ room._id ] = {
 				'users': {},
 				'clients': []
 			    };
 			}
     
 			// TODO: support for private messages? kind = private, need a target user id?
-			for ( var clientIndex = 0; clientIndex < rooms[ room._id ][ 'clients' ].length; ++clientIndex )
+			for ( var clientIndex = 0; clientIndex < self.rooms[ room._id ][ 'clients' ].length; ++clientIndex )
 			{
 						    try
 			    {
-				var otherClient = rooms[ room._id ][ 'clients' ][ clientIndex ];
+				var otherClient = self.rooms[ room._id ][ 'clients' ][ clientIndex ];
     
 				if ( newMessage.kind == 'join' && otherClient == client )
 				{
@@ -146,8 +146,8 @@ var Socket = function() {
 	
 			if ( message.kind == 'join' )
 			{
-			    rooms[ room._id ][ 'clients' ].push( client );
-			    rooms[ room._id ][ 'users' ][ client.id ] = {
+			    self.rooms[ room._id ][ 'clients' ].push( client );
+			    self.rooms[ room._id ][ 'users' ][ client.id ] = {
 				clientId: client.id,
 				userid: newMessage.senderId,
 				nickname: newMessage.nickname,
@@ -158,9 +158,9 @@ var Socket = function() {
 			    };
 			    
 			    var users = [];
-			    for ( var id in rooms[ room._id ][ 'users' ] )
+			    for ( var id in self.rooms[ room._id ][ 'users' ] )
 			    {
-				users.push( rooms[ room._id ][ 'users' ][ id ] );
+				users.push( self.rooms[ room._id ][ 'users' ][ id ] );
 			    }
     
 			    client.emit( 'userlist', { users: users } );
@@ -191,7 +191,7 @@ var Socket = function() {
 				    query.skip( numMessages - 100 );
 				}
     
-				query.asc( 'createdAt' );
+				query.sort( 'createdAt' );
 				
 				var stream = query.stream();
 				
