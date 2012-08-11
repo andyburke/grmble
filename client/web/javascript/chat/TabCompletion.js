@@ -76,12 +76,11 @@ var TabCompletion = function() {
                         {
                             $( this ).val( longestInCommon( candidates, value.length ) );
                         }
-                        return false;
                     }
                 }
             }
             
-            return true;
+            return false;
         });
     }
 }
