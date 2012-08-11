@@ -8,7 +8,7 @@ var NameHighlighter = function() {
         self.app = app;
         
         self.app.events.addListener( 'logged in', function( user ) {
-            self.nicknameRegex = new RegExp( user.nickname + '[\W\s$]', "ig" );
+            self.nicknameRegex = new RegExp( user.nickname + '\\b', "ig" );
         });
 
         self.app.events.addListener( 'logged out', function( user ) {
@@ -23,7 +23,7 @@ var NameHighlighter = function() {
             
             if ( message.content.match( self.nicknameRegex ) )
             {
-                 $( messageElement ).addClass( 'message-references-me' );
+                $( messageElement ).addClass( 'message-references-me' );
             }
         });
     }

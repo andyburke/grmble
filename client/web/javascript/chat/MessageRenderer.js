@@ -97,8 +97,8 @@ var MessageRenderer = function() {
                     return;
                 }
                 
-                $( output ).appendTo( '#chatlog' );
-                self.app.events.emit( 'message rendered', message, output );
+                var renderedMessage = $( output ).appendTo( '#chatlog' );
+                self.app.events.emit( 'message rendered', message, renderedMessage );
                 
                 $( '#submit-message' ).button( 'reset' );
             });

@@ -76,6 +76,7 @@
             .script( "/javascript/chat/UserlistManager.js" )
             .script( "/javascript/chat/MessageHistory.js" )
             .script( "/javascript/chat/TypingStatus.js" )
+            .script( "/javascript/chat/TabCompletion.js" )
 
             .script( "/javascript/views/compiled_templates.js" )
             .script( "/javascript/views/Home.js" )
@@ -119,7 +120,8 @@
                         new MessageHistory(),
                         new NameHighlighter(),
                         new ScrollHandler(),
-                        new TypingStatus()
+                        new TypingStatus(),
+                        new TabCompletion()
                     ];
             
                     for ( var index = 0; index < subsystems.length; ++index )
