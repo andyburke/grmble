@@ -1,0 +1,54 @@
+<div class="page-header">
+    <h1>{name}</h1>
+            <a href="#/Room/{_id}">go to room</a>
+</div>
+<div class="row-fluid">
+    <div class="span7">
+        <form class="form">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="_id">Unique ID</label>
+                    <div class="controls">
+                        <input class="input-xlarge disabled" id="_id" name="_id" type="text" value="{_id}" disabled />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="name">Name</label>
+                    <div class="controls">
+                        <input class="input-xlarge" id="name" name="name" type="text" value="{name}" />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="textarea">Description</label>
+                    <div class="controls">
+                        <textarea class="input-xlarge" id="description" name="description" rows="3">{description}</textarea>
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="tags">Tags</label>
+                    <div class="controls">
+                        <input class="input-xlarge" id="tags" name="tags" type="text" value="{joinedTags}" />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="protection">Visibility</label>
+                    <div class="controls">
+                        <select id="protection">
+                            <option {#isPublic}selected{/isPublic}>Public</option>
+                            <option {^isPublic}selected{/isPublic}>Private</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary update-room-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-room-button">Reset</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div class="span4">
+        <h2>Owners</h2>
+        <div id="ownerlist">
+            {>owner_list/}
+        </div>
+    </div>
+</div>

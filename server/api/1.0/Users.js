@@ -1,5 +1,6 @@
 var models = require( './models.js' );
 var checks = require( './checks.js' );
+var crypto = require( 'crypto' );
 var passwordHash = require( 'password-hash' );
 
 var Users = function() {
@@ -10,7 +11,9 @@ var Users = function() {
         {
             return {
                 'user': '/api/1.0/User',
-                'users': '/api/1.0/Users'
+                'userbyhash': '/api/1.0/UserByHash',
+                'users': '/api/1.0/Users',
+                'me': '/api/1.0/User/Me'
             };
         }
 
@@ -48,10 +51,13 @@ var Users = function() {
                 
                 user = new models.User();
                 user.email = request.param( 'email' ).trim().toLowerCase();
-                user.hash = md5( user.email );
+                user.hash = crypto.createHash( 'md5' ).update( user.email ).digest("hex");
+                
+                var emailParts = user.email.split( '@' );
+                var emailUsername = emailParts[ 0 ];
                 
                 user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? passwordHash.generate( request.param( 'password' ) ) : null;
-                user.nickname = request.param( 'nickname' );
+                user.nickname = request.param( 'nickname', emailUsername );
                 user.location = request.param( 'location' );
                 user.bio = request.param( 'bio' );
                 
@@ -62,17 +68,31 @@ var Users = function() {
                         return;
                     }
             
-                    request.session.user = user;
-                    request.session.save();
-                    
-                    response.json( models.censor( user, { 'passwordHash': true } ) );
+                    request.user = user;
+
+                    var expires = new Date();
+                    expires.setFullYear( expires.getFullYear() + 1 );
+                    var authToken = new models.AuthToken();
+                    authToken.token = utils.security.GenerateAuthToken( user );
+                    authToken.expires = expires;
+                    authToken.owner = user._id;
+                    authToken.save( function( error ) {
+                        if ( error )
+                        {
+                            response.json( error, 500 );
+                            return;
+                        }
+                        
+                        response.cookie( 'authtoken', authToken.token, { maxAge: authToken.expires - new Date(), httpOnly: true, path: '/' } );
+                        response.json( models.censor( app.WithURLs( request, user ), { 'passwordHash': true } ) );
+                    });
                 });
             });
         });
         
         app.put( '/api/1.0/User/:userId', checks.user, function( request, response ) {
     
-            if ( request.param( 'userId' ) != request.session.user._id )
+            if ( request.param( 'userId' ) != request.user._id )
             {
                 response.json( { 'error': 'permission denied', 'message': 'You do not have permission to modify this user.' }, 500 );
                 return;
@@ -80,9 +100,9 @@ var Users = function() {
     
             function save()
             {
-                models.User.findById( request.session.user._id, function( error, user ) {
+                models.User.findById( request.user._id, function( error, user ) {
                     user.email = request.param( 'email', user.email ).trim().toLowerCase();
-                    user.hash = md5( user.email );
+                    user.hash = crypto.createHash( 'md5' ).update( user.email ).digest("hex");
                     user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? passwordHash.generate( request.param( 'password' ) ) : user.passwordHash;
                     user.nickname = request.param( 'nickname', user.nickname );
                     user.location = request.param( 'location' , user.location );
@@ -96,10 +116,9 @@ var Users = function() {
                             return;
                         }
                                             
-                        request.session.user = user;
-                        request.session.save();
+                        request.user = user;
                         
-                        response.json( models.censor( user, { 'passwordHash': true } ) );
+                        response.json( models.censor( app.WithURLs( request, user ), { 'passwordHash': true } ) );
                     });
                 });
             }
@@ -128,9 +147,13 @@ var Users = function() {
             }
         });
         
+        app.get( '/api/1.0/User/Me', checks.user, function( request, response ) {
+            response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+        });
+
         app.get( '/api/1.0/User/:userId', checks.user, function( request, response ) {
             
-            if ( request.param( 'userId' ) != request.session.user._id )
+            if ( request.param( 'userId' ) != request.user._id )
             {
                 models.User.findById( request.params.userId, function( error, user ) {
                     if ( error )
@@ -145,15 +168,41 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( user, { 'email': true, 'passwordHash': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
                 });
             }
             else
             {
-                response.json( models.censor( request.session.user, { 'passwordHash': true } ) );
+                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
             }
         });
         
+        app.get( '/api/1.0/UserByHash/:hash', checks.user, function( request, response ) {
+            
+            if ( request.param( 'hash' ) != request.user.hash )
+            {
+                models.User.findOne( { hash: request.param( 'hash' ) }, function( error, user ) {
+                    if ( error )
+                    {
+                        response.json( error, 500 );
+                        return;
+                    }
+                    
+                    if ( !user )
+                    {
+                        response.json( 'No user found with hash: ' + request.param( 'hash' ), 404 );
+                        return;
+                    }
+                    
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
+                });
+            }
+            else
+            {
+                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+            }
+        });
+
         app.get( '/api/1.0/Users', function( request, response ) {
             var users = request.param( 'users' );
             var idList = users.split( ',' );
@@ -168,7 +217,7 @@ var Users = function() {
                 var result = [];
                 for ( var index = 0; index < users.length; ++index )
                 {
-                    result.push( models.censor( users[ index ], { 'email': true, 'passwordHash': true } ) );
+                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true } ) );
                 }
                 
                 response.json( result );

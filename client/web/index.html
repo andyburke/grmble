@@ -9,6 +9,41 @@
 
         <script src="http://cdnjs.cloudflare.com/ajax/libs/labjs/2.0.3/LAB.min.js"></script>
 
+        <!-- start Mixpanel -->
+        <script type="text/javascript">
+            (function(c,a){
+                window.mixpanel=a;
+                var b,d,h,e;
+                b=c.createElement("script");
+                b.type="text/javascript";
+                b.async=!0;
+                b.src=("https:"===c.location.protocol?"https:":"http:")+'//api.mixpanel.com/site_media/js/api/mixpanel.2.js';
+                d=c.getElementsByTagName("script")[0];
+                d.parentNode.insertBefore(b,d);
+                a._i=[];
+                a.init=function(b,c,f){
+                    function d(a,b){
+                        var c=b.split(".");
+                        2==c.length&&(a=a[c[0]],b=c[1]);
+                        a[b]=function(){
+                            a.push([b].concat(Array.prototype.slice.call(arguments,0)))
+                        }
+                    }
+                    var g=a;
+                    "undefined"!==typeof f?g=a[f]=[]:f="mixpanel";
+                    g.people=g.people||[];
+                    h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.set people.increment".split(" ");
+                    for(e=0;e<h.length;e++)
+                        d(g,h[e]);
+                    a._i.push([b,c,f])
+                };
+                a.__SV=1.1
+            })(document,window.mixpanel||[]);
+            
+            mixpanel.init("6d69541c505047c3d00866c4f0e3e4be");
+        </script>
+        <!-- end Mixpanel -->
+
         <script>
             $LAB
             .setOptions({
@@ -18,25 +53,98 @@
             .script( "http://cdnjs.cloudflare.com/ajax/libs/mustache.js/0.4.2/mustache.min.js" )
             .script( "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.3.0/less-1.3.0.min.js" )
             .script( "http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.3/bootstrap.min.js" )
-            .script( "/javascript/lib/EventEmitter.js" )
+            .script( "/javascript/lib/director-1.1.3.js" )
+            .script( "/javascript/lib/EventEmitter.min.js" )
             .script( "/javascript/lib/dust-core-1.0.0.js" )
             .script( "/javascript/lib/jquery.idle-timer.js" )
             .script( "/javascript/lib/ba-linkify.min.js" )
+            .script( "/javascript/lib/jquery.spin.js" )
+            .script( "/javascript/lib/md5.min.js" )
+            .script( "/javascript/lib/base64.js" )
             .script( "/socket.io/socket.io.js" )
 
             .wait() // wait for all our stock libs to be downloaded
             
             .script( "/javascript/utils.js" )
 
-            .script( "/javascript/ConnectionStatus.js" )
-            .script( "/javascript/Room.js" )
+            .script( "/javascript/UserManager.js" )
 
+            .script( "/javascript/chat/IdleHandler.js" )
+            .script( "/javascript/chat/MessageRenderer.js" )
+            .script( "/javascript/chat/NameHighlighter.js" )
+            .script( "/javascript/chat/ScrollHandler.js" )
+            .script( "/javascript/chat/UserlistManager.js" )
+            .script( "/javascript/chat/MessageHistory.js" )
+            .script( "/javascript/chat/TypingStatus.js" )
+
+            .script( "/javascript/views/compiled_templates.js" )
+            .script( "/javascript/views/Home.js" )
+            .script( "/javascript/views/Room.js" )
+            .script( "/javascript/views/Rooms.js" )
+            .script( "/javascript/views/MyRooms.js" )
+            .script( "/javascript/views/CreateRoom.js" )
+            .script( "/javascript/views/ManageRoom.js" )
+            .script( "/javascript/views/SignUp.js" )
+            .script( "/javascript/views/Settings.js" )
+
+            .script( "/javascript/ConnectionStatus.js" )
             .script( "/javascript/app.js" )
 
             .wait( function() {
                 try
                 {
+                    var theApp = new App( '/api/1.0' );
+
+                    var theRouter = new Router().configure({
+                        notfound: function() {
+                            console.log( 'route not found: ' + window.location );
+                        }
+                    });
+            
+                    var subsystems = [
+                        new UserManager(),
+                        new Home(),
+                        new Room(),
+                        new Rooms(),
+                        new MyRooms(),
+                        new CreateRoom(),
+                        new ManageRoom(),
+                        new SignUp(),
+                        new Settings(),
+                        
+                        // chat
+                        
+                        new MessageRenderer(),
+                        new UserlistManager(),
+                        new MessageHistory(),
+                        new NameHighlighter(),
+                        new ScrollHandler(),
+                        new TypingStatus()
+                    ];
+            
+                    for ( var index = 0; index < subsystems.length; ++index )
+                    {
+                        if ( typeof( subsystems[ index ].Bind ) == 'function' )
+                        {
+                            subsystems[ index ].Bind( theApp, theRouter );
+                        }
+                    }
+                    
                     theApp.Start();
+                    theRouter.init(); // start routing
+                    
+                    if ( window.location.hash == '' )
+                    {
+                        window.location.hash = '/';
+                    }
+            
+                    for ( var index = 0; index < subsystems.length; ++index )
+                    {
+                        if ( typeof( subsystems[ index ].Start ) == 'function' )
+                        {
+                            subsystems[ index ].Start();
+                        }
+                    }
                 }
                 catch( e )
                 {
@@ -54,345 +162,6 @@
             });
         </script>
         
-<!-- TEMPLATES -->
-
-<script id="createroom" type="text/html">
-    <div class="page-header">
-        <h1>Create Room</h1>
-    </div>
-    <div class="row-fluid">
-        <div class="span9">
-            <form class="form-horizontal">
-                <fieldset>
-                    <div class="control-group">
-                        <label class="control-label" for="name">Name</label>
-                        <div class="controls">
-                            <input class="span7" id="name" name="name" size="30" type="text" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="description">Description</label>
-                        <div class="controls">
-                            <textarea class="span7" id="description" name="description" rows="3"></textarea>
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="tags">Tags</label>
-                        <div class="controls">
-                            <input class="span7" id="tags" name="tags" size="30" type="text" placeholder="eg: cats, robots, llamas" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="protection">Visibility</label>
-                        <div class="controls">
-                            <select id="protection">
-                                <option selected>Public</option>
-                                <option>Private</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <input type="submit" class="btn primary button-create-room" value="Create">
-                    </div>
-                </fieldset>
-            </form>
-        </div>
-        <div class="extra span3">
-            <h2>Create a Room</h2>
-            <p>
-                You can create your own chat room!
-            </p>
-        </div>
-    </div>
-</script>
-
-<script id="home" type="text/html">
-    <div class="page-header">
-        <h1>Grumble <small>An Open Node.js Chat Service</small></h1>
-    </div>
-    <div class="row-fluid">
-        <div class="span8">
-            <h2>What is Grumble?</h2>
-            <p>
-                Grumble is an open chat service using node.js.
-            </p>
-        </div>
-    </div>    
-</script>
-
-<script id="manageroom" type="text/html">
-    <div class="page-header">
-        <h1>{{name}}</h1>
-		<a href="#/Room/{{_id}}">go to room</a>
-    </div>
-    <div class="row-fluid">
-        <div class="span7">
-            <form class="form">
-                <fieldset>
-                    <div class="control-group">
-                        <label class="control-label" for="id">Unique ID</label>
-                        <div class="controls">
-                            <input class="input-xlarge disabled" id="id" name="id" type="text" value="{{_id}}" disabled />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="name">Name</label>
-                        <div class="controls">
-                            <input class="input-xlarge" id="name" name="name" type="text" value="{{name}}" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="textarea">Description</label>
-                        <div class="controls">
-                            <textarea class="input-xlarge" id="description" name="description" rows="3">{{description}}</textarea>
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="tags">Tags</label>
-                        <div class="controls">
-                            <input class="input-xlarge" id="tags" name="tags" type="text" value="{{joinedTags}}" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="protection">Visibility</label>
-                        <div class="controls">
-                            <select id="protection">
-                                <option {{#isPublic}}selected{{/isPublic}}>Public</option>
-                                <option {{^isPublic}}selected{{/isPublic}}>Private</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-primary update-room-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-room-button">Reset</button>
-                    </div>
-                </fieldset>
-            </form>
-        </div>
-        <div class="span4">
-            <h2>Owners</h2>
-            <div id="ownerlist">
-            </div>
-        </div>
-    </div>
-</script>
-
-<script id="message" type="text/html">
-    <div id="{{_id}}" time="{{createdAt}}" class="message {{kind}} {{#referencesMe}}message-references-me{{/referencesMe}}">
-        <div class="nickname">
-            {{nickname}}
-        </div>
-        <div class="avatar-container">
-            <img class="avatar" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" />
-        </div>
-        <div class="message-content">
-            {{^processed}}{{content}}{{/processed}}{{{processed}}}
-        </div>
-    </div>
-</script>
-
-<script id="ownerlist" type="text/html">
-    <table class="table table-bordered table-striped">
-        {{#owners}}
-            <tr>
-                <td><a href="#/User/{{.}}"><span id="{{.}}-nickname">(no nickname)</span><br/>{{.}}</a></td>
-                <td><a href="/api/1.0/Room/{{room._id}}/owners/{{.}}" class="remove-room-owner-link">[remove]</a></td>
-            </tr>
-        {{/owners}}
-    </table>
-    
-    <div class="pull-right">
-        <form class="form-horizontal">
-            <input type="hidden" id="roomId" name="roomId" value="{{room._id}}"/>
-            <input class="input-large" type="test" id="newowner" name="newowner" placeholder="Add Owner by Entering an Email"/>
-            <button class="btn btn-primary add-room-owner-button" data-loading-text="Adding..." data-complete-text="Added!">Add</button>
-        </form>
-    </div>
-</script>
-
-<script id="room" type="text/html">
-    <div class="row-fluid">
-        <div class="room-wrapper">
-            <div class="chatlog-wrapper">
-                <div class="load-more-wrapper">
-                    <button id="load-more-button" class="btn" data-loading-text="Loading Older Messages...">Load Older Messages</button>
-                </div>
-                <div class="chatlog" id="chatlog">
-                </div>
-            </div>
-    
-            <div class="sidebar-nav-fixed extra" id="sidebar">
-                <div class="sidebar-room-name-wrapper">
-                    <div id="room-name" class="room-name">{{ room.name }}</div>
-                    <!-- <button class="btn btn-mini btn-warning" id="leave-room">Leave</button> -->
-                </div>
-                <hr/>
-                <div id="userlist">
-                </div>
-            </div>
-        </div>
-
-        <div class="new-messages-indicator-wrapper">
-            <i id="new-messages-indicator" class="icon-chevron-down hide"></i>
-        </div>
-
-        <div class="message-entry-wrapper">
-            <form id="message-entry-form" class="message-entry-form">
-                <div class="row-fluid">
-                    <div class="message-entry-content-wrapper">
-                        <textarea id="message-entry-content" class="boxsizing-border message-entry-content" type="text" name="content" autocomplete="off" placeholder="" / autofocus></textarea>
-                    </div>
-                    <div class="submit-message-wrapper">
-                        <div class="submit-message-button-wrapper">
-                            <button id="submit-message" class="btn btn-primary btn-large pull-right" data-loading-text="Sending...">Send</button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</script>
-
-<script id="rooms" type="text/html">
-    <div class="page-header">
-        <h1>Rooms <small>All public rooms.</small></h1>
-    </div>
-    <div class="row-fluid">
-        <div class="span8">
-            <table class="zebra-striped">
-                <tr>
-                    <th>Room</th>
-                    <th>Description</tH>
-                </tr>
-                {{#rooms}}
-                    <tr>
-                        <td><a href="#/Room/{{_id}}">{{name}}</a></td>
-                        <td>{{description}}</td>
-                    </tr>
-                {{/rooms}}
-            </table>
-        </div>
-    </div>
-</script>
-
-<script id="settings" type="text/html">
-    <div class="page-header">
-        <h1>Settings <small><a href="/#/User/{{_id}}">Public Profile &gt;&gt;</a></small></h1>
-    </div>
-    <div class="row-fluid">
-        <div class="span8">
-            <form class="form-horizontal">
-              <fieldset>
-                <div class="control-group">
-                    <div class="controls">
-                        <img id="user-avatar-preview" width="64" height="64" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}">
-                    </div>
-                </div>
-                <div class="control-group">
-                  <label class="control-label" for="avatar">Avatar URL</label>
-                  <div class="controls">
-                    <input class="input-xlarge" id="avatar" name="avatar" type="text" value="{{avatar}}" />
-                  </div>
-                    <div class="controls">
-                        <button class="btn btn-small" id="use-avatar-none">None</button>
-                        <!-- <button class="btn btn-small" id="use-avatar-facebook"><img src="/images/social/icons/24x24/facebook.png" alt="Facebook Avatar"></button -->
-                        <!-- <button class="btn btn-small" id="use-avatar-twitter"><img src="/images/social/icons/24x24/twitter.png" alt="Twitter Avatar"></button> -->
-                        <button class="btn btn-small" id="use-avatar-gravatar" {{^email}}disabled{{/email}}><img src="/images/social/icons/24x24/gravatar.png" alt="Gravatar Avatar"></button>
-                    </div>
-                </div><!-- /clearfix -->
-                <div class="control-group">
-                  <label class="control-label" for="email">Email</label>
-                  <div class="controls">
-                    <input class="input-xlarge" id="email" name="email" type="text" value="{{ email }}" />
-                  </div>
-                </div><!-- /clearfix -->
-                <div class="control-group">
-                  <label class="control-label" for="password">New Password</label>
-                  <div class="controls">
-                    <input class="input-xlarge" id="password" name="password" type="password" value="" />
-                    <div class="help-block">
-                        Only enter a password here if you want to change your current password.
-                    </div>
-                  </div>
-                </div><!-- /clearfix -->
-                <div class="control-group">
-                  <label class="control-label" for="nickname">Nickname</label>
-                  <div class="controls">
-                    <input class="input-xlarge" id="nickname" name="nickname" type="text" value="{{ nickname }}" />
-                  </div>
-                </div><!-- /clearfix -->
-                <div class="control-group">
-                  <label class="control-label" for="location">Location</label>
-                  <div class="controls">
-                    <input class="input-xlarge" id="location" name="location" type="text" value="{{ location }}" placeholder="eg: Los Angeles, CA" />
-                  </div>
-                </div><!-- /clearfix -->
-                <div class="control-group">
-                  <label class="control-label" for="textarea">Bio</label>
-                  <div class="controls">
-                    <textarea class="input-xlarge" id="bio" name="bio" rows="3">{{ bio }}</textarea>
-                    <div class="help-block">
-                      Enter a short bio if you please.
-                    </div>
-                  </div>
-                </div><!-- /clearfix -->
-                <div class="form-actions">
-                    <button class="btn btn-primary update-account-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-account-button">Reset</button>
-                </div>
-                </fieldset>
-            </form>
-        </div>
-    </div>
-</script>
-
-<script id="signup" type="text/html">
-    <div class="page-header">
-        <h1>Sign Up <small>Chat with people about cats and robots!</small></h1>
-    </div>
-    <div class="row-fluid">
-        <div class="span3">
-            <form class="form-horizontal">
-                <fieldset>
-                    <div class="control-group">
-                        <label class="control-label" for="email">Email</label>
-                        <div class="controls">
-                            <input class="xlarge" id="email" name="email" size="30" type="text" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="control-group">
-                        <label class="control-label" for="password">Password</label>
-                        <div class="controls">
-                            <input class="xlarge" id="password" name="password" size="30" type="password" />
-                        </div>
-                    </div><!-- /clearfix -->
-                    <div class="form-actions">
-                        <input type="submit" class="btn btn-primary button-signup" value="Sign Up!">
-                    </div>
-                </fieldset>
-            </form>
-            Already have an account? Sign in using the navbar above!        
-        </div>
-        <div class="extra span5">
-            <h2>Get into chat!</h2>
-            <p>
-                You can also use your account to create Rooms and access the
-                API!
-            </p>
-        </div>
-    </div>
-</script>
-
-<script id="userlist_entry" type="text/html">
-    <div class="user" id="userlist-entry-{{clientId}}">
-        <img class="user-avatar" id="userlist-entry-avatar-{{clientId}}" src="{{^avatar}}/images/icons/user_64x64.png{{/avatar}}{{avatar}}" title="{{nickname}}" />
-        <div class="userlist-entry-nickname" id="userlist-entry-nickname-{{clientId}}">
-            {{nickname}}
-			<span class="userlist-entry-typingstatus-normal" id="userlist-entry-typingstatus-{{clientId}}"></span>
-        </div>
-    </div>
-</script>
-
-<!-- END TEMPLATES -->
-
     </head>
 
     <body>
@@ -403,12 +172,11 @@
                 <div class="container-fluid">
                     <a class="brand" href="#/">Grumble</a>
                     <ul class="nav">
-                        <li class="navItem active" id="nav-about"><a href="#/"><i class="icon-question-sign icon-white"></i> About</a></li>
-                        <li class="navItem" id="nav-rooms"><a href="#/Rooms"><i class="icon-comment icon-white"></i> Rooms</a></li>
                         <li class="navItem unauthenticated" id="nav-signup"><a href="#/SignUp"><i class="icon-user icon-white"></i> Sign Up!</a></li>
-                        <li class="navItem authenticated" id="nav-settings"><a href="#/Settings"><i class="icon-cog icon-white"></i> Settings</a></li>
+                        <li class="navItem" id="nav-rooms"><a href="#/Rooms"><i class="icon-comment icon-white"></i> Rooms</a></li>
                         <li class="navItem authenticated" id="nav-myrooms"><a href="#/MyRooms"><i class="icon-comment icon-white"></i> My Rooms</a></li>
                         <li class="navItem authenticated" id="nav-createroom"><a href="#/CreateRoom"><i class="icon-plus-sign icon-white"></i> Create Room</a></li>
+                        <li class="navItem authenticated" id="nav-settings"><a href="#/Settings"><i class="icon-cog icon-white"></i> Settings</a></li>
                         <li class="navItem" id="nav-feedback"><a href="https://github.com/andyburke/grumble/issues" target="_blank"><i class="icon-tag icon-white"></i> Bug/Feature Request</a></li>
                     </ul>
                     <ul class="nav pull-right">
@@ -429,7 +197,7 @@
         <div id="signup-modal" class="modal hide">
             <div class="modal-header">
                 <a class="close" data-dismiss="modal">x</a>
-                <h3>Sign Up! <!-- <small>(Or just set your nickname...)</small> --></h3>
+                <h3>Sign Up!</h3>
             </div>
             <div class="row modal-body">
                 <div class="span3">
@@ -451,35 +219,6 @@
                     <p/>
                     <p/>
                     We'll never reveal your email address to a third party.  Ever.
-                </div>
-                <!--
-                <div class="span3 extra">
-                    <a href="#" id="signup-facebook"><img src="/images/social/icons/48x48/facebook.png" alt="Facebook"/> Log In Using Facebook</a>
-                    <div class="clear padded"></div>
-                    <a href="#" id="signup-twitter"><img src="/images/social/icons/48x48/twitter.png" alt="Twitter"/> Log In Using Twitter</a>
-                </div>
-                -->
-            </div>
-            <!--
-            <div class="modal-footer">
-                <a href="#" class="btn" id="signup-modal-set-nickname">Just Set My Nickname</a>
-            </div>
-            -->
-        </div>
-        
-        <div id="set-nickname-modal" class="modal hide">
-            <div class="modal-header">
-                <a class="close" data-dismiss="modal">x</a>
-                <h3>Set Your Nickname</h3>
-            </div>
-            <div class="row modal-body">
-                <div class="centered" style="width: 360px;">
-                    <form id="set-nickname-form">
-                        <fieldset>
-                            <input type="text" class="centered" name="nickname" placeholder="Nickname" />
-                            <a href="#" class="btn" id="set-nickname-modal-set-nickname">Set Nickname</a>
-                        </fieldset>
-                    </form>
                 </div>
             </div>
         </div>

@@ -22,8 +22,8 @@ var Messages = function() {
             
             var message = new models.Message();
             message.roomId = request.params.roomId;
-            message.senderId = request.session.user._id;
-            message.nickname = request.session.user.nickname;
+            message.senderId = request.user._id;
+            message.nickname = request.user.nickname;
             message.kind = typeof( request.param( 'kind' ) ) != undefined ? request.param( 'kind' ) : 'say';
             message.content = request.param( 'content' );
         

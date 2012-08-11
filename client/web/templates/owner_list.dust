@@ -1,0 +1,16 @@
+<table class="table table-bordered table-striped">
+    {#owners}
+        <tr>
+            <td><a href="#/User/{.}"><span id="{.}-nickname">(no nickname)</span><br/>{.}</a></td>
+            <td><a href="/api/1.0/Room/{_id}/Owners/{.}" class="remove-room-owner-link">[remove]</a></td>
+        </tr>
+    {/owners}
+</table>
+
+<div class="pull-right">
+    <form class="form-horizontal">
+        <input type="hidden" id="roomId" name="roomId" value="{_id}"/>
+        <input class="input-large" type="test" id="newowner" name="newowner" placeholder="Add Owner by Entering an Email"/>
+        <button class="btn btn-primary add-room-owner-button" data-loading-text="Adding..." data-complete-text="Added!">Add</button>
+    </form>
+</div>

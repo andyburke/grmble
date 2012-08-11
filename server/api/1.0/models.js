@@ -1,6 +1,4 @@
 var mongoose = require( 'mongoose' );
-var MongooseTypes = require( 'mongoose-types' );
-MongooseTypes.loadTypes( mongoose );
 var SimpleTimestamps = require( 'mongoose-SimpleTimestamps' ).SimpleTimestamps;
 
 // TODO: make this be on the mongoose model prototype
@@ -16,6 +14,14 @@ var censor = exports.censor = function ( object, fields )
     }
     return censored;
 }
+
+exports.AuthTokenSchema = new mongoose.Schema({
+    token: { type: String, unique: true, index: true },
+    owner: { type: mongoose.Schema.ObjectId, index: true },
+    expires: { type: Date, default: null }
+});
+exports.AuthTokenSchema.plugin( SimpleTimestamps );
+exports.AuthToken = mongoose.model( 'AuthToken', exports.AuthTokenSchema );
 
 exports.UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, index: true },

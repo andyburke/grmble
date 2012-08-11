@@ -1,90 +1,111 @@
 var models = require( './models.js' );
 var passwordHash = require( 'password-hash' );
-var sha1 = require( 'sha1' ); // LEGACY
 
-exports.user = function( request, response, next )
-{
-    if ( request.session.user )
-    {
-        next();
-        return;
-    }
-
-    var email = null;
-    var password = null;
-    
-    var authorization = request.headers.authorization;
-    if ( authorization )
-    {
-        var parts = authorization.split(' ');
-        var scheme = parts[0];
-        var credentials = new Buffer( parts[ 1 ], 'base64' ).toString().split( ':' );
-    
-        if ( 'Basic' != scheme )
-        {
-            response.send( 'Basic authorization is the only supported authorization scheme.', 400 );
-            return;
-        }
-        
-        email = credentials[ 0 ];
-        password = credentials[ 1 ];
-    }
-    else
-    {
-        email = request.param( 'email' );
-        password = request.param( 'password' );
-    }
-    
-    if ( !email )
-    {
-        response.json( "You must specify an email for authentication.", 400 );
-        return;
-    }
-
-    models.User.findOne( { 'email': email.trim().toLowerCase() }, function( error, user ) {
+function HandleAuthToken( authToken, request, response, next ) {
+    models.AuthToken.findOne( { 'token': authToken }, function( error, auth ) {
         if ( error )
         {
             response.json( error, 500 );
             return;
         }
         
-        if ( !user )
+        if ( !auth || ( auth.expires < new Date() ) )
         {
-            response.json( 'Could not locate a user with email: ' + email, 404 );
+            response.json( 'Invalid AuthToken', 400 );
             return;
         }
         
-        if ( user.passwordHash )
-        {
-            // LEGACY SUPPORT
-            if ( !passwordHash.isHashed( user.passwordHash ) )
+        models.User.findById( auth.owner, function( error, user ) {
+            if ( error )
             {
-                if ( user.passwordHash != sha1( password ) )
-                {
-                    response.json( 'Invalid password.', 403 );
-                    return;
-                }
+                response.json( error, 500 );
+                return;
             }
-            else
+            
+            if ( !user )
             {
-                if ( !passwordHash.verify( password, user.passwordHash ) )
-                {
-                    response.json( 'Invalid password.', 403 );
-                    return;
-                }
+                response.json( 'Unkown user.', 404 );
+                return;
             }
-        }
-        
-        request.session.user = user;
-        request.session.save();
+            
+            request.user = user;
+            next();
+            return;
+        });
+    });
+}
+
+exports.user = function( request, response, next )
+{
+    if ( request.user )
+    {
         next();
         return;
-    });
+    }
+
+    var authToken = request.param( 'authtoken', request.cookies.authtoken );
+    if ( authToken )
+    {
+        HandleAuthToken( authToken, request, response, next );
+        return;
+    }
+    
+    var authorization = request.headers.authorization;
+    if ( authorization )
+    {
+        var parts = authorization.split(' ');
+        var scheme = parts[0];
+    
+        switch( scheme )
+        {
+            case 'Basic':
+                var credentials = new Buffer( parts[ 1 ], 'base64' ).toString().split( ':' );
+                var email = credentials[ 0 ];
+                var password = credentials[ 1 ];
+
+                models.User.findOne( { 'email': email.trim().toLowerCase() }, function( error, user ) {
+                    if ( error )
+                    {
+                        response.json( error, 500 );
+                        return;
+                    }
+                    
+                    if ( !user )
+                    {
+                        response.json( 'Could not locate a user with email: ' + email, 404 );
+                        return;
+                    }
+                    
+                    if ( !passwordHash.verify( password, user.passwordHash ) )
+                    {
+                        response.json( 'Invalid password.', 403 );
+                        return;
+                    }
+
+                    request.user = user;
+                    next();
+                    return;
+                });
+
+                break;
+            case 'AuthToken':
+                var authToken = parts[ 1 ];
+                HandleAuthToken( authToken, request, response, next );
+                break;
+            default:
+                response.send( 'Authorization scheme \'' + scheme + '\' is not supported.', 400 );
+                break;
+        }
+        
+        return;
+    }
+    
+    response.json( { 'error': 'invalid authentication', 'message': 'You must use an AuthToken, or log in using your email and pasword.' }, 400 );
 }
 
 exports.ownsRoom = function( request, response, next ) {
 
-    if ( !request.session.user )
+    if ( !request.user )
     {
         response.json( 'Server error: user session does not exist.  Please report this problem.', 500 );
         return;
@@ -103,7 +124,7 @@ exports.ownsRoom = function( request, response, next ) {
             return;
         }
         
-        if ( room.owners.indexOf( request.session.user._id ) == -1 )
+        if ( room.owners.indexOf( request.user._id ) == -1 )
         {
             response.json( 'You are not authorized to access this resource.', 403 );
             return;
