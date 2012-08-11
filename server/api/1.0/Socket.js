@@ -170,7 +170,7 @@ var Socket = function() {
 			    //       them to the client in the proper order
 			    
 			    // Send existing messages in room
-			    var kinds = [ 'say', 'join', 'leave' ];
+			    var kinds = [ 'say' ]; //, 'join', 'leave' ];
 			    models.Message.count( { roomId: room._id, kind: { $in: kinds } }, function( error, numMessages ) {
 				if ( error )
 				{
