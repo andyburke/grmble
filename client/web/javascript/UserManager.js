@@ -52,7 +52,7 @@ var UserManager = function() {
                         }
                         
                         $(form).spin( false );
-                        console.log( error );
+                        self.app.ShowError( response.responseText );
                     }
                 });
             });

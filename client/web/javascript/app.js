@@ -24,12 +24,20 @@ var App = function( apiURL ) {
         self.events.addListener( 'logged in', function( user ) {
             $('.authenticated').show();
             $('.unauthenticated').hide();
+            mixpanel.track( "Logged In", {
+                userId: user._id
+            })
+            mixpanel.identify( user._id );
+            mixpanel.name_tag( user.email );
         });
 
         self.events.addListener( 'logged out', function( user ) {
             $('.authenticated').hide();
             $('.unauthenticated').show();
             window.location.hash = '/';
+            mixpanel.track( "Logged Out", {
+                userId: user._id
+            });
         });
     
         self.events.addListener( 'API loaded', function( api ) {
@@ -87,7 +95,11 @@ var App = function( apiURL ) {
             },
             error: function( xhr ) {
                 // TODO: better way to handle this?
-                throw new Exception( xhr.responseText );
+                self.ShowError( xhr.responseText );
+                mixpanel.track( 'Error', {
+                    action: 'Loading API',
+                    error: xhr.responseText
+                });
             }
         });
     }

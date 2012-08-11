@@ -24,7 +24,8 @@ var SignUp = function() {
         });
         
         $( document ).on( 'click', '.button-signup', function( event ) {
-            event.preventDefault();    
+            event.preventDefault();
+            mixpanel.track( "SignUp: Started" );
             var form = $( this ).parents( 'form:first' );
         
             var info = {};
@@ -35,6 +36,11 @@ var SignUp = function() {
             if ( !info.email.length || !info.nickname.length || !info.password.length )
             {
                 self.app.ShowError( 'You must enter an email, a nickname and a password to sign up!' );
+                mixpanel.track( "SignUp: Input Error", {
+                    email: !!info.email.length,
+                    nickname: !!info.nickname.length,
+                    password: !!info.password.length
+                });
                 return;
             }
             
@@ -56,10 +62,18 @@ var SignUp = function() {
             
                         $(form).spin( false );
                         window.location.hash = '/Settings';
+                        mixpanel.track( "SignUp: Success" );
+                        mixpanel.identify( self.app.user._id );
+                        mixpanel.name_tag( self.app.user.email );
+                        mixpanel.register( { email: self.app.user.email, nickname: self.app.user.nickname } );
                     },
                     error: function( response, status, error ) {
                         $(form).spin( false );
                         self.app.ShowError( response.responseText );
+                        mixpanel.track( 'Error', {
+                            action: 'SignUp',
+                            error: xhr.responseText
+                        });
                     }
                 });
             });
