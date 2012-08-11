@@ -31,9 +31,9 @@ var Sessions = function() {
                     var expires = new Date();
                     expires.setFullYear( expires.getFullYear() + 1 );
                     authToken = new models.AuthToken();
-                    authToken.token = utils.security.GenerateAuthToken( user );
+                    authToken.token = utils.security.GenerateAuthToken( request.user );
                     authToken.expires = expires;
-                    authToken.owner = user._id;
+                    authToken.owner = request.user._id;
                     authToken.save( function( error ) {
                         if ( error )
                         {
