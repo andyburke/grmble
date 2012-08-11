@@ -8,4 +8,7 @@
     <div class="message-content">
         {^processed}{content}{/processed}{processed|s}
     </div>
+    <div class="message-time" data-createdat="{createdAt}">
+        {time}
+    </div>
 </div>

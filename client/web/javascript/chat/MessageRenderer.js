@@ -1,3 +1,19 @@
+moment.relativeTime = {
+    future: "in %s",
+    past: "%s ago",
+    s: "now",
+    m: "1m",
+    mm: "%dm",
+    h: "1h",
+    hh: "%dh",
+    d: "1d",
+    dd: "%dd",
+    M: "1m",
+    MM: "%dm",
+    y: "1y",
+    yy: "%dy"
+};
+
 function escapeHTML( text ) {
     return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
 }
@@ -90,6 +106,7 @@ var MessageRenderer = function() {
                 }
             });
     
+            message.time = moment( message.createdAt ).fromNow( true );
             dust.render( 'message', message, function( error, output ) {
                 if ( error )
                 {
@@ -103,5 +120,16 @@ var MessageRenderer = function() {
                 $( '#submit-message' ).button( 'reset' );
             });
         });
+        
+        self.UpdateMessageTimes();
+    }
+    
+    self.UpdateMessageTimes = function() {
+
+        $( '.message-time' ).each( function( index, element ) {
+            $( element ).html( moment( $( element ).data( 'createdat' ) ).fromNow( true ) );
+        });
+
+        setTimeout( self.UpdateMessageTimes, 10000 );
     }
 }
