@@ -90,6 +90,10 @@ var MessageRenderer = function() {
                 case 'startedTyping':
                 case 'stoppedTyping':
                 case 'cancelledTyping':
+                    
+                // TODO: render these, but make them look better somehow
+                case 'join':
+                case 'leave':
                     return;
             }
     
