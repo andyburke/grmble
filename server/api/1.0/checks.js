@@ -1,6 +1,8 @@
 var models = require( './models.js' );
 var passwordHash = require( 'password-hash' );
 
+var crypto = require( 'crypto' );
+
 function HandleAuthToken( authToken, request, response, next ) {
     models.AuthToken.findOne( { 'token': authToken }, function( error, auth ) {
         if ( error )
@@ -76,7 +78,13 @@ exports.user = function( request, response, next )
                         return;
                     }
                     
-                    if ( !passwordHash.verify( password, user.passwordHash ) )
+                    // LEGACY SUPPORT
+                    if ( !passwordHash.isHashed( user.passwordHash ) && crypto.createHash( 'sha1' ).update( password ).digest( "hex" ) != user.passwordHash )
+                    {
+                        response.json( 'Invalid password.', 403 );
+                        return;
+                    }
+                    else if ( !passwordHash.verify( password, user.passwordHash ) )
                     {
                         response.json( 'Invalid password.', 403 );
                         return;
