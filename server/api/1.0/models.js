@@ -58,8 +58,6 @@ exports.MessageSchema = new mongoose.Schema({
     clientId: { type: String }, // the client id the message came from
     nickname: { type: String }, // just easier to toss this here than to require a lookup
     userHash: { type: String },
-    facebookId: { type: String },
-    twitterId: { type: String },
     avatar: { type: String },
     kind: { type: String },
     content: { type: String }

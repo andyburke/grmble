@@ -85,14 +85,12 @@ var Socket = function() {
 		    }
 		    
 		    var newMessage = new models.Message();
-		    newMessage._id = new mongoose.Schema.ObjectId(); // pre-populate this, since we may not save the message to the db
+		    newMessage._id = new mongoose.Schema.ObjectId(); // pre-populate this, since we may not save the message to the db but we still want unique ids
 		    newMessage.roomId = message.roomId;
 		    newMessage.senderId = message.senderId;
 		    newMessage.clientId = client.id;
 		    newMessage.nickname = message.nickname;
 		    newMessage.userHash = message.userHash;
-		    newMessage.facebookId = message.facebookId;
-		    newMessage.twitterId = message.twitterId;
 		    newMessage.avatar = message.avatar;
 		    newMessage.kind = message.kind;
 		    newMessage.content = message.content;
