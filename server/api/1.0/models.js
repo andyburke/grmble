@@ -42,7 +42,12 @@ exports.RoomSchema = new mongoose.Schema({
     description: { type: String },
     tags: { type: Array, index: true },
     owners: { type: Array, index: true },
-    isPublic: { type: Boolean }
+    isPublic: { type: Boolean },
+    features: {
+        users: { type: Number, default: 10 },
+        logs: { type: Boolean, default: false },
+        search: { type: Boolean, default: false }
+    }
 });
 exports.RoomSchema.plugin( SimpleTimestamps );
 exports.Room = mongoose.model( 'Room', exports.RoomSchema );

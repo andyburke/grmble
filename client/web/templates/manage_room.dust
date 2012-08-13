@@ -39,8 +39,44 @@
                         </select>
                     </div>
                 </div>
+                <div class="control-group">
+                    <label class="control-label" for="logs">Logs</label>
+                    <div class="controls">
+                        <div class="row">
+                            <div class="span4">
+                                <div id="logs-slider" class="noUiSlider"></div>
+                            </div>
+                            <div class="span3 setting-info" id="logs-setting">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="users">User Limit</label>
+                    <div class="controls">
+                        <div class="row">
+                            <div class="span4">
+                                <div id="users-slider" class="noUiSlider"></div>
+                            </div>
+                            <div class="span3 setting-info" id="users-setting">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="total">Total</label>
+                    <div class="controls">
+                        <div class="row">
+                            <div class="span2">
+                                &nbsp;
+                            </div>
+                            <div class="span3 total-cost" id="total-cost">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-actions">
-                    <button class="btn btn-primary update-room-button" data-loading-text="Updating..." data-complete-text="Updated!">Update</button>&nbsp;<button type="reset" class="btn reset-room-button">Reset</button>
+                    <button class="btn btn-primary update-room-button" data-loading-text="Saving..." data-complete-text="Saved!">Save</button>&nbsp;<button type="reset" class="btn reset-room-button">Reset</button>
                 </div>
             </fieldset>
         </form>

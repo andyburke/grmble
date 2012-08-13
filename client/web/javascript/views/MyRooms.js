@@ -17,7 +17,7 @@ var MyRooms = function() {
                     url: api.myrooms,
                     type: 'GET',
                     success: function( rooms ) {
-                        dust.render( 'room_list', { subtitle: 'List of my rooms.', rooms: rooms }, function( error, output ) {
+                        dust.render( 'myrooms', { rooms: rooms }, function( error, output ) {
                             if ( error )
                             {
                                 self.app.ShowError( error );

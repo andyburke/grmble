@@ -1,3 +1,53 @@
+function UpdateTotal() {
+    var total = 0;
+    var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+    var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
+    users = users > 100 ? -1 : users;
+    total += logs ? 1 : 0;
+    total += users > 0 ? ( ( users - 10 ) / 10 ) : 25;
+    total = total > 0 ? ( '$' + total + ' / Month' ) : 'Free!';
+    $( '#total-cost' ).html( total );
+}
+
+function UpdateLogs() {
+    var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+    if ( logs )
+    {
+        $( '#logs-setting' ).html( 'Enabled ( $1/month )' );
+    }
+    else
+    {
+        $( '#logs-setting' ).html( 'No Logs ( Free! )' );
+    }
+    UpdateTotal();
+}
+
+function UpdateUserCount() {
+    var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
+    if ( users > 100 )
+    {
+        $( '#users-setting' ).html( 'Unlimited! ( $25/month )' );
+    }
+    else
+    {
+        if ( users < 10 )
+        {
+            users = 10;
+            $( '#users-slider' ).noUiSlider( 'move', {
+                knob: 1,
+                to: 10,
+                scale: [ 0, 110 ]
+            });
+        }
+        var cost = ( users - 10 ) / 10;
+        cost = ( cost > 0 ) ? ( cost + '$/month' ) : 'Free!';
+        $( '#users-setting' ).html( users + ' ( ' + cost + ' ) ' );
+    }
+
+    UpdateTotal();
+}
+
+
 var ManageRoom = function() {
     var self = this;
     
@@ -29,8 +79,31 @@ var ManageRoom = function() {
                         self.app.ShowError( error );
                         return;
                     }
-                
+    
                     $( '#main' ).html( output );
+
+                    $( '#logs-slider' ).noUiSlider( 'init', {
+                        knobs: 1,
+                        connect: "lower",
+                        scale: [ 0, 1 ],
+                        start: [ room.features.logs ? 1 : 0 ],
+                        step: 1,
+                        change: UpdateLogs,
+                        end: UpdateLogs
+                    });
+
+                    $( '#users-slider' ).noUiSlider( 'init', {
+                        knobs: 1,
+                        connect: "lower",
+                        scale: [ 0, 110 ],
+                        start: [ room.features.users ],
+                        step: 10,
+                        change: UpdateUserCount,
+                        end: UpdateUserCount
+                    });
+
+                    UpdateLogs();
+                    UpdateUserCount();
 
                     $( '#ownerlist' ).spin( 'medium' );
     
@@ -152,6 +225,20 @@ var ManageRoom = function() {
                     $( input ).val( input.id in room ? room[ input.id ] : '' );
                     $( input ).html( input.id in room ? room[ input.id ] : '' );
                 });
+                
+                $( '#users-slider' ).noUiSlider( 'move', {
+                    knob: 1,
+                    to: room.features.users,
+                    scale: [ 0, 110 ]
+                });
+                UpdateUserCount();
+
+                $( '#logs-slider' ).noUiSlider( 'move', {
+                    knob: 1,
+                    to: room.features.logs ? 1 : 0,
+                    scale: [ 0, 1 ]
+                });
+                UpdateLogs();
             });
         });
         

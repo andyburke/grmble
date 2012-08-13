@@ -26,6 +26,7 @@ function HandleAuthToken( authToken, request, response, next ) {
             
             if ( !user )
             {
+                response.cookie( 'authtoken', '', { maxAge: -100000, httpOnly: true, path: '/' } );
                 response.json( 'Unkown user.', 404 );
                 return;
             }
@@ -56,7 +57,7 @@ exports.user = function( request, response, next )
     if ( authorization )
     {
         var parts = authorization.split(' ');
-        var scheme = parts[0];
+        var scheme = parts[ 0 ];
     
         switch( scheme )
         {
@@ -65,7 +66,7 @@ exports.user = function( request, response, next )
                 var email = credentials[ 0 ];
                 var password = credentials[ 1 ];
 
-                models.User.findOne( { 'email': email.trim().toLowerCase() }, function( error, user ) {
+                models.User.findOne( { 'email': email.toLowerCase() }, function( error, user ) {
                     if ( error )
                     {
                         response.json( error, 500 );
