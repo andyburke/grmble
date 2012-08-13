@@ -26,6 +26,7 @@ var App = function( apiURL, router ) {
         
         // chat
         
+        new IdleHandler(),
         new MessageRenderer(),
         new UserlistManager(),
         new MessageHistory(),
