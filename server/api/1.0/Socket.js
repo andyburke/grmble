@@ -93,6 +93,7 @@ var Socket = function() {
 		    newMessage.avatar = message.avatar;
 		    newMessage.kind = message.kind;
 		    newMessage.content = message.content;
+		    newMessage.createdAt = new Date();
     
 		    if ( !newMessage.content )
 		    {

@@ -1,7 +1,8 @@
-var App = function( apiURL ) {
+var App = function( apiURL, router ) {
     var self = this;
     
     self.apiURL = apiURL;
+    self.router = router;
 
     self.socket = null;
 
@@ -11,6 +12,50 @@ var App = function( apiURL ) {
     self.rooms = {};
     
     self.events = new EventEmitter();
+
+    self.subsystems = [
+        new UserManager(),
+        new Home(),
+        new Room(),
+        new Rooms(),
+        new MyRooms(),
+        new CreateRoom(),
+        new ManageRoom(),
+        new SignUp(),
+        new Settings(),
+        
+        // chat
+        
+        new MessageRenderer(),
+        new UserlistManager(),
+        new MessageHistory(),
+        new NameHighlighter(),
+        new ScrollHandler(),
+        new TypingStatus(),
+        new TabCompletion()
+    ];
+
+    self.GetSubsystem = function( subsystemType ) {
+        for ( var index = 0; index < self.subsystems.length; ++index )
+        {
+            if ( self.subsystems[ index ] instanceof subsystemType )
+            {
+                return self.subsystems[ index ];
+            }
+        }
+        
+        return null;
+    }
+    
+    self.Bind = function() {
+        for ( var index = 0; index < self.subsystems.length; ++index )
+        {
+            if ( typeof( self.subsystems[ index ].Bind ) == 'function' )
+            {
+                self.subsystems[ index ].Bind( self, self.router );
+            }
+        }
+    }
     
     self.Start = function() {
 
@@ -71,6 +116,15 @@ var App = function( apiURL ) {
         });
         
         self.connectionStatus = new ConnectionStatus( self.socket, '#server-connection-status' );
+        
+
+        for ( var index = 0; index < self.subsystems.length; ++index )
+        {
+            if ( typeof( self.subsystems[ index ].Start ) == 'function' )
+            {
+                self.subsystems[ index ].Start();
+            }
+        }
     }
     
     self.ShowError = function( error ) {

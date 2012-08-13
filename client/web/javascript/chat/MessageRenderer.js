@@ -82,50 +82,62 @@ var MessageRenderer = function() {
     
     self.Start = function() {
         self.app.socket.on( 'message', function( message ) {
-                
-            switch( message.kind )
-            {
-                case 'idle':
-                case 'active':
-                case 'startedTyping':
-                case 'stoppedTyping':
-                case 'cancelledTyping':
-                    
-                // TODO: render these, but make them look better somehow
-                case 'join':
-                case 'leave':
-                    return;
-            }
-    
-            // avoid duplicates
-            if ( $( '#' + message._id ).length != 0 )
-            {
-                return;
-            }
-            
-            // TODO: move this to a handler
-            message.processed = message.content == null ? null : linkify( message.content,  {
-                callback: function(text, href) {
-                    return processTextHref(text, href);
-                }
-            });
-    
-            message.time = moment( message.createdAt ).fromNow( true );
-            dust.render( 'message', message, function( error, output ) {
-                if ( error )
-                {
-                    self.app.ShowError( error );
-                    return;
-                }
-                
-                var renderedMessage = $( output ).appendTo( '#chatlog' );
-                self.app.events.emit( 'message rendered', message, renderedMessage );
-                
-                $( '#submit-message' ).button( 'reset' );
-            });
+            self.RenderMessage( message, true );
         });
         
         self.UpdateMessageTimes();
+    }
+
+    self.RenderMessage = function( message, append ) {
+        switch( message.kind )
+        {
+            case 'idle':
+            case 'active':
+            case 'startedTyping':
+            case 'stoppedTyping':
+            case 'cancelledTyping':
+                
+            // TODO: render these, but make them look better somehow
+            case 'join':
+            case 'leave':
+                return;
+        }
+
+        // avoid duplicates
+        if ( $( '#' + message._id ).length != 0 )
+        {
+            return;
+        }
+        
+        // TODO: move this to a handler
+        message.processed = message.content == null ? null : linkify( message.content,  {
+            callback: function(text, href) {
+                return processTextHref(text, href);
+            }
+        });
+
+        message.time = moment( message.createdAt ).fromNow( true );
+        dust.render( 'message', message, function( error, output ) {
+            if ( error )
+            {
+                self.app.ShowError( error );
+                return;
+            }
+            
+            var renderedMessage = null;
+            if ( append )
+            {
+                renderedMessage = $( '#chatlog' ).append( output );
+            }
+            else
+            {
+                renderedMessage = $( '#chatlog' ).prepend( output );
+            }
+            
+            self.app.events.emit( 'message rendered', message, renderedMessage );
+            
+            $( '#submit-message' ).button( 'reset' );
+        });
     }
     
     self.UpdateMessageTimes = function() {
