@@ -97,44 +97,15 @@
             .wait( function() {
                 try
                 {
-                    var theApp = new App( '/api/1.0' );
-
                     var theRouter = new Router().configure({
                         notfound: function() {
                             console.log( 'route not found: ' + window.location );
                         }
                     });
-            
-                    var subsystems = [
-                        new UserManager(),
-                        new Home(),
-                        new Room(),
-                        new Rooms(),
-                        new MyRooms(),
-                        new CreateRoom(),
-                        new ManageRoom(),
-                        new SignUp(),
-                        new Settings(),
-                        
-                        // chat
-                        
-                        new MessageRenderer(),
-                        new UserlistManager(),
-                        new MessageHistory(),
-                        new NameHighlighter(),
-                        new ScrollHandler(),
-                        new TypingStatus(),
-                        new TabCompletion()
-                    ];
-            
-                    for ( var index = 0; index < subsystems.length; ++index )
-                    {
-                        if ( typeof( subsystems[ index ].Bind ) == 'function' )
-                        {
-                            subsystems[ index ].Bind( theApp, theRouter );
-                        }
-                    }
-                    
+
+                    var theApp = new App( '/api/1.0', theRouter );
+
+                    theApp.Bind();
                     theApp.Start();
                     theRouter.init(); // start routing
                     
@@ -143,13 +114,6 @@
                         window.location.hash = '/';
                     }
             
-                    for ( var index = 0; index < subsystems.length; ++index )
-                    {
-                        if ( typeof( subsystems[ index ].Start ) == 'function' )
-                        {
-                            subsystems[ index ].Start();
-                        }
-                    }
                 }
                 catch( e )
                 {

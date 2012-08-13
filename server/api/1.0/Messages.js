@@ -59,27 +59,15 @@ var Messages = function() {
             
             if ( typeof( request.param( 'since' ) ) != 'undefined' )
             {
-                query.$gt( 'createdAt', request.param( 'since' ) );
+                query.gt( 'createdAt', request.param( 'since' ) );
             }
             
             if ( typeof( request.param( 'before' ) ) != 'undefined' )
             {
-                query.$lt( 'createdAt', request.param( 'before' ) );
+                query.lt( 'createdAt', request.param( 'before' ) );
             }
     
-            var sort = request.param( 'sort', 'asc' );
-            switch( sort )
-            {
-                case 'asc':
-                    query.asc( 'createdAt' );
-                    break;
-                case 'desc':
-                    query.desc( 'createdAt' );
-                    break;
-                default:
-                    response.json( 'Sort order must be \'asc\' or \'desc\'.', 400 );
-                    return;
-            }
+            query.sort( { 'createdAt': request.param( 'sort', 'asc' ) } );
             
             query.exec( function( error, messages ) {
                 if ( error )

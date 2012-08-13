@@ -51,6 +51,16 @@ var Room = function() {
                         }
                         
                         $( '#main' ).html( output );
+                        
+                        if ( self.app.room.features.logs )
+                        {
+                            $( '#load-more-button' ).show();
+                        }
+                        else
+                        {
+                            $( '#load-more-button' ).hide();
+                        }
+                        
                         $( '#main' ).spin( false );
                     });
                 });
@@ -75,6 +85,43 @@ var Room = function() {
                 event.preventDefault();
                 event.stopPropagation();
                 self.SendMessage();
+            }
+        });
+
+        $( document ).on( 'click', '#load-more-button', function( event ) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if ( self.app.room && self.app.room.features.logs )
+            {
+                $( '#load-more-button' ).button( 'loading' );
+                
+                var oldestMessageDate = $( '#chatlog' ).find( '.message:first' ).attr( 'time' );
+                jsonCall({
+                    url: self.app.room.urls.messages,
+                    type: 'GET',
+                    data: {
+                        sort: 'desc',
+                        before: oldestMessageDate,
+                        kinds: 'say'
+                    },
+                    success: function( messages ) {
+                        
+                        var messageRenderer = self.app.GetSubsystem( MessageRenderer );
+                        if ( messageRenderer )
+                        {
+                            for ( var index = 0; index < messages.length; ++index )
+                            {
+                                messageRenderer.RenderMessage( messages[ index ], false );
+                            }
+                        }
+
+                        $( '#load-more-button' ).button( 'reset' );
+                    },
+                    error: function( xhr ) {
+                        $( '#load-more-button' ).button( 'reset' );
+                    }
+                });
             }
         });
     }
