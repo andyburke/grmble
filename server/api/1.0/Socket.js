@@ -116,7 +116,9 @@ var Socket = function() {
 			    {
 				client.json.send({
 				    kind: 'error',
-				    error: error
+				    errorobj: error,
+				    error: 'message save failed',
+				    message: 'Failed to save message into database.'
 				});
 				return;
 			    }
