@@ -1,0 +1,21 @@
+<div class="page-header">
+    <h1>My Rooms <small>Rooms which you own.</small></h1>
+</div>
+<div class="row-fluid">
+    <div class="span8">
+        <table class="zebra-striped">
+            <tr>
+                <th>Room</th>
+                <th>Description</th>
+                <th></th>
+            </tr>
+            {#rooms}
+                <tr>
+                    <td><a href="#/Room/{_id}">{name}</a></td>
+                    <td>{description}</td>
+                    <td><a href="#/ManageRoom/{_id}">[settings]</a></td>
+                </tr>
+            {/rooms}
+        </table>
+    </div>
+</div>

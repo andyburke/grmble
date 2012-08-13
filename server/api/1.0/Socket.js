@@ -1,6 +1,8 @@
 var models = require( './models.js' );
 var checks = require( './checks.js' );
 
+var mongoose = require( 'mongoose' );
+
 var Socket = function() {
     var self = this;
     
@@ -83,6 +85,7 @@ var Socket = function() {
 		    }
 		    
 		    var newMessage = new models.Message();
+		    newMessage._id = new mongoose.Schema.ObjectId(); // pre-populate this, since we may not save the message to the db
 		    newMessage.roomId = message.roomId;
 		    newMessage.senderId = message.senderId;
 		    newMessage.clientId = client.id;
@@ -105,109 +108,112 @@ var Socket = function() {
 			    newMessage.content = 'Left the room.';
 			}
 		    }
-	
-		    newMessage.save( function( error ) {
-			if ( error )
-			{
-			    client.json.send({
-				kind: 'error',
-				error: error
-			    });
-			    return;
-			}
+		    
+		    if ( room.features.logs )
+		    {
+			newMessage.save( function( error ) {
+			    if ( error )
+			    {
+				client.json.send({
+				    kind: 'error',
+				    error: error
+				});
+				return;
+			    }
+			});
+		    }
 			
-			if ( !self.rooms[ room._id ] )
-			{
-			    self.rooms[ room._id ] = {
-				'users': {},
-				'clients': []
-			    };
-			}
+		    if ( !self.rooms[ room._id ] )
+		    {
+			self.rooms[ room._id ] = {
+			    'users': {},
+			    'clients': []
+			};
+		    }
     
-			// TODO: support for private messages? kind = private, need a target user id?
-			for ( var clientIndex = 0; clientIndex < self.rooms[ room._id ][ 'clients' ].length; ++clientIndex )
+		    // TODO: support for private messages? kind = private, need a target user id?
+		    for ( var clientIndex = 0; clientIndex < self.rooms[ room._id ][ 'clients' ].length; ++clientIndex )
+		    {
+			try
 			{
-						    try
+			    var otherClient = self.rooms[ room._id ][ 'clients' ][ clientIndex ];
+
+			    if ( newMessage.kind == 'join' && otherClient == client )
 			    {
-				var otherClient = self.rooms[ room._id ][ 'clients' ][ clientIndex ];
-    
-				if ( newMessage.kind == 'join' && otherClient == client )
-				{
-				    continue;
-				}
-							    
-				otherClient.json.send( newMessage );
+				continue;
 			    }
-			    catch( exception )
-			    {
-				// TODO: drop this connection, possibly create a 'leave' message?
-			    }
+							
+			    otherClient.json.send( newMessage );
 			}
+			catch( exception )
+			{
+			    // TODO: drop this connection, possibly create a 'leave' message?
+			}
+		    }
 	
-			if ( message.kind == 'join' )
+		    if ( message.kind == 'join' )
+		    {
+			self.rooms[ room._id ][ 'clients' ].push( client );
+			self.rooms[ room._id ][ 'users' ][ client.id ] = {
+			    clientId: client.id,
+			    userid: newMessage.senderId,
+			    nickname: newMessage.nickname,
+			    userHash: newMessage.userHash,
+			    facebookId: newMessage.facebookId,
+			    twitterId: newMessage.twitterId,
+			    avatar: newMessage.avatar
+			};
+			
+			var users = [];
+			for ( var id in self.rooms[ room._id ][ 'users' ] )
 			{
-			    self.rooms[ room._id ][ 'clients' ].push( client );
-			    self.rooms[ room._id ][ 'users' ][ client.id ] = {
-				clientId: client.id,
-				userid: newMessage.senderId,
-				nickname: newMessage.nickname,
-				userHash: newMessage.userHash,
-				facebookId: newMessage.facebookId,
-				twitterId: newMessage.twitterId,
-				avatar: newMessage.avatar
-			    };
-			    
-			    var users = [];
-			    for ( var id in self.rooms[ room._id ][ 'users' ] )
+			    users.push( self.rooms[ room._id ][ 'users' ][ id ] );
+			}
+
+			client.emit( 'userlist', { users: users } );
+			
+			// TODO: the performance on this will likely be terrible as rooms grow,
+			//       we really need a better way to get the last N messages and send
+			//       them to the client in the proper order
+			
+			// Send existing messages in room
+			var kinds = [ 'say' ]; //, 'join', 'leave' ];
+			models.Message.count( { roomId: room._id, kind: { $in: kinds } }, function( error, numMessages ) {
+			    if ( error )
 			    {
-				users.push( self.rooms[ room._id ][ 'users' ][ id ] );
+				client.json.send({
+				    kind: 'error',
+				    error: error
+				});
+				return;
 			    }
-    
-			    client.emit( 'userlist', { users: users } );
+
+			    var query = models.Message.find({
+				roomId: room._id,
+				kind: { $in: kinds }
+			    });
 			    
-			    // TODO: the performance on this will likely be terrible as rooms grow,
-			    //       we really need a better way to get the last N messages and send
-			    //       them to the client in the proper order
+			    if ( numMessages > 100 )
+			    {
+				query.skip( numMessages - 100 );
+			    }
+
+			    query.sort( 'createdAt' );
 			    
-			    // Send existing messages in room
-			    var kinds = [ 'say' ]; //, 'join', 'leave' ];
-			    models.Message.count( { roomId: room._id, kind: { $in: kinds } }, function( error, numMessages ) {
-				if ( error )
-				{
-				    client.json.send({
-					kind: 'error',
-					error: error
-				    });
-				    return;
-				}
-    
-				var query = models.Message.find({
-				    roomId: room._id,
-				    kind: { $in: kinds }
-				});
-				
-				if ( numMessages > 100 )
-				{
-				    query.skip( numMessages - 100 );
-				}
-    
-				query.sort( 'createdAt' );
-				
-				var stream = query.stream();
-				
-				stream.on( 'data', function( message ) {
-				    client.json.send( message );
-				});
-				
-				stream.on( 'error', function( error ) {
-				    client.json.send({
-					kind: 'error',
-					error: error
-				    });
+			    var stream = query.stream();
+			    
+			    stream.on( 'data', function( message ) {
+				client.json.send( message );
+			    });
+			    
+			    stream.on( 'error', function( error ) {
+				client.json.send({
+				    kind: 'error',
+				    error: error
 				});
 			    });
-			}
-		    });
+			});
+		    }
 		});
 	    });
 	});

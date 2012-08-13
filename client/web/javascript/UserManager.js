@@ -12,7 +12,7 @@ var UserManager = function() {
             event.preventDefault();    
             var form = $( this ).parents( 'form:first' );
         
-            var email = $( form ).find( "input[type=text][name=email]" ).val();
+            var email = $( form ).find( "input[type=text][name=email]" ).val().trim();
             var password = $( form ).find( "input[type=password][name=password]" ).val();
         
             if ( !email.length || !password.length )
@@ -42,15 +42,6 @@ var UserManager = function() {
                         $(form).spin( false );
                     },
                     error: function( response, status, error ) {
-                        if ( response.status == 403 )
-                        {
-                            alert( 'Invalid password!' );
-                        }
-                        else if ( response.status == 404 )
-                        {
-                            alert( 'Could not locate an account with this email.' );
-                        }
-                        
                         $(form).spin( false );
                         self.app.ShowError( response.responseText );
                     }
