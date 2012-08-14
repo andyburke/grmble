@@ -15,6 +15,32 @@ var censor = exports.censor = function ( object, fields )
     return censored;
 }
 
+var update = exports.update = function( object, parameters, handlers ) {
+    for ( var key in handlers )
+    {
+        object[ key ] = handlers[ key ]( object, parameters );
+    }
+
+    for ( var key in ( object._doc || object ) )
+    {
+        if ( ( key in parameters ) && ( !handlers || !( key in handlers ) ) )
+        {
+            object[ key ] = parameters[ key ];
+        }
+    }
+    
+    if ( typeof( object.schema ) != 'undefined' )
+    {
+        for ( var key in object.schema.paths )
+        {
+            if ( !( key in ( object._doc || object ) ) && ( key in parameters ) )
+            {
+                object[ key ] = parameters[ key ];
+            }
+        }
+    }
+}
+
 exports.AuthTokenSchema = new mongoose.Schema({
     token: { type: String, unique: true, index: true },
     owner: { type: mongoose.Schema.ObjectId, index: true },
@@ -64,3 +90,9 @@ exports.MessageSchema = new mongoose.Schema({
 });
 exports.MessageSchema.plugin( SimpleTimestamps );
 exports.Message = mongoose.model( 'Message', exports.MessageSchema );
+
+exports.StripeEventRecordSchema = new mongoose.Schema({
+    json: { type: String } 
+});
+exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
+exports.StripeEventRecord = mongoose.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
