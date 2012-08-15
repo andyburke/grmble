@@ -155,37 +155,49 @@ var ManageRoom = function() {
                 // only send if toBeUpdated has at least one key
                 for ( var key in toBeUpdated )
                 {
-                    $(button).button( 'loading' );
-                    $(form).spin( 'medium' );
-
                     self.app.GetMe( function( user ) {
 
+                        function UpdateRoom() {
+                            $(button).button( 'loading' );
+                            $(form).spin( 'medium' );
+
+                            jsonCall({
+                                url: room.urls.self,
+                                type: 'PUT',
+                                data: toBeUpdated,
+                                success: function( room ) {
+                                    self.app.rooms[ room._id ] = room;
+                                    $(form).spin( false );
+                                    $(button).button( 'complete' );
+                                    setTimeout( function() {
+                                        $(button).button( 'reset' );
+                                    }, 2000 );
+                                },
+                                error: function( response, status, error ) {
+                                    $(form).spin( false );
+                                    self.app.ShowError( response.responseText );
+                                    $(button).button( 'reset' );
+                                }
+                            });
+                        }
+                    
                         var total = GetTotal();
-                        if ( total > 0 && !user.stripeToken )
+                        if ( total > 0 && !user.stripe )
                         {
-                            // TODO: popup for CC info
-                            self.app.ShowError( "You need billing!" );
+                            var billing = self.app.GetSubsystem( Billing );
+                            function HandleBillingUpdated() {
+                                billing.HideBillingModal();
+                                UpdateRoom();
+                                self.app.events.removeListener( 'user billing updated', HandleBillingUpdated );
+                            }
+                            self.app.events.addListener( 'user billing updated', HandleBillingUpdated )
+                            billing.ShowBillingModal( 'We need your billing info for the changes you\'ve made to your plan.  Please enter it below.' );
                             return;
                         }
-                        
-                        jsonCall({
-                            url: room.urls.self,
-                            type: 'PUT',
-                            data: toBeUpdated,
-                            success: function( room ) {
-                                self.app.rooms[ room._id ] = room;
-                                $(form).spin( false );
-                                $(button).button( 'complete' );
-                                setTimeout( function() {
-                                    $(button).button( 'reset' );
-                                }, 2000 );
-                            },
-                            error: function( response, status, error ) {
-                                $(form).spin( false );
-                                self.app.ShowError( response.responseText );
-                                $(button).button( 'reset' );
-                            }
-                        });
+                        else
+                        {
+                            UpdateRoom();
+                        }
                     });
                     break; // we break, no matter what, because we just wanted to see if there was a key in toBeUpdated
                 }
