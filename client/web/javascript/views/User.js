@@ -12,23 +12,34 @@ var User = function() {
             mixpanel.track( "View: User" );
             self.app.events.emit( 'navigated', 'user' );
             
-            self.app.GetMe( function( user ) {
-                if ( !user )
+            self.app.GetMe( function( me ) {
+                if ( !me )
                 {
-                    self.app.ShowError( 'You must be logged in.', function() {
-                        window.location.hash = '/'; 
-                    });
+                    $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
                     return;
                 }
 
-                dust.render( 'user', user, function( error, output ) {
-                    if ( error )
+                $( '#main' ).spin( 'large' );
+                self.app.GetUser( userId, function( user, error ) {
+                    $( '#main' ).spin( false );
+					
+					if ( error )
                     {
                         self.app.ShowError( error );
                         return;
                     }
-                
-                    $( '#main' ).html( output );
+
+                    document.title = user.nickname + "'s Public Profile on Grmble";
+
+                    dust.render( 'user', user, function( error, output ) {
+                        if ( error )
+                        {
+                            self.app.ShowError( error );
+                            return;
+                        }
+
+                        $( '#main' ).html( output );
+                    });
                 });
             });
         });
