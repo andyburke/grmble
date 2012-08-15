@@ -1,6 +1,3 @@
-var models = require( './models.js' );
-var checks = require( './checks.js' );
-
 var mongoose = require( 'mongoose' );
 
 var Rooms = function() {
@@ -30,11 +27,11 @@ var Rooms = function() {
         app.post( '/api/1.0/Room', checks.user, function( request, response ) {
             
             var room = new models.Room();
-            room.name = request.param( 'name' );
-            room.description = request.param( 'description', '' );
-            room.tags = request.param( 'tags' ) || [];
-            room.ownerId = request.user._id;
-            room.isPublic = request.param( 'isPublic', true );
+            models.update( room, request.body, {
+                ownerId: function( obj, params ) {
+                    return request.user._id;
+                }
+            });
         
             room.save( function( error ) {
                 if ( error )
@@ -68,7 +65,7 @@ var Rooms = function() {
         app.put( '/api/1.0/Room/:roomId', checks.user, checks.ownsRoom, function( request, response ) {
             
             models.update( request.room, request.body );
-        
+            
             request.room.save( function( error ) {
                 if ( error )
                 {

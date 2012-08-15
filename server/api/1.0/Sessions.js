@@ -1,6 +1,3 @@
-var models = require( './models.js' );
-var checks = require( './checks.js' );
-
 var Sessions = function() {
     var self = this;
     
@@ -33,7 +30,7 @@ var Sessions = function() {
                     authToken = new models.AuthToken();
                     authToken.token = utils.security.GenerateAuthToken( request.user );
                     authToken.expires = expires;
-                    authToken.owner = request.user._id;
+                    authToken.ownerId = request.user._id;
                     authToken.save( function( error ) {
                         if ( error )
                         {

@@ -1,6 +1,31 @@
 var mongoose = require( 'mongoose' );
 var SimpleTimestamps = require( 'mongoose-SimpleTimestamps' ).SimpleTimestamps;
 
+var dbURI = 'mongodb://' + config.db.host + ':' + config.db.port + '/' + config.db.name;
+log.channels.db.info( 'Connecting to: ' + dbURI );
+
+var connection = exports.connection = mongoose.createConnection( dbURI );
+
+connection.on( 'error', function( error ) {
+    log.channels.db.error( error );
+});
+
+connection.on( 'connected', function() {
+    log.channels.db.info( 'Connected to db.' ); 
+});
+
+connection.on( 'disconnected', function() {
+    log.channels.db.info( 'Disconnected from db.' ); 
+});
+
+connection.on( 'open', function() {
+    log.channels.db.info( 'DB connection open.' );
+});
+
+connection.on( 'close', function() {
+    log.channels.db.info( 'DB connection closed.' );
+});
+
 // TODO: make this be on the mongoose model prototype
 var censor = exports.censor = function ( object, fields )
 {
@@ -43,11 +68,11 @@ var update = exports.update = function( object, parameters, handlers ) {
 
 exports.AuthTokenSchema = new mongoose.Schema({
     token: { type: String, unique: true, index: true },
-    owner: { type: mongoose.Schema.ObjectId, index: true },
+    ownerId: { type: mongoose.Schema.ObjectId, index: true },
     expires: { type: Date, default: null }
 });
 exports.AuthTokenSchema.plugin( SimpleTimestamps );
-exports.AuthToken = mongoose.model( 'AuthToken', exports.AuthTokenSchema );
+exports.AuthToken = connection.model( 'AuthToken', exports.AuthTokenSchema );
 
 exports.UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, index: true },
@@ -60,7 +85,7 @@ exports.UserSchema = new mongoose.Schema({
     avatar: { type: String }
 });
 exports.UserSchema.plugin( SimpleTimestamps );
-exports.User = mongoose.model( 'User', exports.UserSchema );
+exports.User = connection.model( 'User', exports.UserSchema );
 
 exports.RoomSchema = new mongoose.Schema({
     name: { type: String, index: true },
@@ -75,7 +100,7 @@ exports.RoomSchema = new mongoose.Schema({
     }
 });
 exports.RoomSchema.plugin( SimpleTimestamps );
-exports.Room = mongoose.model( 'Room', exports.RoomSchema );
+exports.Room = connection.model( 'Room', exports.RoomSchema );
 
 exports.MessageSchema = new mongoose.Schema({
     roomId: { type: mongoose.Schema.ObjectId, index: true },
@@ -88,10 +113,10 @@ exports.MessageSchema = new mongoose.Schema({
     content: { type: String }
 });
 exports.MessageSchema.plugin( SimpleTimestamps );
-exports.Message = mongoose.model( 'Message', exports.MessageSchema );
+exports.Message = connection.model( 'Message', exports.MessageSchema );
 
 exports.StripeEventRecordSchema = new mongoose.Schema({
     json: { type: String } 
 });
 exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
-exports.StripeEventRecord = mongoose.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
+exports.StripeEventRecord = connection.model( 'StripeEventRecord', exports.StripeEventRecordSchema );

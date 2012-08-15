@@ -1,6 +1,3 @@
-var models = require( './models.js' );
-var checks = require( './checks.js' );
-
 var Messages = function() {
     var self = this;
 

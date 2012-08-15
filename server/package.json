@@ -13,7 +13,11 @@
     "password-hash": "1.2.x",
     "dustjs-linkedin": "1.0.x",
     "node.extend": "1.0.x",
-    "stripe": "1.2.x"
+    "stripe": "1.2.x",
+    "winston": "0.6.x",
+    "winston-loggly": "0.6.x",
+    "datetime": "0.0.x",
+    "node-fs": "0.1.x"
   },
   "engine": "node >= 0.6.6"
 }
