@@ -7,6 +7,7 @@ var App = function( apiURL, router ) {
     self.socket = null;
 
     self.user = null;
+	self.users = {};
     
     self.room = null;
     self.rooms = {};
@@ -27,6 +28,7 @@ var App = function( apiURL, router ) {
         new ManageRoom(),
         new SignUp(),
         new Settings(),
+        new User(),
         
         // chat
         
@@ -191,6 +193,28 @@ var App = function( apiURL, router ) {
                 callback( null );
             }
         });        
+    }
+
+    self.GetUser = function( userId, callback ) {
+        if ( self.users[ userId ] )
+        {
+            callback( self.users[ userId ] );
+            return;
+        }
+        
+        self.GetAPI( function( api ) {
+            jsonCall({
+                url: api.user + '/' + userId,
+                type: 'GET',
+                success: function( user ) {
+                    self.users[ user._id ] = user;
+                    callback( user );
+                },
+                error: function( xhr ) {
+                    callback( null, xhr.responseText );
+                }
+            });
+        });
     }
     
     self.GetRoom = function( roomId, callback ) {
