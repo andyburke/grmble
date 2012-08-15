@@ -111,9 +111,6 @@ var Users = function() {
                     },
                     'passwordHash': function( obj, params ) {
                         return typeof( params[ 'password' ] ) != 'undefined' ? passwordHash.generate( params[ 'password' ] ) : obj.passwordHash;
-                    },
-                    'stripe': function( obj, params ) {
-                        return obj.stripe; // can only be set by the server
                     }
                 });
         

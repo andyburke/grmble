@@ -6,13 +6,13 @@
                 <div class="control-group">
                     <label class="control-label" for="textarea">Card Number</label>
                     <div class="controls">
-                        <input class="input-xlarge" id="card-number" name="card-number" type="text" autocomplete="off" value="{?stripe}XXXX-XXXX-XXXX-{stripe.card.last4}{/stripe}" />
+                        <input class="input-medium" id="card-number" name="card-number" type="text" autocomplete="off" value="{?stripe}XXXX-XXXX-XXXX-{stripe.card.last4}{/stripe}" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
                     <label class="control-label" for="textarea">CVC</label>
                     <div class="controls">
-                        <input class="input-xsmall" id="card-cvc" name="card-cvc" type="text" autocomplete="off" value="{?stripe}XXX{/stripe}" />
+                        <input class="input-small" id="card-cvc" name="card-cvc" type="text" autocomplete="off" value="{?stripe}XXX{/stripe}" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
