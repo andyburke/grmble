@@ -1,4 +1,3 @@
-var models = require( './models.js' );
 var passwordHash = require( 'password-hash' );
 
 var crypto = require( 'crypto' );
@@ -17,7 +16,7 @@ function HandleAuthToken( authToken, request, response, next ) {
             return;
         }
         
-        models.User.findById( auth.owner, function( error, user ) {
+        models.User.findById( auth.ownerId, function( error, user ) {
             if ( error )
             {
                 response.json( error, 500 );

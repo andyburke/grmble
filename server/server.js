@@ -1,27 +1,54 @@
-// do not crash on uncuaght exceptions
 process.on( 'uncaughtException', function ( error ) {
-    console.log( error.stack );
+    console.error( error.stack ? error.stack : error );
+    if ( log && log.channels && log.channels.server )
+    {
+        log.channels.server.log( 'error', error );
+    }
+    process.exit( 1 );
 });
 
+global.config = require( './config/server.config.js' )
+
+var Logging = require( './lib/logging.js' );
+global.log = new Logging.Logger( config.logging );
+
 global.utils = require( './lib/utils.js' );
+
+process.env.TZ = 'UTC';
+log.channels.server.info( 'Server Timezone: ' + process.env.TZ );
 
 var express = require( 'express' );
 var events = require( 'events' );
 var extend = require( 'node.extend' );
 
-var dbHost = process.env[ 'MONGO_HOST' ] != null ? process.env[ 'MONGO_HOST' ] : 'localhost';
-var dbPort = process.env[ 'MONGO_PORT' ] != null ? process.env[ 'MONGO_PORT' ] : 27017;
-var dbName = process.env[ 'GRUMBLE_DB' ] != null ? process.env[ 'GRUMBLE_DB' ] : 'grumble';
-
-var mongoose = require( 'mongoose' );
-mongoose.connect( dbHost, dbName, dbPort );
-
 var Io = require('socket.io')
 
+global.models = require( './lib/models.js' );
+global.checks = require( './lib/checks.js' );
+
+express.logger.token( 'bytes-written', function( request, response ) {
+    return response.req.client.bytesWritten;
+});
+
 var app = express.createServer(
-    express.static( __dirname + '/static' ),
+    express.logger({
+        format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
+        stream: {
+            write: function( str ) {
+                try
+                {
+                    log.channels.access.info( JSON.parse( str ) );
+                }
+                catch( e )
+                {
+                    log.channels.access.error( e.toString() );
+                }
+            }
+        }
+    }),
     express.bodyParser(),
-    express.cookieParser()
+    express.cookieParser(),
+    express.static( __dirname + '/../client/web' )
 );
 
 var io = Io.listen( app );
@@ -45,7 +72,8 @@ app.subsystems = [
     require( './api/1.0/Socket.js' ),
     require( './api/1.0/Messages.js' ),
     require( './api/1.0/Rooms.js' ),
-    require( './api/1.0/Stripe.js')
+    require( './api/1.0/Stripe.js' ),
+    require( './api/1.0/Pricing.js' )
 ];
 
 app.GetURLs = function() {
@@ -60,19 +88,6 @@ app.GetURLs = function() {
     
     return result;
 }
-
-app.use( express.static( __dirname + '/../client/web' ) );
-
-// prebindings for any use statements
-for ( var index = 0; index < app.subsystems.length; ++index )
-{
-    if ( typeof( app.subsystems[ index ].prebind ) != 'undefined' )
-    {
-        app.subsystems[ index ].prebind( app, __dirname );
-    }
-}
-
-app.use( express.staticCache() ); // cache our static files
 
 app.WithURLs = function( request, ref, postprocess ) {
     function AddURLs( obj ) {
@@ -110,11 +125,19 @@ app.WithURLs = function( request, ref, postprocess ) {
         return AddURLs( ref );
 }
 
+// prebindings for any use statements
+for ( var index = 0; index < app.subsystems.length; ++index )
+{
+    if ( typeof( app.subsystems[ index ].prebind ) != 'undefined' )
+    {
+        app.subsystems[ index ].prebind( app, __dirname );
+    }
+}
+
 for ( var index = 0; index < app.subsystems.length; ++index )
 {
     app.subsystems[ index ].bind( app, io );
 }
 
-var port = process.env[ 'GRUMBLE_PORT' ] || 8000;
-console.log( 'Server loaded, listening on port ' + port + ' ...' );
-app.listen( port );
+console.log( 'Server loaded, listening on port ' + config.server.port + ' ...' );
+app.listen( config.server.port );

@@ -1,5 +1,3 @@
-var models = require( './models.js' );
-var checks = require( './checks.js' );
 var crypto = require( 'crypto' );
 var passwordHash = require( 'password-hash' );
 
@@ -75,7 +73,7 @@ var Users = function() {
                     var authToken = new models.AuthToken();
                     authToken.token = utils.security.GenerateAuthToken( user );
                     authToken.expires = expires;
-                    authToken.owner = user._id;
+                    authToken.ownerId = user._id;
                     authToken.save( function( error ) {
                         if ( error )
                         {
