@@ -25,6 +25,20 @@ function processTextHref(text, href) {
         {
             return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
         }
+		else if ( href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i ) )
+		{
+			var matched = href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i );
+            console.log("FOUND A SPOTIFY: " + matched);
+			
+			if ( matched && matched.length == 2 )
+            {
+                return '<iframe src="https://embed.spotify.com/?theme=white&view=coverart&uri=spotify:track:' + matched[1] + '" width="250" height="80" frameborder="0" allowtransparency="true"></iframe>';
+            }
+            else
+            {
+                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+            }
+		}
         else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
         {
             var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
