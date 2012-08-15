@@ -68,9 +68,10 @@
 
             .wait() // wait for all our stock libs to be downloaded
             
-            .script( "/javascript/utils.js" )
-
-            .script( "/javascript/UserManager.js" )
+            .script( "/javascript/app/utils.js" )
+            .script( "/javascript/app/UserManager.js" )
+            .script( "/javascript/app/ConnectionStatus.js" )
+            .script( "/javascript/app/Stripe.js" )
 
             .script( "/javascript/chat/IdleHandler.js" )
             .script( "/javascript/chat/MessageRenderer.js" )
@@ -91,7 +92,6 @@
             .script( "/javascript/views/SignUp.js" )
             .script( "/javascript/views/Settings.js" )
 
-            .script( "/javascript/ConnectionStatus.js" )
             .script( "/javascript/app.js" )
 
             .wait( function() {
