@@ -61,7 +61,7 @@
             </fieldset>
         </form>
     </div>
-    <div class="span4">
+    <div id="cc-entry-container" class="span4">
         {>cc_entry/}
     </div>
 </div>

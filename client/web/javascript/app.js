@@ -15,6 +15,10 @@ var App = function( apiURL, router ) {
 
     self.subsystems = [
         new UserManager(),
+        new Billing(),
+        
+        // views
+        
         new Home(),
         new Room(),
         new Rooms(),
