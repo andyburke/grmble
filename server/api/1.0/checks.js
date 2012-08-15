@@ -136,7 +136,7 @@ exports.ownsRoom = function( request, response, next ) {
             return;
         }
         
-        if ( room.owners.indexOf( request.user._id ) == -1 )
+        if ( !room.ownerId.equals( request.user._id ) )
         {
             response.json( 'You are not authorized to access this resource.', 403 );
             return;

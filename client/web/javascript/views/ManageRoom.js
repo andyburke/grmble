@@ -1,10 +1,15 @@
-function UpdateTotal() {
+function GetTotal() {
     var total = 0;
     var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
     var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
     users = users > 100 ? -1 : users;
     total += logs ? 1 : 0;
     total += users > 0 ? ( ( users - 10 ) / 10 ) : 25;
+    return total;
+}
+
+function UpdateTotal() {
+    var total = GetTotal();
     total = total > 0 ? ( '$' + total + ' / Month' ) : 'Free!';
     $( '#total-cost' ).html( total );
 }
@@ -104,29 +109,6 @@ var ManageRoom = function() {
 
                     UpdateLogs();
                     UpdateUserCount();
-
-                    $( '#ownerlist' ).spin( 'medium' );
-    
-                    self.app.GetAPI( function( api ) {
-                        jsonCall({
-                            url: api.users,
-                            type: 'GET',
-                            data: {
-                                'users': room.owners.join( ',' )
-                            },
-                            success: function( owners ) {
-                                for ( var index = 0; index < owners.length; ++index )
-                                {
-                                    $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                                }
-                                $( '#ownerlist' ).spin( false ); 
-                            },
-                            error: function( response, status, error ) {
-                                $( '#ownerlist' ).spin( false );
-                                self.app.ShowError( response.responseText );
-                            }
-                        });
-                    });
                 });
             });
         });
@@ -175,26 +157,36 @@ var ManageRoom = function() {
                 {
                     $(button).button( 'loading' );
                     $(form).spin( 'medium' );
-            
-                    jsonCall({
-                        url: room.urls.self,
-                        type: 'PUT',
-                        data: toBeUpdated,
-                        success: function( room ) {
-                            self.app.rooms[ room._id ] = room;
-                            $(form).spin( false );
-                            $(button).button( 'complete' );
-                            setTimeout( function() {
-                                $(button).button( 'reset' );
-                            }, 2000 );
-                        },
-                        error: function( response, status, error ) {
-                            $(form).spin( false );
-                            self.app.ShowError( response.responseText );
-                            $(button).button( 'reset' );
+
+                    self.app.GetMe( function( user ) {
+
+                        var total = GetTotal();
+                        if ( total > 0 && !user.stripeToken )
+                        {
+                            // TODO: popup for CC info
+                            self.app.ShowError( "You need billing!" );
+                            return;
                         }
+                        
+                        jsonCall({
+                            url: room.urls.self,
+                            type: 'PUT',
+                            data: toBeUpdated,
+                            success: function( room ) {
+                                self.app.rooms[ room._id ] = room;
+                                $(form).spin( false );
+                                $(button).button( 'complete' );
+                                setTimeout( function() {
+                                    $(button).button( 'reset' );
+                                }, 2000 );
+                            },
+                            error: function( response, status, error ) {
+                                $(form).spin( false );
+                                self.app.ShowError( response.responseText );
+                                $(button).button( 'reset' );
+                            }
+                        });
                     });
-            
                     break; // we break, no matter what, because we just wanted to see if there was a key in toBeUpdated
                 }
             });
@@ -241,144 +233,5 @@ var ManageRoom = function() {
                 UpdateLogs();
             });
         });
-        
-        $( document ).on( 'click', '.add-room-owner-button', function( event ) {
-            event.preventDefault();
-            var button = this;    
-            var form = $( this ).parents( 'form:first' );
-            
-            $( button ).button( 'loading' );
-            var roomId = $( form ).find( '#roomId' ).val();
-            var hash = md5( $( form ).find( '#newowner' ).val().trim().toLowerCase() );
-        
-            self.app.GetRoom( roomId, function( room, error) {
-                if ( error )
-                {
-                    self.app.ShowError( error );
-                    return;
-                }
-
-                self.app.GetAPI( function( api ) {
-                    jsonCall({
-                        url: api.userbyhash + '/' + hash,
-                        type: 'GET',
-                        success: function( user ) {
-                            jsonCall({
-                                url: room.urls.owners + '/' + user._id,
-                                type: 'POST',
-                                success: function( room ) {
-                                    self.app.rooms[ room._id ] = room;
-            
-                                    $(button).button( 'complete' );
-                                    setTimeout( function() {
-                                        $(button).button( 'reset' );
-                                    }, 2000 );
-                                    
-                                    $( form ).find( '#newowner' ).val( '' );
-                        
-                                    $( '#ownerlist' ).spin( 'medium' );
-            
-                                    dust.render( 'owner_list', room, function( error, output ) {
-                                        if ( error )
-                                        {
-                                            self.app.ShowError( error );
-                                            return;
-                                        }
-                                    
-                                        $( '#ownerlist' ).html( output );
-                                    
-                                        self.app.GetAPI( function( api ) {
-                                            jsonCall({
-                                                url: api.users,
-                                                type: 'GET',
-                                                data: {
-                                                    'users': room.owners.join( ',' )
-                                                },
-                                                success: function( owners ) {
-                                                    for ( var index = 0; index < owners.length; ++index )
-                                                    {
-                                                        $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                                                    }
-                                                    $( '#ownerlist' ).spin( false );
-                                                },
-                                                error: function( response, status, error ) {
-                                                    $( '#ownerlist' ).spin( false );
-                                                    self.app.ShowError( response.responseText );
-                                                }
-                                            });
-                                        });
-                                    });
-                                },
-                                error: function( response, status, error ) {
-                                    $( button ).button( 'reset' );
-                                    self.app.ShowError( response.responseText );
-                                }
-                            });
-                        },
-                        error: function( xhr ) {
-
-                            $(button).button( 'reset' );
-                            
-                            if ( xhr.status == 404 )
-                            {
-                                self.app.ShowError( 'That user has not signed up, please invite them. TODO: improve this' );
-                                return;
-                            }
-
-                            self.app.ShowError( xhr.responseText );
-                        }
-                    });
-                });
-            });
-        });
-        
-        $( document ).on( 'click', '.remove-room-owner-link', function( event ) {
-            event.preventDefault();
-            var link = this;
-            
-            jsonCall({
-                url: link.href,
-                type: 'DELETE',
-                success: function( room ) {
-                    self.app.rooms[ room._id ] = room;
-                    
-                    $( '#ownerlist' ).spin( 'medium' );
-                    dust.render( 'owner_list', room, function( error, output ) {
-                        if ( error )
-                        {
-                            self.app.ShowError( error );
-                            return;
-                        }
-                    
-                        $( '#ownerlist' ).html( output );
-                    
-                        self.app.GetAPI( function( api ) {
-                            jsonCall({
-                                url: api.users,
-                                type: 'GET',
-                                data: {
-                                    'users': room.owners.join( ',' )
-                                },
-                                success: function( owners ) {
-                                    for ( var index = 0; index < owners.length; ++index )
-                                    {
-                                        $( '#' + owners[ index ]._id + '-nickname' ).html( owners[ index ].nickname );
-                                    }
-                                    $( '#ownerlist' ).spin( false ); 
-                                },
-                                error: function( response, status, error ) {
-                                    $( '#ownerlist' ).spin( false );
-                                    self.app.ShowError( response.responseText );
-                                }
-                            });
-                        });
-                    });
-                },
-                error: function( response, status, error ) {
-                    console.log( error );
-                }
-            });
-        });
-
     }
 }

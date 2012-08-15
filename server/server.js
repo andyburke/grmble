@@ -44,7 +44,8 @@ app.subsystems = [
     require( './api/1.0/Users.js' ),
     require( './api/1.0/Socket.js' ),
     require( './api/1.0/Messages.js' ),
-    require( './api/1.0/Rooms.js' )
+    require( './api/1.0/Rooms.js' ),
+    require( './api/1.0/Stripe.js')
 ];
 
 app.GetURLs = function() {
