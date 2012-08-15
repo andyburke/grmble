@@ -92,6 +92,7 @@
             .script( "/javascript/views/ManageRoom.js" )
             .script( "/javascript/views/SignUp.js" )
             .script( "/javascript/views/Settings.js" )
+            .script( "/javascript/views/User.js" )
 
             .script( "/javascript/app.js" )
 
@@ -137,7 +138,10 @@
     </head>
 
     <body>
-        <audio src="/sounds/message.mp3" id="message-sound"></audio>
+        <audio id="message-sound">
+        	<source src="/sounds/message.mp3" type="audio/mp3">
+			<source src="/sounds/message.ogg" type="audio/ogg">
+        </audio>
         
         <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
