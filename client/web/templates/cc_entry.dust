@@ -1,0 +1,30 @@
+<div class="row-fluid">
+    <div class="span7">
+        <h1>Billing Info</h1>
+        <form class="form">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="textarea">Card Number</label>
+                    <div class="controls">
+                        <input class="input-xlarge" id="card-number" name="card-number" type="text" autocomplete="off" value="{?stripe}XXXX-XXXX-XXXX-{stripe.card.last4}{/stripe}" />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="textarea">CVC</label>
+                    <div class="controls">
+                        <input class="input-xsmall" id="card-cvc" name="card-cvc" type="text" autocomplete="off" value="{?stripe}XXX{/stripe}" />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
+                    <label class="control-label" for="tags">Expiration (MM/YYYY)</label>
+                    <div class="controls">
+                        <input class="input-small" id="card-expiration" name="card-expiration" type="text" autocomplete="off" value="{?stripe}{stripe.card.exp_month}/{stripe.card.exp_year}{/stripe}"/>
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="form-actions">
+                    <button class="btn btn-primary save-card-button" data-loading-text="Saving..." data-complete-text="Saved!">Save</button>{?cancellable}&nbsp;<button class="btn cancel-card-button">Cancel</button>{/cancellable}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

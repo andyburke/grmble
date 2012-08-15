@@ -97,29 +97,35 @@ var Users = function() {
                 response.json( { 'error': 'permission denied', 'message': 'You do not have permission to modify this user.' }, 500 );
                 return;
             }
-    
+
+            var util = require( 'util' );    
             function save()
             {
-                models.User.findById( request.user._id, function( error, user ) {
-                    user.email = request.param( 'email', user.email ).trim().toLowerCase();
-                    user.hash = crypto.createHash( 'md5' ).update( user.email ).digest("hex");
-                    user.passwordHash = typeof( request.param( 'password' ) ) != 'undefined' ? passwordHash.generate( request.param( 'password' ) ) : user.passwordHash;
-                    user.nickname = request.param( 'nickname', user.nickname );
-                    user.location = request.param( 'location' , user.location );
-                    user.bio = request.param( 'bio', user.bio );
-                    user.avatar = request.param( 'avatar', user.avatar );
+                console.log( util.inspect( request.user ) );
+                models.update( request.user, request.body, {
+                    'email': function( obj, params ) {
+                        return params[ 'email' ] ? params[ 'email' ].trim().toLowerCase() : obj.email;
+                    },
+                    'hash': function( obj, params ) {
+                        return crypto.createHash( 'md5' ).update( obj.email ).digest( 'hex' );
+                    },
+                    'passwordHash': function( obj, params ) {
+                        return typeof( params[ 'password' ] ) != 'undefined' ? passwordHash.generate( params[ 'password' ] ) : obj.passwordHash;
+                    },
+                    'stripe': function( obj, params ) {
+                        return obj.stripe; // can only be set by the server
+                    }
+                });
         
-                    user.save( function( error ) {
-                        if ( error )
-                        {
-                            response.json( error, 500 );
-                            return;
-                        }
-                                            
-                        request.user = user;
-                        
-                        response.json( models.censor( app.WithURLs( request, user ), { 'passwordHash': true } ) );
-                    });
+                request.user.save( function( error ) {
+                    if ( error )
+                    {
+                        response.json( error, 500 );
+                        return;
+                    }
+
+                    console.log( util.inspect( request.user ) );
+                    response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
                 });
             }
             
@@ -168,7 +174,7 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 });
             }
             else
@@ -194,7 +200,7 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 });
             }
             else
@@ -217,7 +223,7 @@ var Users = function() {
                 var result = [];
                 for ( var index = 0; index < users.length; ++index )
                 {
-                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true } ) );
+                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 }
                 
                 response.json( result );
