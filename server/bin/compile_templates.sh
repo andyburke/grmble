@@ -1,0 +1,1 @@
+node compile_templates.js ../../client/web/templates/ ../../client/web/javascript/views/compiled_templates.js 
