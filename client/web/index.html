@@ -49,6 +49,7 @@
             $LAB
             .setOptions({
             })
+            .script( "https://js.stripe.com/v1/" )
             .script( "http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js" )
             .script( "http://cdnjs.cloudflare.com/ajax/libs/spin.js/1.2.4/spin.min.js" )
             .script( "http://cdnjs.cloudflare.com/ajax/libs/mustache.js/0.4.2/mustache.min.js" )
@@ -71,7 +72,7 @@
             .script( "/javascript/app/utils.js" )
             .script( "/javascript/app/UserManager.js" )
             .script( "/javascript/app/ConnectionStatus.js" )
-            .script( "/javascript/app/Stripe.js" )
+            .script( "/javascript/app/Billing.js" )
 
             .script( "/javascript/chat/IdleHandler.js" )
             .script( "/javascript/chat/MessageRenderer.js" )
@@ -97,6 +98,8 @@
             .wait( function() {
                 try
                 {
+                    Stripe.setPublishableKey( 'pk_0AdmZd4S9SyrQ1jVNqTRwMFbkTnIp' );
+
                     var theRouter = new Router().configure({
                         notfound: function() {
                             console.log( 'route not found: ' + window.location );
