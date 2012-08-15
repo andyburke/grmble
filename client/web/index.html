@@ -134,7 +134,10 @@
     </head>
 
     <body>
-        <audio src="/sounds/message.mp3" id="message-sound"></audio>
+        <audio id="message-sound">
+        	<source src="/sounds/message.mp3" type="audio/mp3">
+			<source src="/sounds/message.ogg" type="audio/ogg">
+        </audio>
         
         <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
