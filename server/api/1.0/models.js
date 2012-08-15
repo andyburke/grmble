@@ -56,8 +56,7 @@ exports.UserSchema = new mongoose.Schema({
     nickname: { type: String },
     location: { type: String },
     bio: { type: String },
-    facebookId: { type: String },
-    twitterId: { type: String },
+    stripe: { type: mongoose.Schema.Types.Mixed },
     avatar: { type: String }
 });
 exports.UserSchema.plugin( SimpleTimestamps );
@@ -67,7 +66,7 @@ exports.RoomSchema = new mongoose.Schema({
     name: { type: String, index: true },
     description: { type: String },
     tags: { type: Array, index: true },
-    owners: { type: Array, index: true },
+    ownerId: { type: mongoose.Schema.ObjectId, index: true },
     isPublic: { type: Boolean },
     features: {
         users: { type: Number, default: 10 },

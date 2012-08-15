@@ -111,6 +111,9 @@ var Users = function() {
                     },
                     'passwordHash': function( obj, params ) {
                         return typeof( params[ 'password' ] ) != 'undefined' ? passwordHash.generate( params[ 'password' ] ) : obj.passwordHash;
+                    },
+                    'stripe': function( obj, params ) {
+                        return obj.stripe; // can only be set by the server
                     }
                 });
         
@@ -171,7 +174,7 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 });
             }
             else
@@ -197,7 +200,7 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 });
             }
             else
@@ -220,7 +223,7 @@ var Users = function() {
                 var result = [];
                 for ( var index = 0; index < users.length; ++index )
                 {
-                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true } ) );
+                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
                 }
                 
                 response.json( result );

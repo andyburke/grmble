@@ -81,10 +81,4 @@
             </fieldset>
         </form>
     </div>
-    <div class="span4">
-        <h2>Owners</h2>
-        <div id="ownerlist">
-            {>owner_list/}
-        </div>
-    </div>
 </div>
