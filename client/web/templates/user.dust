@@ -1,0 +1,40 @@
+<div class="page-header">
+    <h1>Public Profile of {nickname}</h1>
+</div>
+<div class="row-fluid">
+    <div class="span8">
+        <form class="form-horizontal">
+          <fieldset>
+            <div class="control-group">
+                <div class="controls">
+                    <img id="user-avatar-preview" width="64" height="64" src="{^avatar}/images/icons/user_64x64.png{/avatar}{avatar}">
+                </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="email">Email</label>
+              <div class="controls">
+                {email}
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label class="control-label" for="nickname">Nickname</label>
+              <div class="controls">
+                {nickname}
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label class="control-label" for="location">Location</label>
+              <div class="controls">
+                {location}
+              </div>
+            </div><!-- /clearfix -->
+            <div class="control-group">
+              <label class="control-label" for="textarea">Bio</label>
+              <div class="controls">
+                {bio}
+              </div>
+            </div><!-- /clearfix -->
+            </fieldset>
+        </form>
+    </div>
+</div>
