@@ -122,7 +122,6 @@ var App = function( apiURL, router ) {
         
         self.connectionStatus = new ConnectionStatus( self.socket, '#server-connection-status' );
         
-
         for ( var index = 0; index < self.subsystems.length; ++index )
         {
             if ( typeof( self.subsystems[ index ].Start ) == 'function' )

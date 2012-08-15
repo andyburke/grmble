@@ -62,6 +62,7 @@ var Billing = function() {
                                 var oldUser = self.app.user;
                                 self.app.user = user;
                                 self.app.events.emit( 'user updated', self.app.user, oldUser );
+                                self.app.events.emit( 'user billing updated', self.app.user );
                                 
                                 dust.render( 'cc_entry', self.app.user, function( error, output ) {
                                     if ( error )
@@ -87,5 +88,47 @@ var Billing = function() {
                 }
             });
         });
+        
+        $( document ).on( 'click', '.cancel-card-button', function( event ) {
+            event.preventDefault();
+            self.app.HideBillingModal();
+        });        
     }
+
+    self.Start = function() {
+        // make sure we clear the form on hide
+        $( '#cc-modal' ).on( 'hidden', self.HideBillingModal );
+    }
+    
+    self.ShowBillingModal = function( reason ) {
+        self.app.GetMe( function( me ) {
+            $( '#cc-reason' ).html( reason );
+            dust.render( 'cc_entry', me, function( error, output ) {
+                if ( error )
+                {
+                    self.app.ShowError( error );
+                    return;
+                }
+            
+                $( '#cc-entry-container' ).html( output );
+                $( '#cc-modal' ).modal( { 'backdrop': 'static' } );
+            });
+        });
+    }
+    
+    self.HideBillingModal = function() {
+        self.app.GetMe( function( me ) {
+            dust.render( 'cc_entry', me, function( error, output ) {
+                if ( error )
+                {
+                    self.app.ShowError( error );
+                    return;
+                }
+            
+                $( '#cc-entry-container' ).html( output );
+            });
+        });
+        $( '#cc-modal' ).modal( 'hide' );
+    }
+
 }
