@@ -1,6 +1,6 @@
 var mongoose = require( 'mongoose' );
 
-var stripe = require( 'stripe' )( )
+var stripe = require( 'stripe' )( config.stripe.keys.test );
 
 var Rooms = function() {
     var self = this;
