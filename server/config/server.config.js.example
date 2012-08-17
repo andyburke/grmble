@@ -9,7 +9,7 @@ module.exports = {
         
         loggly: {
             subdomain: 'grumble',
-            inputToken: '90b1efe8-eddb-4826-a705-0f218aa1e720'
+            inputToken: '...'
         },
         
     },
@@ -23,5 +23,25 @@ module.exports = {
     
     mixpanel: {
         id: ''
+    },
+    
+    stripe: {
+        key: {
+            test: '...',
+            live: '...'
+        }
+    },
+    
+    pricing: {
+        logs: 5,
+        users: {
+            "10": 0,
+            "20": 2,
+            "30": 4,
+            "40": 6,
+            "50": 8,
+            "Unlimited": 25
+        },
+        search: 10
     }
 }
