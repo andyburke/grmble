@@ -1,5 +1,7 @@
 var mongoose = require( 'mongoose' );
 
+var stripe = require( 'stripe' )( )
+
 var Rooms = function() {
     var self = this;
 
@@ -64,7 +66,35 @@ var Rooms = function() {
     
         app.put( '/api/1.0/Room/:roomId', checks.user, checks.ownsRoom, function( request, response ) {
             
+            var oldCost = 0;
+            oldCost += request.room.features.logs ? config.pricing.logging : 0;
+            oldCost += config.pricing.users[ request.room.features.users ];
+            oldCost += request.room.features.search ? config.pricing.search : 0;
+            
             models.update( request.room, request.body );
+            
+            var totalCost = 0;
+            totalCost += request.room.features.logs ? config.pricing.logging : 0;
+            totalCost += config.pricing.users[ request.room.features.users ];
+            totalCost += request.room.features.search ? config.pricing.search : 0;
+
+            if ( totalCost > 0 && !request.user.stripe )
+            {
+                response.json( { 'error': 'no billing info', 'message': 'You must have billing info associated with your account to add these settings to your room.' }, 403 );
+                return;
+            }
+
+            if ( !request.user.stripeCustomer )
+            {
+                // TODO: create the customer
+            }
+
+            if ( oldCost > 0 )
+            {
+                // TODO: unsub from old plan
+            }
+            
+            // TODO: update to new plan
             
             request.room.save( function( error ) {
                 if ( error )
