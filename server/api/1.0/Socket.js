@@ -29,8 +29,6 @@ var Socket = function() {
 			newMessage.clientId = client.id;
 			newMessage.nickname = user.nickname;
 			newMessage.userHash = user.userHash;
-			newMessage.facebookId = user.facebookId;
-			newMessage.twitterId = user.twitterId;
 			newMessage.avatar = user.avatar;
 			newMessage.kind = 'leave';
 			newMessage.content = 'Left the room.';
@@ -156,8 +154,6 @@ var Socket = function() {
 			    userid: newMessage.senderId,
 			    nickname: newMessage.nickname,
 			    userHash: newMessage.userHash,
-			    facebookId: newMessage.facebookId,
-			    twitterId: newMessage.twitterId,
 			    avatar: newMessage.avatar
 			};
 			
