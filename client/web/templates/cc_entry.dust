@@ -6,19 +6,19 @@
                 <div class="control-group">
                     <label class="control-label" for="textarea">Card Number</label>
                     <div class="controls">
-                        <input class="input-medium" id="card-number" name="card-number" type="text" autocomplete="off" value="{?stripe}XXXX-XXXX-XXXX-{stripe.card.last4}{/stripe}" />
+                        <input class="input-medium" id="card-number" name="card-number" type="text" autocomplete="off" value="{?stripeToken}XXXX-XXXX-XXXX-{stripeToken.card.last4}{/stripeToken}" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
                     <label class="control-label" for="textarea">CVC</label>
                     <div class="controls">
-                        <input class="input-small" id="card-cvc" name="card-cvc" type="text" autocomplete="off" value="{?stripe}XXX{/stripe}" />
+                        <input class="input-small" id="card-cvc" name="card-cvc" type="text" autocomplete="off" value="{?stripeToken}XXX{/stripeToken}" />
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
                     <label class="control-label" for="tags">Expiration (MM/YYYY)</label>
                     <div class="controls">
-                        <input class="input-small" id="card-expiration" name="card-expiration" type="text" autocomplete="off" value="{?stripe}{stripe.card.exp_month}/{stripe.card.exp_year}{/stripe}"/>
+                        <input class="input-small" id="card-expiration" name="card-expiration" type="text" autocomplete="off" value="{?stripeToken}{stripeToken.card.exp_month}/{stripeToken.card.exp_year}{/stripeToken}"/>
                     </div>
                 </div><!-- /clearfix -->
                 <div class="form-actions">

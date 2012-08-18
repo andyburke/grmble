@@ -11,7 +11,7 @@ var Pricing = function() {
     self.bind = function( app ) {
 
         app.get( '/api/1.0/Pricing', function( request, response ) {
-            response.json( {} );
+            response.json( config.pricing );
         });
     }
 

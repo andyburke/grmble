@@ -56,7 +56,7 @@ var Billing = function() {
                             url: me.urls.self,
                             type: 'PUT',
                             data: {
-                                stripe: response
+                                stripeToken: response
                             },
                             success: function( user ) {
                                 var oldUser = self.app.user;

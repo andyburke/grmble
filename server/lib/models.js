@@ -81,7 +81,8 @@ exports.UserSchema = new mongoose.Schema({
     nickname: { type: String },
     location: { type: String },
     bio: { type: String },
-    stripe: { type: mongoose.Schema.Types.Mixed },
+    stripeToken: { type: mongoose.Schema.Types.Mixed },
+    stripeCustomer: { type: mongoose.Schema.Types.Mixed },
     avatar: { type: String }
 });
 exports.UserSchema.plugin( SimpleTimestamps );

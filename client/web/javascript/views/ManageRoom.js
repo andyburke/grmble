@@ -1,58 +1,3 @@
-function GetTotal() {
-    var total = 0;
-    var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
-    var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
-    users = users > 100 ? -1 : users;
-    total += logs ? 1 : 0;
-    total += users > 0 ? ( ( users - 10 ) / 10 ) : 25;
-    return total;
-}
-
-function UpdateTotal() {
-    var total = GetTotal();
-    total = total > 0 ? ( '$' + total + ' / Month' ) : 'Free!';
-    $( '#total-cost' ).html( total );
-}
-
-function UpdateLogs() {
-    var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
-    if ( logs )
-    {
-        $( '#logs-setting' ).html( 'Enabled ( $1/month )' );
-    }
-    else
-    {
-        $( '#logs-setting' ).html( 'No Logs ( Free! )' );
-    }
-    UpdateTotal();
-}
-
-function UpdateUserCount() {
-    var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
-    if ( users > 100 )
-    {
-        $( '#users-setting' ).html( 'Unlimited! ( $25/month )' );
-    }
-    else
-    {
-        if ( users < 10 )
-        {
-            users = 10;
-            $( '#users-slider' ).noUiSlider( 'move', {
-                knob: 1,
-                to: 10,
-                scale: [ 0, 110 ]
-            });
-        }
-        var cost = ( users - 10 ) / 10;
-        cost = ( cost > 0 ) ? ( cost + '$/month' ) : 'Free!';
-        $( '#users-setting' ).html( users + ' ( ' + cost + ' ) ' );
-    }
-
-    UpdateTotal();
-}
-
-
 var ManageRoom = function() {
     var self = this;
     
@@ -93,22 +38,21 @@ var ManageRoom = function() {
                         scale: [ 0, 1 ],
                         start: [ room.features.logs ? 1 : 0 ],
                         step: 1,
-                        change: UpdateLogs,
-                        end: UpdateLogs
+                        change: self.UpdatePrices,
+                        end: self.UpdatePrices
                     });
 
                     $( '#users-slider' ).noUiSlider( 'init', {
                         knobs: 1,
                         connect: "lower",
-                        scale: [ 0, 110 ],
-                        start: [ room.features.users ],
+                        scale: [ 0, 60 ],
+                        start: [ room.features.users != -1 ? room.features.users : 60 ],
                         step: 10,
-                        change: UpdateUserCount,
-                        end: UpdateUserCount
+                        change: self.UpdatePrices,
+                        end: self.UpdatePrices
                     });
 
-                    UpdateLogs();
-                    UpdateUserCount();
+                    self.UpdatePrices();
                 });
             });
         });
@@ -152,6 +96,25 @@ var ManageRoom = function() {
                     toBeUpdated.isPublic = isPublic;
                 }
             
+                var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
+                if ( users > 50 )
+                {
+                    users = -1;
+                }
+                
+                if ( users != room.features.users )
+                {
+                    toBeUpdated.features = toBeUpdated.features || room.features;
+                    toBeUpdated.features.users = users;
+                }
+
+                var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+                if ( logs != room.features.logs )
+                {
+                    toBeUpdated.features = toBeUpdated.features || room.features;
+                    toBeUpdated.features.logs = logs;
+                }
+                
                 // only send if toBeUpdated has at least one key
                 for ( var key in toBeUpdated )
                 {
@@ -181,23 +144,31 @@ var ManageRoom = function() {
                             });
                         }
                     
-                        var total = GetTotal();
-                        if ( total > 0 && !user.stripe )
-                        {
-                            var billing = self.app.GetSubsystem( Billing );
-                            function HandleBillingUpdated() {
-                                billing.HideBillingModal();
-                                UpdateRoom();
-                                self.app.events.removeListener( 'user billing updated', HandleBillingUpdated );
+                        self.GetPrices( function( prices, error ) {
+                            if ( error )
+                            {
+                                self.app.ShowError( error );
+                                return;
                             }
-                            self.app.events.addListener( 'user billing updated', HandleBillingUpdated )
-                            billing.ShowBillingModal( 'We need your billing info for the changes you\'ve made to your plan.  Please enter it below.' );
-                            return;
-                        }
-                        else
-                        {
-                            UpdateRoom();
-                        }
+                            
+                            if ( prices.total > 0 && !user.stripe )
+                            {
+                                var billing = self.app.GetSubsystem( Billing );
+                                function HandleBillingUpdated() {
+                                    billing.HideBillingModal();
+                                    UpdateRoom();
+                                    self.app.events.removeListener( 'user billing updated', HandleBillingUpdated );
+                                }
+                                self.app.events.addListener( 'user billing updated', HandleBillingUpdated )
+                                billing.ShowBillingModal( 'We need your billing info for the changes you\'ve made to your plan.  Please enter it below.' );
+                                return;
+                            }
+                            else
+                            {
+                                UpdateRoom();
+                            }
+                            
+                        });
                     });
                     break; // we break, no matter what, because we just wanted to see if there was a key in toBeUpdated
                 }
@@ -233,17 +204,81 @@ var ManageRoom = function() {
                 $( '#users-slider' ).noUiSlider( 'move', {
                     knob: 1,
                     to: room.features.users,
-                    scale: [ 0, 110 ]
+                    scale: [ 0, 60 ]
                 });
-                UpdateUserCount();
 
                 $( '#logs-slider' ).noUiSlider( 'move', {
                     knob: 1,
                     to: room.features.logs ? 1 : 0,
                     scale: [ 0, 1 ]
                 });
-                UpdateLogs();
+
+                self.UpdatePrices();
             });
+        });
+    }
+    
+    self.GetPrices = function( callback ) {
+        self.app.GetPricing( function( pricing, error ) {
+            if ( error )
+            {
+                callback( null, error );
+                return;
+            }
+            
+            var prices = {};
+
+            var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+            prices.logs = logs ? pricing.logs : 0;
+
+            var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
+            if ( users < 10 )
+            {
+                users = 10;
+                $( '#users-slider' ).noUiSlider( 'move', {
+                    knob: 1,
+                    to: 10,
+                    scale: [ 0, 60 ]
+                });
+            }
+            prices.users = pricing.users[ users ];
+            if ( !( users in pricing.users ) )
+            {
+                prices.users = pricing.users[ 'Unlimited' ];
+            }
+
+            prices.total = prices.logs + prices.users;
+            callback( prices );
+        });
+    }
+    
+    self.UpdatePrices = function() {
+        self.GetPrices( function( prices, error ) {
+            if ( error )
+            {
+                self.app.ShowError( error );
+                return;
+            }
+
+            $( '#logs-setting' ).spin( 'small' );
+            $( '#users-setting' ).spin( 'small' );
+            $( '#total-cost' ).spin( 'small' );
+            
+            var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+            $( '#logs-setting' ).html( logs ? 'Enabled ( $' + prices.logs + ' / Month )' : 'No Logs ( Free! )' );
+            $( '#logs-setting' ).spin( false );
+
+            var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
+            if ( users > 50 )
+            {
+                users = 'Unlimited!';
+            }
+            var usersCost = ( prices.users > 0 ) ? ( prices.users + '$ / Month' ) : 'Free!';
+            $( '#users-setting' ).html( users + ' ( ' + usersCost + ' ) ' );
+            $( '#users-setting' ).spin( false );
+            
+            $( '#total-cost' ).html( prices.total > 0 ? ( '$' + prices.total + ' / Month' ) : 'Free!' );
+            $( '#total-cost' ).spin( false );
         });
     }
 }

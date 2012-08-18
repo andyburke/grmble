@@ -82,7 +82,7 @@ var Users = function() {
                         }
                         
                         response.cookie( 'authtoken', authToken.token, { maxAge: authToken.expires - new Date(), httpOnly: true, path: '/' } );
-                        response.json( models.censor( app.WithURLs( request, user ), { 'passwordHash': true } ) );
+                        response.json( models.censor( app.WithURLs( request, user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
                     });
                 });
             });
@@ -99,7 +99,6 @@ var Users = function() {
             var util = require( 'util' );    
             function save()
             {
-                console.log( util.inspect( request.user ) );
                 models.update( request.user, request.body, {
                     'email': function( obj, params ) {
                         return params[ 'email' ] ? params[ 'email' ].trim().toLowerCase() : obj.email;
@@ -111,7 +110,13 @@ var Users = function() {
                         return typeof( params[ 'password' ] ) != 'undefined' ? passwordHash.generate( params[ 'password' ] ) : obj.passwordHash;
                     }
                 });
-        
+                
+                // mark stripeToken as modified, as it's a mixed datatype
+                if ( typeof( request.body[ 'stripeToken' ] ) != 'undefined' )
+                {
+                    request.user.markModified( 'stripeToken' );
+                }
+                
                 request.user.save( function( error ) {
                     if ( error )
                     {
@@ -149,7 +154,7 @@ var Users = function() {
         });
         
         app.get( '/api/1.0/User/Me', checks.user, function( request, response ) {
-            response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+            response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
         });
 
         app.get( '/api/1.0/User/:userId', checks.user, function( request, response ) {
@@ -169,12 +174,12 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
                 });
             }
             else
             {
-                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
             }
         });
         
@@ -195,12 +200,12 @@ var Users = function() {
                         return;
                     }
                     
-                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
+                    response.json( models.censor( app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
                 });
             }
             else
             {
-                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+                response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
             }
         });
 
@@ -218,7 +223,7 @@ var Users = function() {
                 var result = [];
                 for ( var index = 0; index < users.length; ++index )
                 {
-                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true, 'stripe': true } ) );
+                    result.push( models.censor( app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
                 }
                 
                 response.json( result );

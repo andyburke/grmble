@@ -1,6 +1,6 @@
 var mongoose = require( 'mongoose' );
 
-var stripe = require( 'stripe' )( config.stripe.keys.test );
+var stripe = require( 'stripe' )( config.stripe.key.test );
 
 var Rooms = function() {
     var self = this;
@@ -67,44 +67,132 @@ var Rooms = function() {
         app.put( '/api/1.0/Room/:roomId', checks.user, checks.ownsRoom, function( request, response ) {
             
             var oldCost = 0;
-            oldCost += request.room.features.logs ? config.pricing.logging : 0;
+            oldCost += request.room.features.logs ? config.pricing.logs : 0;
             oldCost += config.pricing.users[ request.room.features.users ];
             oldCost += request.room.features.search ? config.pricing.search : 0;
             
             models.update( request.room, request.body );
             
             var totalCost = 0;
-            totalCost += request.room.features.logs ? config.pricing.logging : 0;
-            totalCost += config.pricing.users[ request.room.features.users ];
+            totalCost += request.room.features.logs ? config.pricing.logs : 0;
+            var users = request.room.features.users > 0 ? request.room.features.users : 'Unlimited';
+            if ( !( users in config.pricing.users ) )
+            {
+                response.json( { 'error': 'invalid user count', 'message': 'Sorry, but the number of users is not supported.' }, 400 );
+                return;
+            }
+            
+            totalCost += config.pricing.users[ users ];
             totalCost += request.room.features.search ? config.pricing.search : 0;
 
-            if ( totalCost > 0 && !request.user.stripe )
+            if ( totalCost > 0 && !request.user.stripeToken )
             {
                 response.json( { 'error': 'no billing info', 'message': 'You must have billing info associated with your account to add these settings to your room.' }, 403 );
                 return;
             }
 
-            if ( !request.user.stripeCustomer )
-            {
-                // TODO: create the customer
+            function SaveRoom() {
+                request.room.save( function( error ) {
+                    if ( error )
+                    {
+                        response.json( error.message ? error.message : error, 500 );
+                        return;
+                    }
+            
+                    response.json( app.WithURLs( request, request.room ) );
+                });
             }
 
-            if ( oldCost > 0 )
+            var planId = 'sub_' + ( totalCost * 100 );
+            if ( !request.user.stripeCustomer && totalCost > 0 )
             {
-                // TODO: unsub from old plan
+                var planId = 'sub_' + ( totalCost * 100 );
+                stripe.plans.create({
+                    id: planId,
+                    amount: totalCost * 100,
+                    currency: 'usd',
+                    interval: 'month',
+                    name: 'Grmble Monthly Subscription'
+                }, function( error ) {
+                    if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
+                    {
+                        response.json( error, 500 );
+                        return;
+                    }
+                    
+                    stripe.customers.create({
+                        card: request.user.stripeToken.id,
+                        email: request.user.email,
+                        description: request.user.nickname,
+                        plan: planId
+                    }, function( error, customer ) {
+                        if ( error )
+                        {
+                            response.json( error, 500 );
+                            return;
+                        }
+                 
+                        request.user.stripeCustomer = customer;
+                        request.user.markModified( 'stripeCustomer' );
+                        request.user.save( function( error ) {
+                            if ( error )
+                            {
+                                response.json( error, 500 );
+                                return;
+                            }
+                            
+                            SaveRoom();
+                        });
+                    });
+                });
             }
-            
-            // TODO: update to new plan
-            
-            request.room.save( function( error ) {
-                if ( error )
-                {
-                    response.json( error.message ? error.message : error, 500 );
-                    return;
-                }
-        
-                response.json( app.WithURLs( request, request.room ) );
-            });
+            else if ( request.user.stripeCustomer )
+            {
+                stripe.customers.cancel_subscription( request.user.stripeCustomer.id, false, function( error ) {
+                    if ( error )
+                    {
+                        response.json( error, 500 );
+                        return;
+                    }
+                    
+                    if ( totalCost > 0 )
+                    {
+                        stripe.plans.create({
+                            id: planId,
+                            amount: totalCost * 100,
+                            currency: 'usd',
+                            interval: 'month',
+                            name: 'Grmble Monthly Subscription'
+                        }, function( error ) {
+                            if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
+                            {
+                                response.json( error, 500 );
+                                return;
+                            }
+                            
+                            stripe.customers.update_subscription( request.user.stripeCustomer.id, {
+                                plan: planId
+                            }, function( error ) {
+                                if ( error )
+                                {
+                                    response.json( error, 500 );
+                                    return;
+                                }
+                                
+                                SaveRoom();
+                            });
+                        });
+                    }
+                    else
+                    {
+                        SaveRoom();
+                    }
+                });
+            }
+            else
+            {
+                SaveRoom();
+            }
         });
 
         // TODO: we will need some kind of filtering/cursoring here

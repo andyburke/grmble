@@ -238,4 +238,19 @@ var App = function( apiURL, router ) {
             });
         });
     }
+    
+    self.GetPricing = function( callback ) {
+        self.GetAPI( function( api ) {
+            jsonCall({
+                url: api.pricing,
+                type: 'GET',
+                success: function( pricing ) {
+                    callback( pricing );
+                },
+                error: function( xhr ) {
+                    callback( null, xhr );
+                }
+            });
+        });
+    }
 }
