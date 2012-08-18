@@ -12,6 +12,7 @@ function HandleAuthToken( authToken, request, response, next ) {
         
         if ( !auth || ( auth.expires < new Date() ) )
         {
+            response.cookie( 'authtoken', '', { maxAge: -100000, httpOnly: true, path: '/' } );
             response.json( 'Invalid AuthToken', 400 );
             return;
         }
