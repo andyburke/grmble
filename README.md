@@ -1,12 +1,12 @@
-Grumble
+Grmble
 ====
 
 #### Getting Started
 
  1. Install node (http://nodejs.org/)
  2. Install mongo (http://www.mongodb.org/downloads)
- 3. Clone the code: git clone git@github.com:andyburke/grumble.git
- 4. cd grumble/server
+ 3. Clone the code: git clone git@github.com:andyburke/grmble.git
+ 4. cd grmble/server
  5. npm install
  6. sudo npm install -g nodemon (for easy iteration)
  7. sudo npm install -g node-inspector (for debugging)

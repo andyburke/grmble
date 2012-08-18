@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h1>Grumble <small>An Open Node.js Chat Service</small></h1>
+    <h1>Grmble <small>An Open Node.js Chat Service</small></h1>
 </div>
 <div id="welcome" class="unauthenticated">
     <div class="row-fluid">
