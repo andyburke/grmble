@@ -51,17 +51,9 @@ var TypingStatus = function() {
     
     self.SendUserTypingStatus = function( status ) {
         self.app.GetMe( function( user ) {
-            var message = {
-                kind: status,
-                roomId: self.app.room._id,
-                senderId: user._id,
-                nickname: user.nickname,
-                userHash: user.hash,
-                avatar: user.avatar,
-                content: null
-            };
-        
-            self.app.socket.emit( 'message', message );
+            self.app.SendMessage({
+                kind: status
+            });
         });
     }
 }

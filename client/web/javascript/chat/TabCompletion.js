@@ -21,30 +21,47 @@ var TabCompletion = function() {
     
     self.app = null;
     self.users = {};
+    self.subscriptions = {};
     
     self.Bind = function( app ) {
         self.app = app;
-    }
-    
-    self.Start = function() {
-        self.app.socket.on( 'message', function( message ) {
-            if ( message.kind == 'join' )
+        
+        self.app.events.addListener( 'joining room', function( room ) {
+            self.subscriptions[ room._id ] = self.app.client.subscribe( '/room/' + room._id, function( message ) {
+                if ( message.kind == 'join' )
+                {
+                    self.users[ message.nickname ] = true;
+                }
+                else if ( message.kind == 'leave' )
+                {
+                    delete self.users[ message.nickname ];
+                }
+            });
+        });
+        
+        self.app.events.addListener( 'leaving room', function( room ) {
+            if ( self.subscriptions[ room._id ] )
             {
-                self.users[ message.nickname ] = true;
-            }
-            else if ( message.kind == 'leave' )
-            {
-                delete self.users[ message.nickname ];
+                self.subscriptions[ room._id ].cancel();
+                delete self.subscriptions[ room._id ];
             }
         });
         
-        self.app.socket.on( 'userlist', function( userlist ) {
-            self.users = {};
-            for ( var index = 0; index < userlist.users.length; ++index )
-            {
-                self.users[ userlist.users[ index ].nickname ] = true;
-            }
+        self.app.events.addListener( 'client created', function( client ) {
+            client.subscribe( '/client/' + self.app.clientId, function( message ) {
+                if ( message.kind == 'userlist' )
+                {
+                    self.users = {};
+                    for ( var index = 0; index < message.users.length; ++index )
+                    {
+                        self.users[ message.users[ index ].nickname ] = true;
+                    }
+                }
+            });
         });
+    }
+    
+    self.Start = function() {
         
         $( document ).on( 'keydown', '#message-entry-content', function( event ) {
             var keyCode = event.keyCode || event.which;

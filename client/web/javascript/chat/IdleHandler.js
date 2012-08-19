@@ -5,6 +5,7 @@ var IdleHandler = function() {
 
     self.app = null;
     self.unreadMessages = 0;
+    self.subscription = null;
 
     self.Bind = function( app ) {
         self.app = app;
@@ -14,41 +15,43 @@ var IdleHandler = function() {
         });
     
         $( document ).bind( 'idle.idleTimer', function() {
-            if ( self.app.socket && self.app.room && self.app.user )
+            if ( self.app.client && self.app.room && self.app.user )
             {
-                self.app.socket.emit( 'message', {
-                    kind: 'idle',
-                    roomId: self.app.room._id,
-                    senderId: self.app.user._id,
-                    nickname: self.app.user.nickname,
-                    userHash: self.app.user.hash,
-                    avatar: self.app.user.avatar,
-                    content: null
+                self.app.SendMessage({
+                    kind: 'idle'
                 });
             }
         });
         
         $( document ).bind( 'active.idleTimer', function() {
-            if ( self.app.socket && self.app.room && self.app.user )
+            if ( self.app.client && self.app.room && self.app.user )
             {
                 self.unreadMessages = 0;
                 document.title = self.app.room.name + ' on Grmble';
-                
-                self.app.socket.emit( 'message', {
-                    kind: 'active',
-                    roomId: self.app.room._id,
-                    nickname: self.app.user.nickname,
-                    userHash: self.app.user.hash,
-                    avatar: self.app.user.avatar,
-                    content: null
+
+                self.app.SendMessage({
+                    kind: 'active'
                 });
             }
         });
     }
     
-    self.Start = function() {
-        self.app.socket.on( 'message', function( message ) {
-                
+    self.Watch = function() {
+        if ( !self.app.room )
+        {
+            return;
+        }
+        
+        self.unreadMessages = 0;
+        
+        if ( self.subscription )
+        {
+            self.subscription.cancel();
+            self.subscription = null;
+        }
+        
+        self.subscription = self.app.client.subscribe( '/room/' + self.app.room._id, function( message ) {
+            
             if ( message.kind != 'say' )
             {
                 return;

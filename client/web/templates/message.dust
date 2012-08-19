@@ -1,4 +1,4 @@
-<div id="{_id}" time="{createdAt}" class="message {kind} {#referencesMe}message-references-me{/referencesMe}">
+<div id="{_id}" data-time="{createdAt}" class="message {kind} {#referencesMe}message-references-me{/referencesMe}">
     <div class="nickname">
         {nickname}
     </div>

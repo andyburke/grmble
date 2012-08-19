@@ -4,20 +4,23 @@ var App = function( apiURL, router ) {
     self.apiURL = apiURL;
     self.router = router;
 
-    self.socket = null;
+    self.client = null;
 
     self.user = null;
-	self.users = {};
+    self.users = {};
     
     self.room = null;
     self.rooms = {};
     
     self.events = new EventEmitter();
+    
+    self.clientId = Math.uuid();
 
     self.subsystems = [
         new UserManager(),
         new Billing(),
-        
+	new ConnectionStatus(),
+	
         // views
         
         new Home(),
@@ -66,6 +69,28 @@ var App = function( apiURL, router ) {
     
     self.Start = function() {
 
+	// TODO: should we be using pageshow/pagehide?
+	window.onbeforeunload = function() {
+	    if ( self.room )
+	    {
+		self.events.emit( 'leaving room', self.room );
+                
+                self.SendMessage({
+                    kind: 'leave' 
+                }, function( error, message ) {
+                    if ( error )
+                    {
+			// do nothing, they're closing
+                    }
+                    else
+                    {
+                        self.events.emit( 'left room', message.roomId );
+                    }
+                    self.room = null;
+                });
+	    }
+	}
+	
         self.events.addListener( 'navigated', function( view ) {
             $('.navItem').removeClass( 'active' );
             var activeItem = $( '#nav-' + view );
@@ -106,23 +131,27 @@ var App = function( apiURL, router ) {
             });
         });
 
-        self.GetAPI( function() {} );
+        self.GetAPI( function( api ) {
+	    var js = document.createElement( 'script' );
+	    js.src = api.faye + '/client.js';
+	    js.onload = function() {
+		self.client = new Faye.Client( api.faye, {
+		    timeout: 60,
+		    retry: 10
+		});
+		self.events.emit( 'client created', self.client );
+		
+		self.client.subscribe( '/client/' + self.clientId, function( message ) {
+		    if ( message.kind == 'error' )
+		    {
+			self.ShowError( message );
+		    }
+		});
+	    };
+	    document.getElementsByTagName( 'head' )[ 0 ].appendChild( js );
+	});
 
         self.userManager = new UserManager( self );
-        
-        self.socket = io.connect( window.location.origin, {
-            'connect timeout': 1000, // this timeout might be a bit low... we'll see
-            'sync disconnect on unload': false, // we will handle disconnect ourselves
-            'reconnect': true,
-            'reconnection limit': 10000,
-            'max reconnection attempts': 30
-        });
-
-        self.socket.on( 'reconnect_failed', function() {
-            alert( 'Could not reconnect to the server.  Try reloading the page.' ); 
-        });
-        
-        self.connectionStatus = new ConnectionStatus( self.socket, '#server-connection-status' );
         
         for ( var index = 0; index < self.subsystems.length; ++index )
         {
@@ -252,5 +281,35 @@ var App = function( apiURL, router ) {
                 }
             });
         });
+    }
+    
+    self.SendMessage = function( message, callback ) {
+	callback = callback || function() {};
+
+	if ( !self.room )
+	{
+	    callback( { 'error': 'no room', 'message': 'You are not currently in a room.' }, message );
+	    return;
+	}
+
+	var newMessage = $.extend({
+	    _id: new ObjectId().toString(),
+	    clientId: self.clientId,
+	    createdAt: new Date(),
+	    roomId: self.room._id,
+	    senderId: self.user._id,
+	    nickname: self.user.nickname,
+	    userHash: self.user.hash,
+	    avatar: self.user.avatar,
+	    content: null
+	}, message );
+	
+	var publication = self.client.publish( '/room/' + self.room._id, newMessage );
+	publication.callback( function() {
+	    callback( null, newMessage ); 
+	});
+	publication.errback( function( error ) {
+	    callback( error, newMessage ); 
+	});
     }
 }

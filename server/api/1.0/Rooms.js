@@ -149,7 +149,7 @@ var Rooms = function() {
             else if ( request.user.stripeCustomer )
             {
                 stripe.customers.cancel_subscription( request.user.stripeCustomer.id, false, function( error ) {
-                    if ( error )
+                    if ( error && ( !error.statusCode || error.statusCode != 404 ) )
                     {
                         response.json( error, 500 );
                         return;

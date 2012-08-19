@@ -2,45 +2,60 @@ var UserlistManager = function() {
     var self = this;
     
     self.app = null;
-    self.userlistReceivedAt = 0;
+    self.clientSubscription = null;
+    self.roomSubscription = null;
 
     self.Bind = function( app ) {
         self.app = app;
-    }
-    
-    self.Start = function() {
-        self.app.socket.on( 'message', function( message ) {
-            switch( message.kind )
-            {
-                case 'idle':
-                    $( '#userlist-entry-' + message.clientId ).fadeTo( 'slow', 0.3 );
-                    return;
-                case 'active':
-                    $( '#userlist-entry-' + message.clientId ).fadeTo( 'fast', 1.0 );
-                    return;
-                case 'startedTyping':
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('typing');
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('stoppedTyping');
-                    return;
-                case 'stoppedTyping':
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).text('...');
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).addClass('stoppedTyping');
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).removeClass('typing');
-                    
-                    return;
-                case 'cancelledTyping':
-                    $( '#userlist-entry-typingstatus-' + message.clientId ).text('');
-                    return;
-            }
-    
-            var now = new Date();
-            if ( now.getTime() - self.userlistReceivedAt.getTime() > 5000 )
-            {
+
+        self.app.events.addListener( 'client created', function() {
+            self.clientSubscription = self.app.client.subscribe( '/client/' + self.app.clientId, function( message ) {
+                if ( message.kind == 'userlist' )
+                {
+                    $( '#userlist-container' ).spin( 'medium' );
+                    $( '#userlist' ).html( '' );
+                    for ( var index = 0; index < message.users.length; ++index )
+                    {
+                        dust.render( 'userlist_entry', message.users[ index ], function( error, output ) {
+                            if ( error )
+                            {
+                                self.app.ShowError( error );
+                                return;
+                            }
+                            
+                            $( '#userlist' ).append( output );
+                        });
+                    }
+                    $( '#userlist-container' ).spin( false );
+                }
+            });
+        });
+        
+        self.app.events.addListener( 'joining room', function() {
+            self.subscription = self.app.client.subscribe( '/room/' + self.app.room._id, function( message ) {
                 switch( message.kind )
                 {
+                    case 'idle':
+                        $( '#userlist-entry-' + message.senderId ).fadeTo( 'slow', 0.3 );
+                        return;
+                    case 'active':
+                        $( '#userlist-entry-' + message.senderId ).fadeTo( 'fast', 1.0 );
+                        return;
+                    case 'startedTyping':
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).text('...');
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).addClass('typing');
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).removeClass('stoppedTyping');
+                        return;
+                    case 'stoppedTyping':
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).text('...');
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).addClass('stoppedTyping');
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).removeClass('typing');
+                        return;
+                    case 'cancelledTyping':
+                        $( '#userlist-entry-typingstatus-' + message.senderId ).text('');
+                        return;
                     case 'join':
-                        if ( $( 'userlist-entry-' + message.clientid ).length == 0 )
+                        if ( $( '#userlist-entry-' + message.senderId ).length == 0 )
                         {
                             dust.render( 'userlist_entry', message, function( error, output ) {
                                 if ( error )
@@ -53,32 +68,19 @@ var UserlistManager = function() {
                             });
                         }
                         break;
-                    
                     case 'leave':
-                        $( '#userlist-entry-' + message.clientId ).remove();
+                        $( '#userlist-entry-' + message.senderId ).remove();
                         break;
                 }
-            }
+            });
         });
 
-        self.app.socket.on( 'userlist', function( userlist ) {
-            self.userlistReceivedAt = new Date();
-            $( '#userlist-container' ).spin( 'medium' );
-            $( '#userlist' ).html( '' );
-            for ( var index = 0; index < userlist.users.length; ++index )
+        self.app.events.addListener( 'leaving room', function() {
+            if ( self.subscription )
             {
-                dust.render( 'userlist_entry', userlist.users[ index ], function( error, output ) {
-                    if ( error )
-                    {
-                        self.app.ShowError( error );
-                        return;
-                    }
-                    
-                    $( '#userlist' ).append( output );
-                });
+                self.subscription.cancel();
+                self.subscription = null;
             }
-            $( '#userlist-container' ).spin( false );
         });
-        
     }
 }

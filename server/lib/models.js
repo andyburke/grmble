@@ -106,7 +106,6 @@ exports.Room = connection.model( 'Room', exports.RoomSchema );
 exports.MessageSchema = new mongoose.Schema({
     roomId: { type: mongoose.Schema.ObjectId, index: true },
     senderId: { type: mongoose.Schema.ObjectId, index: true },
-    clientId: { type: String }, // the client id the message came from
     nickname: { type: String }, // just easier to toss this here than to require a lookup
     userHash: { type: String },
     avatar: { type: String },

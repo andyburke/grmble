@@ -88,16 +88,33 @@ var MessageRenderer = function() {
     var self = this;
     
     self.app = null;
+    self.subscriptions = {};
     
     self.Bind = function( app ) {
         self.app = app;
+        
+        self.app.events.addListener( 'client created', function() {
+            self.app.client.subscribe( '/client/' + self.app.clientId, function( message ) {
+                self.RenderMessage( message );
+            });
+        });
+        
+        self.app.events.addListener( 'joining room', function( room ) {
+            self.subscriptions[ room._id ] = self.app.client.subscribe( '/room/' + room._id, function( message ) {
+                self.RenderMessage( message, true );
+            });
+        });
+        
+        self.app.events.addListener( 'leaving room', function( room ) {
+            if ( self.subscriptions[ room._id ] )
+            {
+                self.subscriptions[ room._id ].cancel();
+                self.subscriptions[ room._id ] = null;
+            }
+        });
     }
     
     self.Start = function() {
-        self.app.socket.on( 'message', function( message ) {
-            self.RenderMessage( message, true );
-        });
-        
         self.UpdateMessageTimes();
     }
 
@@ -109,6 +126,8 @@ var MessageRenderer = function() {
             case 'startedTyping':
             case 'stoppedTyping':
             case 'cancelledTyping':
+            case 'userlist':
+            case 'error':
                 
             // TODO: render these, but make them look better somehow
             case 'join':
@@ -144,12 +163,27 @@ var MessageRenderer = function() {
             }
             else
             {
-                renderedMessage = $( '#chatlog' ).prepend( output );
+                var elements = $( '#chatlog' ).find( '.message' );
+                var inserted = false;
+                
+                for ( var index = 0; index < elements.length; ++index )
+                {
+                    var time = $( elements[ index ] ).data( 'time' );
+                    if ( time > message.createdAt )
+                    {
+                        renderedMessage = $( elements[ index ] ).before( output );
+                        inserted = true;
+                        break;
+                    }
+                }
+                
+                if ( !inserted )
+                {
+                    renderedMessage = $( '#chatlog' ).append( output );
+                }
             }
             
             self.app.events.emit( 'message rendered', message, renderedMessage );
-            
-            $( '#submit-message' ).button( 'reset' );
         });
     }
     

@@ -12,8 +12,7 @@ var Stripe = function() {
             stripeEventRecord.save( function( error ) {
                 if ( error )
                 {
-                    console.error( error );
-                    // TODO: need to log this into a central service
+                    log.channels.server.error( error );
                     response.send( error, 500 );
                 }
 

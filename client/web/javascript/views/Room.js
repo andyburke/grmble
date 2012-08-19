@@ -8,6 +8,27 @@ var Room = function() {
         self.app = app;
         self.router = router;
         
+        self.router.on( 'after', '/Room/:roomId', function( roomId ) {
+            if ( self.app.room )
+            {
+                self.app.events.emit( 'leaving room', self.app.room );
+                
+                self.app.SendMessage({
+                    kind: 'leave' 
+                }, function( error, message ) {
+                    if ( error )
+                    {
+                        self.app.ShowError( error ); 
+                    }
+                    else
+                    {
+                        self.app.events.emit( 'left room', message.roomId );
+                    }
+                    self.app.room = null;
+                });
+            }
+        });
+        
         self.router.on( '/Room/:roomId', function( roomId ) {
             mixpanel.track( "View: Room", {
                 roomId: roomId
@@ -32,17 +53,21 @@ var Room = function() {
                     self.app.room = room;
                     document.title = room.name + ' on Grmble';
 
-                    self.app.socket.emit( 'message', {
-                        kind: 'join',
-                        roomId: room._id,
-                        senderId: user._id,
-                        nickname: user.nickname,
-                        userHash: user.hash,
-                        avatar: user.avatar,
-                        content: null
+                    self.app.events.emit( 'joining room', room );
+                    
+                    self.app.SendMessage({
+                        kind: 'join' 
+                    }, function( error, message ) {
+                        if ( error )
+                        {
+                            self.app.ShowError( error ); 
+                        }
+                        else
+                        {
+                            self.app.events.emit( 'joined room', message.roomId );
+                        }
                     });
-                    self.app.events.emit( 'joined room', room );
-
+                    
                     dust.render( 'room', { room: room }, function( error, output ) {
                         if ( error )
                         {
@@ -96,7 +121,7 @@ var Room = function() {
             {
                 $( '#load-more-button' ).button( 'loading' );
                 
-                var oldestMessageDate = $( '#chatlog' ).find( '.message:first' ).attr( 'time' );
+                var oldestMessageDate = $( '#chatlog' ).find( '.message:first' ).data( 'time' );
                 jsonCall({
                     url: self.app.room.urls.messages,
                     type: 'GET',
@@ -127,25 +152,39 @@ var Room = function() {
     }
     
     self.SendMessage = function() {
+        mixpanel.track( "Message: Sending", {
+            roomId: self.app.room._id
+        });
+
         if ( $.trim( $( '#message-entry-content' ).val() ).length > 0 )
         {
             self.app.GetMe( function( user ) {
-                var message = {
-                    kind: 'say',
-                    roomId: self.app.room._id,
-                    senderId: user._id,
-                    nickname: user.nickname,
-                    userHash: user.hash,
-                    avatar: user.avatar,
-                    content: $( '#message-entry-content' ).val()
-                };
     
-                self.app.socket.emit( 'message', message );
-                self.app.events.emit( 'message sent', message );
+                $( '#message-entry-content' ).attr( 'readonly','readonly' );
                 $( '#submit-message' ).button( 'loading' );
-                $( '#message-entry-content' ).val( '' );
-                mixpanel.track( "Message: Sent", {
-                    roomId: self.app.room._id
+
+                self.app.SendMessage({
+                    kind: 'say',
+                    content: $( '#message-entry-content' ).val()
+                }, function( error, message ) {
+                    if ( error )
+                    {
+                        self.app.ShowError( error );
+                        $( '#submit-message' ).button( 'reset' );
+                        $( '#message-entry-content' ).removeAttr( 'readonly' );
+                        mixpanel.track( "Message: Error", {
+                            error: error
+                        });
+                        return;
+                    }
+
+                    $( '#submit-message' ).button( 'reset' );
+                    $( '#message-entry-content' ).val( '' );
+                    $( '#message-entry-content' ).removeAttr( 'readonly' );
+                    self.app.events.emit( 'message sent', message );
+                    mixpanel.track( "Message: Sent", {
+                        roomId: self.app.room._id
+                    });
                 });
             });
         }

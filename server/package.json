@@ -9,7 +9,6 @@
     "mongoose-types": "1.0.x",
     "connect-mongodb": "1.1.x",
     "mongoose-SimpleTimestamps": "https://github.com/andyburke/mongoose-SimpleTimestamps/tarball/master",
-    "socket.io": "0.9.x",
     "password-hash": "1.2.x",
     "dustjs-linkedin": "1.0.x",
     "node.extend": "1.0.x",
@@ -18,7 +17,8 @@
     "winston-loggly": "0.6.x",
     "datetime": "0.0.x",
     "node-fs": "0.1.x",
-    "redis": "0.7.x"
+    "redis": "0.7.x",
+    "faye": "0.8.x"
   },
-  "engine": "node >= 0.6.6"
+  "engine": "node >= 0.8.0"
 }
