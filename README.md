@@ -3,28 +3,35 @@ Grmble
 
 #### Getting Started
 
- 1. Install node (http://nodejs.org/)
- 2. Install mongo (http://www.mongodb.org/downloads)
- 3. Clone the code: git clone git@github.com:andyburke/grmble.git
- 4. cd grmble/server
- 5. npm install
- 6. sudo npm install -g nodemon (for easy iteration)
- 7. sudo npm install -g node-inspector (for debugging)
- 8. run mongod
- 9. nodemon --debug server.js
- 10. http://localhost:8000/
+ * install node (http://nodejs.org/)
+ * install mongo (http://www.mongodb.org/downloads)
+ * install redis (http://redis.io/download)
+ * clone the code: git clone git@github.com:andyburke/grmble.git
+ * cd grmble/server
+ * npm install (to install all required modules)
+ * copy grmble/server/config/server.config.js.example to grmble/server/config/server.config.js and adjust settings
+ * run mongod
+ * run redis-server
+ * nodemon --debug server.js
+ * http://localhost:8000/
 
 #### Optional, But Recommended
 
-    sudo npm install -g nodemon
-    sudo npm install -g node-inspector
+ * sudo npm install -g nodemon (for easy iteration)
+ * sudo npm install -g node-inspector (for debugging)
 
-Then you can do:
+#### Running (Debug)
+
+Open two terminals.  In one, run:
 
     nodemon --debug server.js
 
-in one terminal, and:
+In the other, run:
 
     node-inspector
 
-in another (which will let you debug the server using chrome by pointing to the url it prints out).
+This will output a line like:
+
+    visit http://0.0.0.0:8080/debug?port=5858 to start debugging
+    
+Plug that url into your favorite webkit browser and you'll be able to set breakpoints, etc.
