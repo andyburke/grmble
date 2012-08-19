@@ -51,6 +51,8 @@ var app = express.createServer(
     express.static( __dirname + '/../client/web' )
 );
 
+var RedisStore = require( 'socket.io/lib/stores/redis' );
+
 var io = Io.listen( app );
 io.configure( function(){ 
     io.set( 'transports', [
@@ -59,7 +61,13 @@ io.configure( function(){
         'htmlfile',
         'xhr-polling',
         'jsonp-polling'
-    ] );
+    ]);
+    
+    io.set('store', new RedisStore({
+        redisPub: redis.createClient( config.redis.port, config.redis.host ),
+        redisSub: redis.createClient( config.redis.port, config.redis.host ),
+        redisClient : redis.createClient( config.redis.port, config.redis.host )
+    }));
 });
 
 app.eventEmitter = new events.EventEmitter();

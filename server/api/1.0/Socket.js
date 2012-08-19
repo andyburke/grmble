@@ -1,4 +1,5 @@
 var mongoose = require( 'mongoose' );
+var MessageBus = require( '../../lib/MessageBus' );
 
 var Socket = function() {
     var self = this;
@@ -9,14 +10,14 @@ var Socket = function() {
 	io.sockets.on( 'connection', function( client ) {
 	    
 	    client.on( 'disconnect', function() {
-		for ( var room in self.rooms )
+		for ( var roomId in self.rooms )
 		{
-		    var index = self.rooms[ room ][ 'clients' ].indexOf( client );
+		    var index = self.rooms[ roomId ][ 'clients' ].indexOf( client );
 		    if ( index != -1 )
 		    {
-			self.rooms[ room ][ 'clients' ].splice( index, 1 );
-			var user = self.rooms[ room ][ 'users' ][ client.id ];
-			delete self.rooms[ room ][ 'users' ][ client.id ];
+			self.rooms[ roomId ][ 'clients' ].splice( index, 1 );
+			var user = self.rooms[ roomId ][ 'users' ][ client.id ];
+			delete self.rooms[ roomId ][ 'users' ][ client.id ];
     
 			// we could handle quick rejoins here by using setTimeout and checking if the
 			// user is back in the room's client list.  However, we'd then have to start
@@ -24,7 +25,7 @@ var Socket = function() {
 			// Overall, not worth it right now.
 			
 			var newMessage = new models.Message();
-			newMessage.roomId = room;
+			newMessage.roomId = roomId;
 			newMessage.senderId = user._id;
 			newMessage.clientId = client.id;
 			newMessage.nickname = user.nickname;
@@ -33,27 +34,51 @@ var Socket = function() {
 			newMessage.kind = 'leave';
 			newMessage.content = 'Left the room.';
 	
-			newMessage.save( function( error ) {
-			    if ( error )
+			for ( var clientIndex = 0; clientIndex < self.rooms[ roomId ][ 'clients' ].length; ++clientIndex )
+			{
+			    try
 			    {
-				console.log( error );
-				return;
+				var otherClient = self.rooms[ roomId ][ 'clients' ][ clientIndex ];
+				otherClient.json.send( newMessage );
 			    }
+			    catch( exception )
+			    {
+				// TODO: drop this connection, possibly create a 'leave' message?
+			    }
+			}
+
+			MessageBus.Publish( newMessage );
+			
+			// execute this in a function to capture some things in scope
+			(function() {
+			    var theRoomId = roomId;
+			    var theMessage = newMessage;
+			    models.Room.findById( theRoomId, function( error, room ) {
+				if ( error )
+				{
+				    log.channels.db.log( 'error', error );
+				    return;
+				}
+			
+				if ( !room )
+				{
+				    log.channels.db.log( 'error', { 'error': 'invalid room id', 'message': 'Could not find a room with id: ' + theRoomId } );
+				    return;
+				}
     
-			    // NOTE: use the newMessage.roomId to avoid scope issues
-			    for ( var clientIndex = 0; clientIndex < self.rooms[ newMessage.roomId ][ 'clients' ].length; ++clientIndex )
-			    {
-				try
+				if ( room.features.logs )
 				{
-				    var otherClient = self.rooms[ newMessage.roomId ][ 'clients' ][ clientIndex ];
-				    otherClient.json.send( newMessage );
+				    theMessage.save( function( error ) {
+					if ( error )
+					{
+					    log.channels.db.log( 'error', error );
+					    return;
+					}
+		
+				    });
 				}
-				catch( exception )
-				{
-				    // TODO: drop this connection, possibly create a 'leave' message?
-				}
-			    }
-			});
+			    });
+			})();
 		    }
 		}
 	    });
@@ -102,6 +127,8 @@ var Socket = function() {
 			}
 		    }
 		    
+		    MessageBus.Publish( newMessage );
+
 		    if ( room.features.logs )
 		    {
 			newMessage.save( function( error ) {
@@ -209,6 +236,43 @@ var Socket = function() {
 		    }
 		});
 	    });
+	});
+	
+	MessageBus.on( 'message', function( message ) {
+	    if ( !self.rooms[ message.roomId ] )
+	    {
+		// no users in that room on this server
+		return;
+	    }
+
+	    // TODO: support for private messages? kind = private, need a target user id?
+	    for ( var clientIndex = 0; clientIndex < self.rooms[ message.roomId ][ 'clients' ].length; ++clientIndex )
+	    {
+		try
+		{
+		    var otherClient = self.rooms[ message.roomId ][ 'clients' ][ clientIndex ];
+		    otherClient.json.send( message );
+		}
+		catch( exception )
+		{
+		    // TODO: drop this connection, possibly create a 'leave' message?
+		}
+	    }
+
+	    switch( message.kind ) {
+		case 'join':
+		    self.rooms[ message.roomId ][ 'users' ][ message.clientId ] = {
+			clientId: message.clientId,
+			userid: message.senderId,
+			nickname: message.nickname,
+			userHash: message.userHash,
+			avatar: message.avatar
+		    };
+		    break;
+		case 'leave':
+		    delete self.rooms[ message.roomId ][ 'users' ][ message.clientId ];
+		    break;
+	    }
 	});
     }
 }

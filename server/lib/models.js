@@ -1,7 +1,7 @@
 var mongoose = require( 'mongoose' );
 var SimpleTimestamps = require( 'mongoose-SimpleTimestamps' ).SimpleTimestamps;
 
-var dbURI = 'mongodb://' + config.db.host + ':' + config.db.port + '/' + config.db.name;
+var dbURI = 'mongodb://' + config.mongo.host + ':' + config.mongo.port + '/' + config.mongo.name;
 log.channels.db.info( 'Connecting to: ' + dbURI );
 
 var connection = exports.connection = mongoose.createConnection( dbURI );
