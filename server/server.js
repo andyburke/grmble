@@ -1,6 +1,6 @@
 process.on( 'uncaughtException', function ( error ) {
     console.error( error.stack ? error.stack : error );
-    if ( log && log.channels && log.channels.server )
+    if ( typeof( log ) != 'undefined' && log.channels && log.channels.server )
     {
         log.channels.server.log( 'error', error );
     }
