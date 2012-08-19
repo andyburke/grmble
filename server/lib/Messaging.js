@@ -31,6 +31,11 @@ var Messaging = function() {
 
         self.bayeux.attach( app );
         
+        // we listen for joins/leaves across any of our servers so that all servers have full lists
+        // of users in rooms
+        //
+        // TODO: figure out what to do with servers that have just come up
+        //
         self.bayeux.getClient().subscribe( '/room/*', function( message ) {
             if ( message.kind == 'join' )
             {
@@ -46,8 +51,20 @@ var Messaging = function() {
                     avatar: message.avatar
                 };
             }
+            else if ( message.kind == 'leave' )
+            {
+                if ( self.rooms[ message.roomId ] )
+                {
+                    delete self.rooms[ message.roomId ][ message.senderId ];
+                }
+            }
         });
         
+        // we listen only on the local server using 'bind' for handling logging and initial message emission
+        //
+        // if we were to subscribe, we'd end up trying to log the message from every app server and
+        // emitting ( N * initial message count ) messages on the client channel where N is the number
+        // of app servers
         self.bayeux.bind( 'publish', function( clientId, channel, message ) {
             if ( self.bayeux.getClient().getClientId() == clientId )
             {
@@ -164,13 +181,6 @@ var Messaging = function() {
                             });
                         });
                     });
-                }
-                else if ( message.kind == 'leave' )
-                {
-                    if ( self.rooms[ message.roomId ] )
-                    {
-                        delete self.rooms[ message.roomId ][ message.senderId ];
-                    }
                 }
             });
         });
