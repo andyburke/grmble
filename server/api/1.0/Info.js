@@ -13,7 +13,7 @@ var Info = function() {
     self.bind = function( app ) {
 
         app.get( '/api/1.0', function( request, response ) {
-            var urls = app.GetURLs ? app.GetURLs() : {};
+            var urls = app.GetURLs ? app.GetURLs( request ) : {};
             
             for ( var urlKey in urls )
             {

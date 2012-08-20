@@ -85,13 +85,13 @@ topLevelDomain.run( function() {
         require( './lib/Messaging.js' )
     ];
     
-    app.GetURLs = function() {
+    app.GetURLs = function( request ) {
         var result = {};
         for ( var subsystem in app.subsystems )
         {
             if ( app.subsystems[ subsystem ].GetURLs )
             {
-                result = extend( result, app.subsystems[ subsystem ].GetURLs() );
+                result = extend( result, app.subsystems[ subsystem ].GetURLs( null, request ) );
             }
         }
         
@@ -106,7 +106,7 @@ topLevelDomain.run( function() {
             {
                 if ( app.subsystems[ subsystem ].GetURLs )
                 {
-                    result.urls = extend( result.urls, app.subsystems[ subsystem ].GetURLs( obj ) );
+                    result.urls = extend( result.urls, app.subsystems[ subsystem ].GetURLs( obj, request ) );
                 }
             }
             

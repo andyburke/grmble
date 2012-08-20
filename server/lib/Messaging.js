@@ -9,9 +9,9 @@ var Messaging = function() {
 
     self.rooms = {};
 
-    self.GetURLs = function( obj ) {
+    self.GetURLs = function( obj, request ) {
         return {
-            'faye': '/faye'
+            'faye': 'http://' + ( ( request.headers.host.indexOf( ':' ) != -1 ) ? request.headers.host : ( request.headers.host + ':' + config.server.port ) ) + '/faye'
         };
     };
     
