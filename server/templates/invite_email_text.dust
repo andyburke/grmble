@@ -1,0 +1,12 @@
+{user.nickname} just invited you to join Grmble and chat in the channel '{room.name}'.
+
+{?message}
+{message}
+
+-- {user.nickname}
+{/message}
+
+Click here to chat: {link}
+
+Thanks,
+Grmble.com

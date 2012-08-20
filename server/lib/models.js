@@ -121,6 +121,10 @@ exports.StripeEventRecordSchema = new mongoose.Schema({
 exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
 exports.StripeEventRecord = connection.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
 
-exports.PasswordResetRequestSchema = new mongoose.Schema({
-     
+exports.InviteSchema = new mongoose.Schema({
+    senderId: { type: mongoose.Schema.ObjectId, index: true },
+    email: { type: String, index: true },
+    roomId: { type: mongoose.Schema.ObjectId }
 });
+exports.InviteSchema.plugin( SimpleTimestamps );
+exports.Invite = connection.model( 'Invite', exports.InviteSchema );

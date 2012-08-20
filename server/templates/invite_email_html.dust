@@ -1,0 +1,19 @@
+<html>
+    <body>
+        {user.nickname} just invited you to join Grmble and chat in the channel '{room.name}'.
+        <p/>
+        {?message}
+            <pre>
+                {message}
+            </pre>
+            <p/>
+            -- {user.nickname}
+            <p/>
+        {/message}
+        
+        Click here to chat: <a href="{link}">{link}</a>
+        <p/>
+        Thanks,<br/>
+        Grmble.com
+    </body>
+</html>

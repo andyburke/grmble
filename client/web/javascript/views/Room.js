@@ -149,6 +149,87 @@ var Room = function() {
                 });
             }
         });
+        
+        $( document ).on( 'click', '.invite-to-room-button', function( event ) {
+            event.preventDefault();
+            
+            if ( self.app.room )
+            {
+                mixpanel.track( "Invite: Shown", {
+                    roomId: self.app.room._id
+                });
+
+                $( '#invite-modal' ).modal( { 'backdrop': 'static' } );
+            }
+        });
+
+
+        $( document ).on( 'click', '.invite-button', function( event ) {
+            event.preventDefault();
+            
+            if ( !self.app.room )
+            {
+                self.app.ShowError( 'You must be in a room to send an invite.' );
+                $( '#invite-modal' ).modal( 'hide' );
+                return;
+            }
+        
+            mixpanel.track( "Invite: Sending", {
+                roomId: self.app.room._id
+            });
+
+            var button = this;
+            var form = $(this).parents( 'form:first' );
+
+            var email = $( form ).find( 'input[name=email]' ).val();
+            var message = $( form ).find( 'textarea[name=message]' ).val();
+            
+            if ( !email.length )
+            {
+                self.app.ShowError( 'You must enter an email address!' );
+                mixpanel.track( "Invite: Error", {
+                    error: 'No email entered.'
+                });
+                return;
+            }
+
+            $(button).button( 'loading' );
+            $(form).spin( 'medium' );
+            
+            jsonCall({
+                url: self.app.room.urls.invite,
+                type: 'POST',
+                data: {
+                    email: email,
+                    message: message,
+                    roomId: self.app.room._id
+                },
+                success: function() {
+                    $( form ).spin( false );
+                    $( button ).button( 'complete' );
+                    setTimeout( function() {
+                        $( form ).find( 'input[name=email]' ).val( '' );
+                        $( form ).find( 'textarea[name=message]' ).val( '' );
+                        $( button ).button( 'reset' );
+                        $( '#invite-modal' ).modal( 'hide' );
+                    }, 1000 );
+
+                    mixpanel.track( "Invite: Sent", {
+                        roomId: self.app.room._id
+                    });
+                },
+                error: function( xhr ) {
+                    $(form).spin( false );
+                    self.app.ShowError( response.responseText );
+                    $(button).button( 'reset' );
+
+                    mixpanel.track( "Invite: Error", {
+                        error: xhr.responseText
+                    });
+                }
+            });
+        });
+
     }
     
     self.SendMessage = function() {

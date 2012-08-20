@@ -7,7 +7,7 @@ var passwordHash = require( 'password-hash' );
 dust.loadSource( dust.compile( fs.readFileSync( 'templates/password_reset_email_text.dust', 'ascii' ), 'password_reset_email_text' ) );
 dust.loadSource( dust.compile( fs.readFileSync( 'templates/password_reset_email_html.dust', 'ascii' ), 'password_reset_email_html' ) );
 
-var smtpTransport = nodemailer.createTransport("SES", {
+var smtpTransport = nodemailer.createTransport( 'SES', {
     AWSAccessKeyID: config.aws.AccessKeyID,
     AWSSecretKey: config.aws.SecretKey
 });

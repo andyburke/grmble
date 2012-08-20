@@ -224,6 +224,41 @@
             <div id="cc-entry-container" class="modal-body">
             </div>
         </div>
+
+        <div id="invite-modal" class="modal hide">
+            <div class="modal-header">
+                <a class="close" data-dismiss="modal">x</a>
+                <h3>Invite A Friend!</h3>
+            </div>
+            <div class="modal-body">
+                <div class="span4">
+                    <form id="invite-form">
+                        <fieldset>
+                            <div class="control-group">
+                              <div class="controls">
+                                <input class="input-xlarge" name="email" type="email" placeholder="Email" />
+                              </div>
+                            </div><!-- /clearfix -->
+                            <div class="control-group">
+                              <div class="controls">
+                                <textarea class="input-xlarge" name="message" rows="3" placeholder="Message (optional)"></textarea>
+                              </div>
+                            </div><!-- /clearfix -->
+                            <div class="form-actions">
+                                <button class="btn btn-primary invite-button" data-loading-text="Sending..." data-complete-text="Sent!">Send</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div class="span2 extra">
+                    <h3>Send an invite to a friend!</h3>
+                    We'll email your friend a link to this room with your message attached!
+                    <p/>
+                    <p/>
+                    We won't store or share their email address.
+                </div>
+            </div>
+        </div>
     
         <div class="container-fluid">
             <div class="content" id="main">

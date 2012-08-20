@@ -11,7 +11,9 @@
         <div class="sidebar-nav-fixed extra" id="sidebar">
             <div class="sidebar-room-name-wrapper">
                 <div id="room-name" class="room-name">{room.name}</div>
-                <!-- <button class="btn btn-mini btn-warning" id="leave-room">Leave</button> -->
+                <div>
+                    <button class="btn invite-to-room-button">Invite</button>
+                </div>
             </div>
             <hr/>
             <div id="userlist">
