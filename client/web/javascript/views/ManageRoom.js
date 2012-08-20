@@ -32,6 +32,16 @@ var ManageRoom = function() {
     
                     $( '#main' ).html( output );
 
+                    $( '#privacy-slider' ).noUiSlider( 'init', {
+                        knobs: 1,
+                        connect: "lower",
+                        scale: [ 0, 1 ],
+                        start: [ room.features.privacy ? 1 : 0 ],
+                        step: 1,
+                        change: self.UpdatePrices,
+                        end: self.UpdatePrices
+                    });
+
                     $( '#logs-slider' ).noUiSlider( 'init', {
                         knobs: 1,
                         connect: "lower",
@@ -90,10 +100,11 @@ var ManageRoom = function() {
                     toBeUpdated.tags = tags;
                 }
                 
-                var isPublic = $(form).find( "#protection" ).val() == 'Public';
-                if ( isPublic != room.isPublic )
+                var privacy = $( '#privacy-slider' ).noUiSlider( 'value' )[ 1 ];
+                if ( privacy != room.features.privacy )
                 {
-                    toBeUpdated.isPublic = isPublic;
+                    toBeUpdated.features = toBeUpdated.features || room.features;
+                    toBeUpdated.features.privacy = privacy;
                 }
             
                 var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
@@ -196,6 +207,12 @@ var ManageRoom = function() {
                     $( input ).html( input.id in room ? room[ input.id ] : '' );
                 });
                 
+                $( '#privacy-slider' ).noUiSlider( 'move', {
+                    knob: 1,
+                    to: room.features.privacy ? 1 : 0,
+                    scale: [ 0, 1 ]
+                });
+
                 $( '#advertising-slider' ).noUiSlider( 'move', {
                     knob: 1,
                     to: room.features.advertising ? 0 : 1,
@@ -223,13 +240,16 @@ var ManageRoom = function() {
             
             var prices = {};
 
-            var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
-            prices.logs = logs ? pricing.logs : 0;
+            var privacy = $( '#privacy-slider' ).noUiSlider( 'value' )[ 1 ];
+            prices.privacy = privacy ? pricing.privacy : 0;
 
             var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
             prices.advertising = advertising ? pricing.advertising : 0;
 
-            prices.total = prices.logs + prices.advertising;
+            var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
+            prices.logs = logs ? pricing.logs : 0;
+
+            prices.total = prices.advertising + prices.logs + prices.privacy;
             callback( prices );
         });
     }
@@ -242,18 +262,23 @@ var ManageRoom = function() {
                 return;
             }
 
-            $( '#logs-setting' ).spin( 'small' );
+            $( '#privacy-setting' ).spin( 'small' );
             $( '#advertising-setting' ).spin( 'small' );
+            $( '#logs-setting' ).spin( 'small' );
             $( '#total-cost' ).spin( 'small' );
+            
+            var privacy = $( '#privacy-slider' ).noUiSlider( 'value' )[ 1 ];
+            $( '#privacy-setting' ).html( privacy ? 'Private ( $' + prices.privacy + ' / Month )' : 'Public ( Free! )' );
+            $( '#privacy-setting' ).spin( false );
+            
+            var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
+            $( '#advertising-setting' ).html( advertising ? 'Ads: Off ( $' + prices.advertising + ' / Month )' : 'Ads: On ( Free! )' );
+            $( '#advertising-setting' ).spin( false );
             
             var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
             $( '#logs-setting' ).html( logs ? 'Enabled ( $' + prices.logs + ' / Month )' : 'No Logs ( Free! )' );
             $( '#logs-setting' ).spin( false );
 
-            var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
-            $( '#advertising-setting' ).html( advertising ? 'Ads: Off ( $' + prices.advertising + ' / Month )' : 'Ads: On ( Free! )' );
-            $( '#advertising-setting' ).spin( false );
-            
             $( '#total-cost' ).html( prices.total > 0 ? ( '$' + prices.total + ' / Month' ) : 'Free!' );
             $( '#total-cost' ).spin( false );
         });

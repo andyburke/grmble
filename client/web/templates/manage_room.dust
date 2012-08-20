@@ -31,12 +31,15 @@
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
-                    <label class="control-label" for="protection">Visibility</label>
+                    <label class="control-label" for="privacy">Private Room</label>
                     <div class="controls">
-                        <select id="protection">
-                            <option {#isPublic}selected{/isPublic}>Public</option>
-                            <option {^isPublic}selected{/isPublic}>Private</option>
-                        </select>
+                        <div class="row">
+                            <div class="span4">
+                                <div id="privacy-slider" class="noUiSlider"></div>
+                            </div>
+                            <div class="span3 setting-info" id="privacy-setting">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="control-group">

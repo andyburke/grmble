@@ -298,7 +298,7 @@ var Rooms = function() {
         
         // TODO: we will need some kind of filtering/cursoring here
         app.get( '/api/1.0/Rooms', function( request, response ) {
-            models.Room.find( { 'isPublic': true }, function( error, rooms ) {
+            models.Room.find( { 'features.privacy': false }, function( error, rooms ) {
                 if ( error )
                 {
                     response.json( error, 500 );
