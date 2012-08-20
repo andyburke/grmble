@@ -80,6 +80,7 @@ topLevelDomain.run( function() {
         require( './api/1.0/Rooms.js' ),
         require( './api/1.0/Stripe.js' ),
         require( './api/1.0/Pricing.js' ),
+        require( './api/1.0/Passwords.js' ),
         
         // sockets
         require( './lib/Messaging.js' )

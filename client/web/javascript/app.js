@@ -32,6 +32,7 @@ var App = function( apiURL, router ) {
         new SignUp(),
         new Settings(),
         new User(),
+	new PasswordManagement(),
         
         // chat
         

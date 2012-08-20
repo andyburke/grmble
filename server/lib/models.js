@@ -120,3 +120,7 @@ exports.StripeEventRecordSchema = new mongoose.Schema({
 });
 exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
 exports.StripeEventRecord = connection.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
+
+exports.PasswordResetRequestSchema = new mongoose.Schema({
+     
+});
