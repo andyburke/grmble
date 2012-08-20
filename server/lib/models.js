@@ -95,7 +95,7 @@ exports.RoomSchema = new mongoose.Schema({
     ownerId: { type: mongoose.Schema.ObjectId, index: true },
     isPublic: { type: Boolean },
     features: {
-        users: { type: Number, default: 10 },
+        advertising: { type: Boolean, default: true },
         logs: { type: Boolean, default: false },
         search: { type: Boolean, default: false }
     }

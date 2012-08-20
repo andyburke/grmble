@@ -42,12 +42,12 @@ var ManageRoom = function() {
                         end: self.UpdatePrices
                     });
 
-                    $( '#users-slider' ).noUiSlider( 'init', {
+                    $( '#advertising-slider' ).noUiSlider( 'init', {
                         knobs: 1,
                         connect: "lower",
-                        scale: [ 0, 60 ],
-                        start: [ room.features.users != -1 ? room.features.users : 60 ],
-                        step: 10,
+                        scale: [ 0, 1 ],
+                        start: [ room.features.advertising ? 0 : 1 ],
+                        step: 1,
                         change: self.UpdatePrices,
                         end: self.UpdatePrices
                     });
@@ -96,16 +96,11 @@ var ManageRoom = function() {
                     toBeUpdated.isPublic = isPublic;
                 }
             
-                var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
-                if ( users > 50 )
-                {
-                    users = -1;
-                }
-                
-                if ( users != room.features.users )
+                var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
+                if ( advertising != room.features.advertising )
                 {
                     toBeUpdated.features = toBeUpdated.features || room.features;
-                    toBeUpdated.features.users = users;
+                    toBeUpdated.features.advertising = advertising;
                 }
 
                 var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
@@ -201,10 +196,10 @@ var ManageRoom = function() {
                     $( input ).html( input.id in room ? room[ input.id ] : '' );
                 });
                 
-                $( '#users-slider' ).noUiSlider( 'move', {
+                $( '#advertising-slider' ).noUiSlider( 'move', {
                     knob: 1,
-                    to: room.features.users,
-                    scale: [ 0, 60 ]
+                    to: room.features.advertising ? 0 : 1,
+                    scale: [ 0, 1 ]
                 });
 
                 $( '#logs-slider' ).noUiSlider( 'move', {
@@ -231,23 +226,10 @@ var ManageRoom = function() {
             var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
             prices.logs = logs ? pricing.logs : 0;
 
-            var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
-            if ( users < 10 )
-            {
-                users = 10;
-                $( '#users-slider' ).noUiSlider( 'move', {
-                    knob: 1,
-                    to: 10,
-                    scale: [ 0, 60 ]
-                });
-            }
-            prices.users = pricing.users[ users ];
-            if ( !( users in pricing.users ) )
-            {
-                prices.users = pricing.users[ 'Unlimited' ];
-            }
+            var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
+            prices.advertising = advertising ? pricing.advertising : 0;
 
-            prices.total = prices.logs + prices.users;
+            prices.total = prices.logs + prices.advertising;
             callback( prices );
         });
     }
@@ -261,21 +243,16 @@ var ManageRoom = function() {
             }
 
             $( '#logs-setting' ).spin( 'small' );
-            $( '#users-setting' ).spin( 'small' );
+            $( '#advertising-setting' ).spin( 'small' );
             $( '#total-cost' ).spin( 'small' );
             
             var logs = $( '#logs-slider' ).noUiSlider( 'value' )[ 1 ];
             $( '#logs-setting' ).html( logs ? 'Enabled ( $' + prices.logs + ' / Month )' : 'No Logs ( Free! )' );
             $( '#logs-setting' ).spin( false );
 
-            var users = Math.round( $( '#users-slider' ).noUiSlider( 'value' )[ 1 ] / 10 ) * 10;
-            if ( users > 50 )
-            {
-                users = 'Unlimited!';
-            }
-            var usersCost = ( prices.users > 0 ) ? ( prices.users + '$ / Month' ) : 'Free!';
-            $( '#users-setting' ).html( users + ' ( ' + usersCost + ' ) ' );
-            $( '#users-setting' ).spin( false );
+            var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
+            $( '#advertising-setting' ).html( advertising ? 'Ads: Off ( $' + prices.advertising + ' / Month )' : 'Ads: On ( Free! )' );
+            $( '#advertising-setting' ).spin( false );
             
             $( '#total-cost' ).html( prices.total > 0 ? ( '$' + prices.total + ' / Month' ) : 'Free!' );
             $( '#total-cost' ).spin( false );
