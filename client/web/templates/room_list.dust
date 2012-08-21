@@ -5,19 +5,19 @@
     <div class="span2"></div>
     <div class="span10">
         {#rooms}
-            <a href="#/Room/{_id}">
-                <div class="room-listing">
-                    <div class="centered" style="width: 128px;">
-                        <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
-                    </div>
-                    <div class="room-name">
-                        {name}
-                    </div>
-                    <div class="room-description">
-                        {description}
-                    </div>
-                </div>
-            </a>
+            <div class="room-listing">
+				<a href="#/Room/{_id}">
+	                <div class="centered" style="width: 128px;">
+	                    <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
+	                </div>
+	                <div class="room-name">
+	                    {name}
+	                </div>
+	                <div class="room-description">
+	                    {description}
+	                </div>
+				</a>
+            </div>
         {/rooms}
     </div>
 </div>
