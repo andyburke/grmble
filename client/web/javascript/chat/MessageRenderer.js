@@ -8,10 +8,10 @@ moment.relativeTime = {
     hh: "%dh",
     d: "1d",
     dd: "%dd",
-    M: "1m",
-    MM: "%dm",
-    y: "1y",
-    yy: "%dy"
+    M: "1M",
+    MM: "%dM",
+    y: "1Y",
+    yy: "%dY"
 };
 
 function escapeHTML( text ) {
