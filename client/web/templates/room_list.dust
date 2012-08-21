@@ -3,17 +3,17 @@
     <div class="span10">
         {#rooms}
             <div class="room-listing">
-				<a href="#/Room/{_id}">
-	                <div class="centered" style="width: 128px;">
-	                    <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
-	                </div>
-	                <div class="room-name">
-	                    {name}
-	                </div>
-	                <div class="room-description">
-	                    {description}
-	                </div>
-				</a>
+                <a href="#/Room/{_id}">
+                    <div class="centered" style="width: 128px;">
+	                <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
+	            </div>
+	            <div class="room-name">
+	                {name}
+	            </div>
+	            <div class="room-description">
+	                {?description}{description}{:else}&nbsp;{/description} <!-- wtf? why do we need an nbsp to keep css from fucking up? -->
+	            </div>
+                </a>
             </div>
         {/rooms}
     </div>
