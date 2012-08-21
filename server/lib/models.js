@@ -89,10 +89,11 @@ exports.UserSchema.plugin( SimpleTimestamps );
 exports.User = connection.model( 'User', exports.UserSchema );
 
 exports.RoomSchema = new mongoose.Schema({
+    ownerId: { type: mongoose.Schema.ObjectId, index: true },
     name: { type: String, index: true },
     description: { type: String },
     tags: { type: Array, index: true },
-    ownerId: { type: mongoose.Schema.ObjectId, index: true },
+    image: { type: String },
     features: {
         privacy: { type: Boolean, default: false },
         advertising: { type: Boolean, default: true },

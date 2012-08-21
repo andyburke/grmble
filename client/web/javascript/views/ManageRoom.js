@@ -87,6 +87,12 @@ var ManageRoom = function() {
                 {
                     toBeUpdated.name = name;
                 }
+
+                var image = $(form).find( "#image" ).val();
+                if ( image != room.image )
+                {
+                    toBeUpdated.image = image;
+                }
                 
                 var description = $(form).find( "#description" ).val();
                 if ( description != room.description )
@@ -107,7 +113,7 @@ var ManageRoom = function() {
                     toBeUpdated.features.privacy = privacy;
                 }
             
-                var advertising = $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ];
+                var advertising = !( $( '#advertising-slider' ).noUiSlider( 'value' )[ 1 ] );
                 if ( advertising != room.features.advertising )
                 {
                     toBeUpdated.features = toBeUpdated.features || room.features;
@@ -135,6 +141,11 @@ var ManageRoom = function() {
                                 type: 'PUT',
                                 data: toBeUpdated,
                                 success: function( room ) {
+                                    
+                                    $( form ).find( "#image-preview" ).attr( 'src', room.image ? room.image : '/images/icons/chat.png' );
+
+                                    if ( room.image )
+                                    
                                     self.app.rooms[ room._id ] = room;
                                     $(form).spin( false );
                                     $(button).button( 'complete' );
@@ -195,6 +206,8 @@ var ManageRoom = function() {
                     return;
                 }
 
+                $( form ).find( "#image-preview" ).attr( 'src', room.image ? room.image : '/images/icons/chat.png' );
+                
                 $( form ).find( 'input[type=text]' ).each( function( index, input ) {
                     
                     if ( input.id == 'tags' )

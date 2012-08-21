@@ -82,21 +82,16 @@ var Rooms = function() {
             
             var oldCost = 0;
             oldCost += request.room.features.logs ? config.pricing.logs : 0;
-            oldCost += config.pricing.users[ request.room.features.users ];
+            oldCost += request.room.features.privacy ? config.pricing.privacy : 0;
+            oldCost += request.room.features.advertising ? config.pricing.advertising : 0;
             oldCost += request.room.features.search ? config.pricing.search : 0;
             
             models.update( request.room, request.body );
             
             var totalCost = 0;
             totalCost += request.room.features.logs ? config.pricing.logs : 0;
-            var users = request.room.features.users > 0 ? request.room.features.users : 'Unlimited';
-            if ( !( users in config.pricing.users ) )
-            {
-                response.json( { 'error': 'invalid user count', 'message': 'Sorry, but the number of users is not supported.' }, 400 );
-                return;
-            }
-            
-            totalCost += config.pricing.users[ users ];
+            totalCost += request.room.features.privacy ? config.pricing.privacy : 0;
+            totalCost += request.room.features.advertising ? config.pricing.advertising : 0;
             totalCost += request.room.features.search ? config.pricing.search : 0;
 
             if ( totalCost > 0 && !request.user.stripeToken )

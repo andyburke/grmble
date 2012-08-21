@@ -10,6 +10,8 @@
 
         <div class="sidebar-nav-fixed extra" id="sidebar">
             <div class="sidebar-room-name-wrapper">
+                <img id="room-image" class="room-image" src="{?room.image}{room.image}{:else}/images/icons/chat.png{/room.image}" />
+                <div class="clear"></div>
                 <div id="room-name" class="room-name">{room.name}</div>
                 <div>
                     <button class="btn invite-to-room-button">Invite</button>

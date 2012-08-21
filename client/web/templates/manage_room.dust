@@ -19,6 +19,17 @@
                     </div>
                 </div><!-- /clearfix -->
                 <div class="control-group">
+                    <label class="control-label" for="image">Image</label>
+                    <div class="control-group">
+                        <div class="controls">
+                            <img id="image-preview" class="room-image" src="{^image}/images/icons/chat.png{:else}{image}{/image}">
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <input class="input-xlarge" id="image" name="image" type="text" value="{image}" />
+                    </div>
+                </div><!-- /clearfix -->
+                <div class="control-group">
                     <label class="control-label" for="textarea">Description</label>
                     <div class="controls">
                         <textarea class="input-xlarge" id="description" name="description" rows="3">{description}</textarea>
@@ -30,6 +41,8 @@
                         <input class="input-xlarge" id="tags" name="tags" type="text" value="{joinedTags}" />
                     </div>
                 </div><!-- /clearfix -->
+
+<!-- FEATURES -->
                 <div class="control-group">
                     <label class="control-label" for="privacy">Private Room</label>
                     <div class="controls">
