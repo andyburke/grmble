@@ -42,8 +42,7 @@ var CreateRoom = function() {
                     data: {
                         'name': name,
                         'description': description,
-                        'tags': tags,
-                        'isPublic': isPublic
+                        'tags': tags
                     },
                     cache: false,
                     success: function( room ) {
