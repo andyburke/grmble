@@ -37,26 +37,40 @@ var Messaging = function() {
         // TODO: figure out what to do with servers that have just come up
         //
         self.bayeux.getClient().subscribe( '/room/*', function( message ) {
-            if ( message.kind == 'join' )
+            switch( message.kind )
             {
-                if ( !self.rooms[ message.roomId ] )
-                {
-                    self.rooms[ message.roomId ] = {};
-                }
-                
-                self.rooms[ message.roomId ][ message.senderId ] = {
-                    senderId: message.senderId,
-                    nickname: message.nickname,
-                    userHash: message.userHash,
-                    avatar: message.avatar
-                };
-            }
-            else if ( message.kind == 'leave' )
-            {
-                if ( self.rooms[ message.roomId ] )
-                {
-                    delete self.rooms[ message.roomId ][ message.senderId ];
-                }
+                case 'join':
+                    if ( !self.rooms[ message.roomId ] )
+                    {
+                        self.rooms[ message.roomId ] = {};
+                    }
+                    
+                    self.rooms[ message.roomId ][ message.senderId ] = {
+                        senderId: message.senderId,
+                        nickname: message.nickname,
+                        userHash: message.userHash,
+                        avatar: message.avatar,
+                        idle: false
+                    };
+                    break;
+                case 'leave':
+                    if ( self.rooms[ message.roomId ] )
+                    {
+                        delete self.rooms[ message.roomId ][ message.senderId ];
+                    }
+                    break;
+                case 'idle':
+                    if ( self.rooms[ message.roomId ] && self.rooms[ message.roomId ][ message.senderId ] )
+                    {
+                        self.rooms[ message.roomId ][ message.senderId ].idle = true;
+                    }
+                    break;
+                case 'active':
+                    if ( self.rooms[ message.roomId ] && self.rooms[ message.roomId ][ message.senderId ] )
+                    {
+                        self.rooms[ message.roomId ][ message.senderId ].idle = false;
+                    }
+                    break;
             }
         });
         

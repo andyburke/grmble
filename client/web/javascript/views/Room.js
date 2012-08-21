@@ -220,7 +220,7 @@ var Room = function() {
                 },
                 error: function( xhr ) {
                     $(form).spin( false );
-                    self.app.ShowError( response.responseText );
+                    self.app.ShowError( xhr.responseText );
                     $(button).button( 'reset' );
 
                     mixpanel.track( "Invite: Error", {

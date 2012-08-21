@@ -23,7 +23,12 @@ var UserlistManager = function() {
                                 return;
                             }
                             
-                            $( '#userlist' ).append( output );
+                            var newEntry = $( output );
+                            $( '#userlist' ).append( newEntry );
+                            if ( message.users[ index ].idle )
+                            {
+                                $( newEntry ).fadeTo( 'fast', 0.3 );
+                            }
                         });
                     }
                     $( '#userlist-container' ).spin( false );
