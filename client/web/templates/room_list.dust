@@ -2,18 +2,20 @@
     <h1>Rooms <small>{subtitle}</small></h1>
 </div>
 <div class="row-fluid">
-    <div class="span8">
-        <table class="zebra-striped">
-            <tr>
-                <th>Room</th>
-                <th>Description</tH>
-            </tr>
-            {#rooms}
-                <tr>
-                    <td><a href="#/Room/{_id}">{name}</a></td>
-                    <td>{description}</td>
-                </tr>
-            {/rooms}
-        </table>
+    <div class="span2"></div>
+    <div class="span10">
+        {#rooms}
+            <a href="#/Room/{_id}">
+                <div class="room-listing">
+                    <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
+                    <div class="room-name">
+                        {name}
+                    </div>
+                    <div class="room-description">
+                        {description}
+                    </div>
+                </div>
+            </a>
+        {/rooms}
     </div>
 </div>
