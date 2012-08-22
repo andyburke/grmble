@@ -1,3 +1,7 @@
+function SendHeartbeat() {
+    
+}
+
 var Room = function() {
     var self = this;
     
@@ -8,24 +12,33 @@ var Room = function() {
         self.app = app;
         self.router = router;
         
+        self.heartbeatTimeout = null;
+        
         self.router.on( 'after', '/Room/:roomId', function( roomId ) {
             if ( self.app.room )
             {
                 self.app.events.emit( 'leaving room', self.app.room );
+
+                if ( self.heartbeatTimeout )
+                {
+                    clearTimeout( self.heartbeatTimeout );
+                }
                 
                 self.app.SendMessage({
                     kind: 'leave' 
                 }, function( error, message ) {
+
+                    self.app.room = null;
+
                     if ( error )
                     {
-                        self.app.ShowError( error ); 
+                        self.app.ShowError( error );
+                        return;
                     }
-                    else
-                    {
-                        self.app.events.emit( 'left room', message.roomId );
-                    }
-                    self.app.room = null;
+
+                    self.app.events.emit( 'left room', message.roomId );
                 });
+
             }
         });
         
@@ -60,12 +73,12 @@ var Room = function() {
                     }, function( error, message ) {
                         if ( error )
                         {
-                            self.app.ShowError( error ); 
+                            self.app.ShowError( error );
+                            return;
                         }
-                        else
-                        {
-                            self.app.events.emit( 'joined room', message.roomId );
-                        }
+
+                        self.app.events.emit( 'joined room', message.roomId );
+                        self.SendHeartbeat();
                     });
                     
                     dust.render( 'room', { room: room }, function( error, output ) {
@@ -271,4 +284,25 @@ var Room = function() {
         }
     }
     
+    self.SendHeartbeat = function() {
+        var idle = false;
+        if ( typeof( IdleHandler ) != 'undefined' )
+        {
+            var idleHandler = self.app.GetSubsystem( IdleHandler );
+            idle = idleHandler && idleHandler.idle;
+        }
+
+        self.app.SendMessage({
+            kind: 'heartbeat',
+            idle: idle
+        }, function( error, heartbeat ) {
+            if ( error )
+            {
+                self.app.ShowError( error );
+                return;
+            }
+            
+            self.heartbeatTimeout = setTimeout( self.SendHeartbeat, 30000 );
+        });
+    }
 }

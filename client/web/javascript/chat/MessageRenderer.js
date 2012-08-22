@@ -121,6 +121,7 @@ var MessageRenderer = function() {
     self.RenderMessage = function( message, append ) {
         switch( message.kind )
         {
+            case 'heartbeat':
             case 'idle':
             case 'active':
             case 'startedTyping':
@@ -128,63 +129,66 @@ var MessageRenderer = function() {
             case 'cancelledTyping':
             case 'userlist':
             case 'error':
+                return;
                 
             // TODO: render these, but make them look better somehow
             case 'join':
             case 'leave':
                 return;
-        }
 
-        // avoid duplicates
-        if ( $( '#' + message._id ).length != 0 )
-        {
-            return;
-        }
-        
-        // TODO: move this to a handler
-        message.processed = message.content == null ? null : linkify( message.content,  {
-            callback: function(text, href) {
-                return processTextHref(text, href);
-            }
-        });
-
-        message.time = moment( message.createdAt ).fromNow( true );
-        dust.render( 'message', message, function( error, output ) {
-            if ( error )
-            {
-                self.app.ShowError( error );
-                return;
-            }
-            
-            var renderedMessage = null;
-            if ( append )
-            {
-                renderedMessage = $( '#chatlog' ).append( output );
-            }
-            else
-            {
-                var elements = $( '#chatlog' ).find( '.message' );
-                var inserted = false;
-                
-                for ( var index = 0; index < elements.length; ++index )
+            case 'say':
+                // avoid duplicates
+                if ( $( '#' + message._id ).length != 0 )
                 {
-                    var time = $( elements[ index ] ).data( 'time' );
-                    if ( time > message.createdAt )
-                    {
-                        renderedMessage = $( elements[ index ] ).before( output );
-                        inserted = true;
-                        break;
+                    return;
+                }
+                
+                // TODO: move this to a handler
+                message.processed = message.content == null ? null : linkify( message.content,  {
+                    callback: function(text, href) {
+                        return processTextHref(text, href);
                     }
-                }
-                
-                if ( !inserted )
-                {
-                    renderedMessage = $( '#chatlog' ).append( output );
-                }
-            }
-            
-            self.app.events.emit( 'message rendered', message, renderedMessage );
-        });
+                });
+        
+                message.time = moment( message.createdAt ).fromNow( true );
+                dust.render( 'message', message, function( error, output ) {
+                    if ( error )
+                    {
+                        self.app.ShowError( error );
+                        return;
+                    }
+                    
+                    var renderedMessage = null;
+                    if ( append )
+                    {
+                        renderedMessage = $( '#chatlog' ).append( output );
+                    }
+                    else
+                    {
+                        var elements = $( '#chatlog' ).find( '.message' );
+                        var inserted = false;
+                        
+                        for ( var index = 0; index < elements.length; ++index )
+                        {
+                            var time = $( elements[ index ] ).data( 'time' );
+                            if ( time > message.createdAt )
+                            {
+                                renderedMessage = $( elements[ index ] ).before( output );
+                                inserted = true;
+                                break;
+                            }
+                        }
+                        
+                        if ( !inserted )
+                        {
+                            renderedMessage = $( '#chatlog' ).append( output );
+                        }
+                    }
+                    
+                    self.app.events.emit( 'message rendered', message, renderedMessage );
+                });
+                break;
+        }
     }
     
     self.UpdateMessageTimes = function() {

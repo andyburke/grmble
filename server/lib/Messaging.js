@@ -1,6 +1,8 @@
 var faye = require( 'faye' );
 var fayeRedis = require( 'faye-redis' );
 
+var mongoose = require( 'mongoose' );
+
 var Messaging = function() {
     var self = this;
 
@@ -8,6 +10,8 @@ var Messaging = function() {
     self.bayeux = null;
 
     self.rooms = {};
+    
+    self.timeouts = {};
 
     self.GetURLs = function( obj, request ) {
         return {
@@ -37,13 +41,26 @@ var Messaging = function() {
         // TODO: figure out what to do with servers that have just come up
         //
         self.bayeux.getClient().subscribe( '/room/*', function( message ) {
+            if ( !self.rooms[ message.roomId ] )
+            {
+                self.rooms[ message.roomId ] = {};
+            }
+
             switch( message.kind )
             {
-                case 'join':
-                    if ( !self.rooms[ message.roomId ] )
+                case 'heartbeat':
+                    if ( !self.rooms[ message.roomId ][ message.senderId ] )
                     {
-                        self.rooms[ message.roomId ] = {};
+                        self.rooms[ message.roomId ][ message.senderId ] = {
+                            senderId: message.senderId,
+                            nickname: message.nickname,
+                            userHash: message.userHash,
+                            avatar: message.avatar,
+                            idle: message.idle || false
+                        };
                     }
+                    break;
+                case 'join':
                     
                     self.rooms[ message.roomId ][ message.senderId ] = {
                         senderId: message.senderId,
@@ -54,23 +71,48 @@ var Messaging = function() {
                     };
                     break;
                 case 'leave':
-                    if ( self.rooms[ message.roomId ] )
-                    {
-                        delete self.rooms[ message.roomId ][ message.senderId ];
-                    }
+                    delete self.rooms[ message.roomId ][ message.senderId ];
                     break;
                 case 'idle':
-                    if ( self.rooms[ message.roomId ] && self.rooms[ message.roomId ][ message.senderId ] )
+                    if ( self.rooms[ message.roomId ][ message.senderId ] )
                     {
                         self.rooms[ message.roomId ][ message.senderId ].idle = true;
                     }
                     break;
                 case 'active':
-                    if ( self.rooms[ message.roomId ] && self.rooms[ message.roomId ][ message.senderId ] )
+                    if ( self.rooms[ message.roomId ][ message.senderId ] )
                     {
                         self.rooms[ message.roomId ][ message.senderId ].idle = false;
                     }
                     break;
+            }
+            
+            var empty = true;
+            for ( var key in self.rooms[ message.roomId ] )
+            {
+                if ( self.rooms[ message.roomId ].hasOwnProperty( key ) )
+                {
+                    empty = false;
+                    break;
+                }
+            }
+            
+            if ( empty )
+            {
+                delete self.rooms[ message.roomId ];
+                if ( self.timeouts[ message.roomId ] )
+                {
+                    for ( var senderId in self.timeouts[ message.roomId ] )
+                    {
+                        if ( self.timeouts[ message.roomId ][ senderId ] )
+                        {
+                            clearTimeout( self.timeouts[ message.roomId ][ senderId ] );
+                            self.timeouts[ message.roomId ][ senderId ] = null;
+                        }
+                    }
+                    
+                    delete self.timeouts[ message.roomId ];
+                }
             }
         });
         
@@ -102,6 +144,40 @@ var Messaging = function() {
                         error: 'No room found with id: ' + message.roomId
                     });
                     return;
+                }
+                
+                if ( message.kind == 'leave' )
+                {
+                    if ( self.timeouts[ message.roomId ] && self.timeouts[ message.roomId ][ message.senderId ] )
+                    {
+                        clearTimeout( self.timeouts[ message.roomId ][ message.senderId ] );
+                        self.timeouts[ message.roomId ][ message.senderId ] = null;
+                    }
+                }
+                else
+                {
+                    (function() {
+                        var capturedMessage = message;
+                        
+                        if ( !self.timeouts[ capturedMessage.roomId ] )
+                        {
+                            self.timeouts[ capturedMessage.roomId ] = {};
+                        }
+                        
+                        if ( self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] )
+                        {
+                            clearTimeout( self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] );
+                            self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] = null;
+                        }
+                        
+                        self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] = setTimeout( function() {
+                            capturedMessage._id = new mongoose.Types.ObjectId();
+                            capturedMessage.kind = 'leave';
+                            capturedMessage.createdAt = new Date();
+                            capturedMessage.content = 'timeout';
+                            self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, capturedMessage );
+                        }, 31000 );
+                    })();
                 }
                 
                 if ( room.features.logs )

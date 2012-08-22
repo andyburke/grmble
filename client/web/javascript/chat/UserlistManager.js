@@ -60,6 +60,7 @@ var UserlistManager = function() {
                         $( '#userlist-entry-typingstatus-' + message.senderId ).text('');
                         return;
                     case 'join':
+                    case 'heartbeat':
                         if ( $( '#userlist-entry-' + message.senderId ).length == 0 )
                         {
                             dust.render( 'userlist_entry', message, function( error, output ) {
@@ -68,8 +69,13 @@ var UserlistManager = function() {
                                     self.app.ShowError( error );
                                     return;
                                 }
-                                
-                                $( '#userlist' ).append( output );
+
+                                var newEntry = $( output );
+                                $( '#userlist' ).append( newEntry );
+                                if ( message.idle )
+                                {
+                                    $( newEntry ).fadeTo( 'fast', 0.3 );
+                                }
                             });
                         }
                         break;

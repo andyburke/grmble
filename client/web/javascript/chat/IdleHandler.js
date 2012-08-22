@@ -6,6 +6,7 @@ var IdleHandler = function() {
     self.app = null;
     self.unreadMessages = 0;
     self.subscription = null;
+    self.idle = false;
 
     self.Bind = function( app ) {
         self.app = app;
@@ -17,6 +18,8 @@ var IdleHandler = function() {
         $( document ).bind( 'idle.idleTimer', function() {
             if ( self.app.client && self.app.room && self.app.user )
             {
+                self.idle = true;
+
                 self.app.SendMessage({
                     kind: 'idle'
                 });
@@ -28,6 +31,8 @@ var IdleHandler = function() {
             {
                 self.unreadMessages = 0;
                 document.title = self.app.room.name + ' on Grmble';
+
+                self.idle = false;
 
                 self.app.SendMessage({
                     kind: 'active'
