@@ -176,7 +176,7 @@ var Messaging = function() {
                             capturedMessage.createdAt = new Date();
                             capturedMessage.content = 'timeout';
                             self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, capturedMessage );
-                        }, 31000 );
+                        }, 61000 );
                     })();
                 }
                 
