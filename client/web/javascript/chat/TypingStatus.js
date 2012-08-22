@@ -14,6 +14,12 @@ var TypingStatus = function() {
         $( document ).on( 'cut', '#message-entry-content', self.HandleChangedInput );
         
         self.app.events.addListener( 'message sent', function() {
+            if ( self.typingTimeout )
+            {
+                clearTimeout( self.typingTimeout );
+                self.typingTimeout = null;
+            }
+
             self.SendUserTypingStatus( 'cancelledTyping' );
         });
     }
