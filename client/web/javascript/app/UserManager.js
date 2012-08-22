@@ -36,8 +36,15 @@ var UserManager = function() {
                         $(form).find( "input[type=text][name=email]" ).val( '' );
                         $(form).find( "input[type=password][name=password]" ).val( '' );
             
+                        $( '#signup-modal' ).modal( 'hide' );
+                        
                         self.app.user = data.user || data;
                         self.app.events.emit( 'logged in', self.app.user );
+
+                        // cause a 'reload'
+                        var lastHash = window.location.hash;
+                        window.location.hash = '';
+                        window.location.hash = lastHash;
             
                         $(form).spin( false );
                     },

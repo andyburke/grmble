@@ -180,26 +180,41 @@
                 <a class="close" data-dismiss="modal">x</a>
                 <h3>Sign Up!</h3>
             </div>
-            <div class="row modal-body">
-                <div class="span3">
-                    <form id="signup-form">
-                        <fieldset>
-                            <input type="text" class="pull-right" name="email" placeholder="Email" />
-                            <div class="clear"></div>
-                            <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
-                            <div class="clear"></div>
-                            <input type="password" class="pull-right" name="password" placeholder="Password" />
-                            <div class="clear"></div>
-                            <input type="submit" class="button-signup pull-right btn btn-primary" id="signup-modal-signup-button" value="Sign Up!" />
-                        </fieldset>
-                    </form>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="span3">
+                        <form id="signup-form">
+                            <fieldset>
+                                <input type="text" class="pull-right" name="email" placeholder="Email" />
+                                <div class="clear"></div>
+                                <input type="text" class="pull-right" name="nickname" placeholder="Nickname" />
+                                <div class="clear"></div>
+                                <input type="password" class="pull-right" name="password" placeholder="Password" />
+                                <div class="clear"></div>
+                                <input type="submit" class="button-signup pull-right btn btn-primary" id="signup-modal-signup-button" value="Sign Up!" />
+                            </fieldset>
+                        </form>
+                    </div>
+                    <div class="span3 extra">
+                        <h3>Sign Up To Enter Rooms!</h3>
+                        When you sign up, you can set your nickname and avatar!
+                        <p/>
+                        <p/>
+                        We'll never reveal your email address to a third party.  Ever.
+                    </div>
                 </div>
-                <div class="span3 extra">
-                    <h3>Sign Up To Enter Rooms!</h3>
-                    When you sign up, you can set your nickname and avatar!
-                    <p/>
-                    <p/>
-                    We'll never reveal your email address to a third party.  Ever.
+                <hr/>
+                <div class="row">
+                    <div class="span1">
+                        Already have an account?
+                    </div>
+                    <div class="span6 extra">
+                        <form id="modal-signin-form" class="navbar-form pull-right form-inline">
+                            <input class="input-medium" type="text" name="email" placeholder="Email">
+                            <input class="input-medium" type="password" name="password" placeholder="Password">
+                            <button class="btn button-signin" type="submit"><i class="icon-user"></i> Sign In</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
