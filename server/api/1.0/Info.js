@@ -6,7 +6,11 @@ var Info = function() {
 
     self.GetURLs = function( obj ) {
         return obj ? {} : {
-            'info': '/api/1.0'
+            'info': '/api/1.0',
+            'icons': {
+                'active': '/images/icons/chat_highlighted.png',
+                'inactive': '/images/icons/chat.png'
+            }
         };
     }
 
