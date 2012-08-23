@@ -51,11 +51,7 @@ var IdleHandler = function() {
                 self.unreadMessages = 0;
                 document.title = self.app.room.name + ' on Grmble';
 
-                var favIcon = document.getElementById( 'favicon' );
-                if ( favIcon )
-                {
-                    favIcon.setAttribute( 'href', self.normalIcon );
-                }
+                self.SetFavIcon( self.normalIcon );
 
                 self.idle = false;
 
@@ -103,21 +99,34 @@ var IdleHandler = function() {
     }
     
     self.IndicateActivity = function() {
-        var favIcon = document.getElementById( 'favicon' );
-        if ( favIcon )
+        if ( $.data( document, 'idleTimer' ) == 'idle' )
         {
-            if ( $.data( document, 'idleTimer' ) == 'idle' )
-            {
-                var state = favIcon.getAttribute( 'data-icon' ) == 'active' ? 'inactive' : 'active';
-                favIcon.setAttribute( 'data-icon', state );
-                favIcon.setAttribute( 'href', self.icons[ state ] );
+            var state = document.getElementById( 'favicon' ).getAttribute( 'data-icon' ) == 'active' ? 'inactive' : 'active';
+            favIcon = self.SetFavIcon( self.icons[ state ] );
+            favIcon.setAttribute( 'data-icon', state );
 
-                self.activityIndicatorTimeout = setTimeout( self.IndicateActivity, 1000 );
-            }
-            else
-            {
-                self.activityIndicatorTimeout = null;
-            }
+            self.activityIndicatorTimeout = setTimeout( self.IndicateActivity, 1000 );
         }
+        else
+        {
+            self.activityIndicatorTimeout = null;
+        }
+    }
+    
+    self.SetFavIcon = function( url ) {
+        var head = document.getElementsByTagName( 'head' )[ 0 ];
+        var favIcon = document.getElementById( 'favicon' );
+
+        head.removeChild( favIcon );
+        
+        favIcon = document.createElement( 'link' );
+        favIcon.id = 'favicon';
+        favIcon.type = 'image/png';
+        favIcon.rel = 'shortcut icon';
+        favIcon.href = url;
+        
+        head.appendChild( favIcon );
+
+        return favIcon;
     }
 }
