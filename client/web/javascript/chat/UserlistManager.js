@@ -5,6 +5,8 @@ var UserlistManager = function() {
     self.clientSubscription = null;
     self.roomSubscription = null;
 
+    self.lastUserShown = null;
+    
     self.Bind = function( app ) {
         self.app = app;
 
@@ -105,30 +107,45 @@ var UserlistManager = function() {
             event.stopPropagation();
             var userlistElement = this;
 
+            var userId = $( userlistElement ).data( 'userid' );
+            
+            if ( self.lastUserShown == userId && $( '#userinfo' ).css( 'height' ) != '0px' )
+            {
+                $( '#userinfo' ).css( 'height', '0px' );
+                $( '#userlist' ).css( 'bottom', '0px' );
+                return;
+            }
+            
+            
             $( '#userinfo' ).css( 'height', '200px' );
             $( '#userlist' ).css( 'bottom', '200px' );
-            $( '#userinfoarea' ).spin( 'medium' );
-            self.app.GetAPI( function( api ) {
-                jsonCall({
-                    url: api.user + '/' + $( userlistElement ).data( 'userid' ),
-                    type: 'GET',
-                    success: function( user ) {
-                        dust.render( 'short_profile', user, function( error, output ) {
-                            if ( error )
-                            {
-                                self.app.ShowError( error );
-                                return;
-                            }
-                            
-                            $( '#userinfoarea' ).html( output );
-                            $( '#userinfoarea' ).spin( false );
-                        });
-                    },
-                    error: function( xhr ) {
-                        self.app.ShowError( xhr.responseText );
-                    }
+            
+            if ( self.lastUserShown != userId )
+            {
+                self.lastUserShown = userId;
+                $( '#userinfoarea' ).spin( 'medium' );
+                self.app.GetAPI( function( api ) {
+                    jsonCall({
+                        url: api.user + '/' + userId,
+                        type: 'GET',
+                        success: function( user ) {
+                            dust.render( 'short_profile', user, function( error, output ) {
+                                if ( error )
+                                {
+                                    self.app.ShowError( error );
+                                    return;
+                                }
+                                
+                                $( '#userinfoarea' ).html( output );
+                                $( '#userinfoarea' ).spin( false );
+                            });
+                        },
+                        error: function( xhr ) {
+                            self.app.ShowError( xhr.responseText );
+                        }
+                    });
                 });
-            });
+            }
         });
     }
 }
