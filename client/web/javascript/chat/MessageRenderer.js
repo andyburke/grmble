@@ -21,9 +21,10 @@ function escapeHTML( text ) {
 function processTextHref(text, href) {
     if ( href )
     {
+        var result = '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
         if ( href.match( /(?:png|gif|jpg)$/i ) )
         {
-            return '<a href="' + href + '" title="' + href + '" target="_blank"><img src="' + escapeHTML( text ) + '" /></a>';    
+            result = '<a href="' + href + '" title="' + href + '" target="_blank"><img class="dynamic-embed" src="' + escapeHTML( text ) + '" /></a>';
         }
         else if ( href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i ) )
         {
@@ -31,11 +32,7 @@ function processTextHref(text, href) {
 
             if ( matched && matched.length == 2 )
             {
-                return '<iframe src="https://embed.spotify.com/?theme=white&view=coverart&uri=spotify:track:' + matched[1] + '" width="250" height="80" frameborder="0" allowtransparency="true"></iframe>';
-            }
-            else
-            {
-                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                result = '<iframe class="dynamic-embed" src="https://embed.spotify.com/?theme=white&view=coverart&uri=spotify:track:' + matched[1] + '" width="250" height="80" frameborder="0" allowtransparency="true"></iframe>';
             }
         }
         else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
@@ -43,11 +40,7 @@ function processTextHref(text, href) {
             var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
             if ( matched && matched.length == 2 )
             {
-                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-            }
-            else
-            {
-                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                result = '<iframe class="youtube-player dynamic-embed" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
             }
         }
         else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
@@ -55,11 +48,7 @@ function processTextHref(text, href) {
             var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
             if ( matched && matched.length == 2 )
             {
-                return '<iframe class="youtube-player" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-            }
-            else
-            {
-                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
+                result = '<iframe class="youtube-player dynamic-embed" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
             }
         }
         else if ( href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/.*?/i ) )
@@ -67,18 +56,11 @@ function processTextHref(text, href) {
             var matched = href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\w[\w|-]*)/i);
             if ( matched && matched.length == 2 )
             {
-                return '<iframe src="http://player.vimeo.com/video/' + matched[1] + '?autoplay=0&amp;api=1" width="640" height="360" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
+                result = '<iframe class="dynamic-embed" src="http://player.vimeo.com/video/' + matched[1] + '?autoplay=0&amp;api=1" width="640" height="360" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
             }
-            else
-            {
-                return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-            }
-
         }
-        else
-        {
-            return '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-        }
+        
+        return result;
     }
 
     return escapeHTML( text );

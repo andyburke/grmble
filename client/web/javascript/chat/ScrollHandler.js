@@ -5,6 +5,8 @@ var ScrollHandler = function() {
     self.nearBottom = true;
     self.scrollRequests = 0;
     
+    var lastHeight = 0;
+    
     self.Bind = function( app ) {
         self.app = app;
         
@@ -17,8 +19,8 @@ var ScrollHandler = function() {
         });
     }
     
-    self.ScrollToBottom = function() {
-        if ( self.nearBottom )
+    self.ScrollToBottom = function( force ) {
+        if ( self.nearBottom || force )
         {
             ++self.scrollRequests;
             if ( self.scrollRequests == 1 )
@@ -34,6 +36,17 @@ var ScrollHandler = function() {
                         if ( outstandingRequests )
                         {
                             self.ScrollToBottom();
+                        }
+                        else
+                        {
+                            // images, iframes, etc, may load.  If they do, let's make sure we scroll again.
+                            setTimeout( function() {
+                                if ( $( document ).height() != lastHeight )
+                                {
+                                    self.ScrollToBottom( true );
+                                }
+                                lastHeight = $( document ).height();
+                            }, 500 );
                         }
                     }
                 );
