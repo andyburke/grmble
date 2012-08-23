@@ -97,7 +97,14 @@ var Room = function() {
                     self.SendHeartbeat();
                     self.app.SendMessage({
                         kind: 'join'
-                    }, function( message ) {
+                    }, function( error, message ) {
+                        
+                        if ( error )
+                        {
+                            self.app.ShowError( error );
+                            return;
+                        }
+                        
                         self.app.SendClientMessage({
                             kind: 'userlist request'
                         });
@@ -343,7 +350,17 @@ var Room = function() {
             {
                 self.app.SendMessage({
                     kind: 'join'    
-                }, function( message ) {
+                }, function( error, message ) {
+
+                    self.lastConsistencyCheck = new Date();
+                    self.consistencyCheckTimeout = setTimeout( self.CheckConsistency, self.consistencyCheckFrequency );
+
+                    if ( error )
+                    {
+                        self.app.ShowError( error );
+                        return;
+                    }
+                    
                     self.app.SendClientMessage({
                         kind: 'userlist request'
                     });
