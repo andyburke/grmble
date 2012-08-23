@@ -53,6 +53,8 @@ var SignUp = function() {
                     data: info,
                     cache: false,
                     success: function( data ) {
+                        mixpanel.track( "SignUp: Success" );
+
                         $(form).find( "input[type=text][name=email]" ).val( '' );
                         $(form).find( "input[type=text][name=nickname]" ).val( '' );
                         $(form).find( "input[type=password][name=password]" ).val( '' );
@@ -64,15 +66,15 @@ var SignUp = function() {
                         $( '#signup-modal' ).modal( 'hide' );
                         $( '#signup-thanks' ).modal( { 'backdrop': 'static' } );
 
+                        mixpanel.identify( self.app.user._id );
+                        mixpanel.name_tag( self.app.user.email );
+                        mixpanel.register( { email: self.app.user.email, nickname: self.app.user.nickname } );
+                        mixpanel.people.set( { '$email': self.app.user.email, name: self.app.user.nickname } );
+
                         // cause a 'reload'
                         var lastHash = window.location.hash;
                         window.location.hash = '';
                         window.location.hash = lastHash;
-                        
-                        mixpanel.track( "SignUp: Success" );
-                        mixpanel.identify( self.app.user._id );
-                        mixpanel.name_tag( self.app.user.email );
-                        mixpanel.register( { email: self.app.user.email, nickname: self.app.user.nickname } );
                     },
                     error: function( response, status, error ) {
                         $(form).spin( false );

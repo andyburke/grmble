@@ -231,6 +231,10 @@ var App = function( apiURL, router ) {
                 //self.nicknameRegex = new RegExp( user.nickname + '[\W\s$]', "ig" );
                 callback( self.user );
                 self.events.emit( 'got me', self.user );
+		mixpanel.identify( self.user._id );
+		mixpanel.name_tag( self.user.email );
+		mixpanel.register( { email: self.user.email, nickname: self.user.nickname } );
+		mixpanel.people.set( { '$email': self.user.email, name: self.user.nickname } );
             },
             error: function( xhr ) {
                 callback( null );
