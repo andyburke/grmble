@@ -180,6 +180,8 @@ var Messaging = function() {
                 case 'startedTyping':
                 case 'stoppedTyping':
                 case 'cancelledTyping':
+                case 'idle':
+                case 'active':
                     // don't log
                     return;
 
