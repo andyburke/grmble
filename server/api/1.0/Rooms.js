@@ -155,7 +155,7 @@ var Rooms = function() {
                     });
                 });
             }
-            else if ( request.user.stripeCustomer )
+            else if ( request.user.stripeCustomer && ( oldCost != totalCost ) )
             {
                 stripe.customers.cancel_subscription( request.user.stripeCustomer.id, false, function( error ) {
                     if ( error && ( !error.statusCode || error.statusCode != 404 ) )
