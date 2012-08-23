@@ -167,6 +167,7 @@ topLevelDomain.run( function() {
         }
     }
     
-    console.log( 'Server loaded, listening on port ' + config.server.port + ' ...' );
+    log.channels.server.info( 'Grmble Environment: ' + ( process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ) );
+    log.channels.server.info( 'Server loaded, listening on port ' + config.server.port + ' ...' );
     app.listen( config.server.port );
 });

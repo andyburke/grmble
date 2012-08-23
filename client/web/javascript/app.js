@@ -135,6 +135,8 @@ var App = function( apiURL, router ) {
         });
 
         self.GetAPI( function( api ) {
+	    
+	    // setup Faye
 	    var js = document.createElement( 'script' );
 	    js.src = api.faye + '/client.js';
 	    js.onload = function() {
@@ -192,6 +194,8 @@ var App = function( apiURL, router ) {
                 self.api = apiInfo.urls;
                 callback( self.api );
                 self.events.emit( 'API loaded', self.api );
+		
+		Stripe.setPublishableKey( apiInfo.stripe.publishablekey );
             },
             error: function( xhr ) {
                 // TODO: better way to handle this?

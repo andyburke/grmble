@@ -1,6 +1,6 @@
 var mongoose = require( 'mongoose' );
 
-var stripe = require( 'stripe' )( config.stripe.key.test );
+var stripe = require( 'stripe' )( config.stripe.key[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ] );
 
 require( 'date-utils' );
 var nodemailer = require( 'nodemailer' );

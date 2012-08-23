@@ -30,7 +30,10 @@ var Info = function() {
             var result = {
                 urls: urls,
                 time: new Date(),
-                version: "1.0"
+                version: "1.0",
+                stripe: {
+                    publishablekey: config.stripe.publishable[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ]
+                }
             };
 
             response.json( result );

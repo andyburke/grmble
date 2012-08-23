@@ -11,7 +11,7 @@ var Room = function() {
     self.consistencyCheckThreshold = 45000;
     self.consistencyCheckFrequency = 30000;
     
-    self.debugSubcription = null;
+    self.debugSubscription = null;
 
     self.Bind = function( app, router ) {
         self.app = app;
@@ -39,7 +39,7 @@ var Room = function() {
                     kind: 'leave' 
                 }, function( error, message ) {
 
-                    if ( self.debugSubcription )
+                    if ( self.debugSubscription )
                     {
                         self.debugSubscription.cancel();
                         self.debugSubsription = null;
@@ -84,7 +84,7 @@ var Room = function() {
 
                     if ( self.app.debug )
                     {
-                        self.debugSubcription = self.app.client.subscribe( '/room/' + self.app.room._id, function( message ) {
+                        self.debugSubscription = self.app.client.subscribe( '/room/' + self.app.room._id, function( message ) {
                             console.log( message );
                         });
                     }

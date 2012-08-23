@@ -48,6 +48,8 @@ var Billing = function() {
                 if ( response.error )
                 {
                     self.app.ShowError( response.error.message );
+                    $( form ).spin( false );
+                    $( button ).button( 'reset' );
                 }
                 else
                 {
@@ -71,7 +73,7 @@ var Billing = function() {
                                         return;
                                     }
                                 
-                                    $( '#cc-entry-container' ).html( output );
+                                    $( '.cc-entry-container' ).html( output );
                                 });
                                 $( form ).spin( false );
                                 $( button ).button( 'complete' );
@@ -82,6 +84,8 @@ var Billing = function() {
                             },
                             error: function( xhr ) {
                                 self.app.ShowError( xhr.responseText );
+                                $( form ).spin( false );
+                                $( button ).button( 'reset' );
                             }
                         });
                     });

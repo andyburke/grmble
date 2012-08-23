@@ -2,7 +2,8 @@ var Stripe = function() {
     var self = this;
     
     self.GetURLs = function( obj ) {
-        return {};
+        return obj ? {} : {
+        };
     };
     
     self.bind = function( app ) {

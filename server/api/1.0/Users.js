@@ -124,7 +124,6 @@ var Users = function() {
                         return;
                     }
 
-                    console.log( util.inspect( request.user ) );
                     response.json( models.censor( app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
                 });
             }
