@@ -1,7 +1,7 @@
 var IdleHandler = function() {
     var self = this;
     
-    self.idleTimeout = 1 * 1000;
+    self.idleTimeout = 120 * 1000;
 
     self.app = null;
     self.unreadMessages = 0;
