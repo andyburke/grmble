@@ -9,16 +9,24 @@
         </div>
 
         <div class="sidebar-nav-fixed extra" id="sidebar">
-            <div class="sidebar-room-name-wrapper">
-                <img id="room-image" class="room-image" src="{?room.image}{room.image}{:else}/images/icons/chat.png{/room.image}" />
-                <div class="clear"></div>
-                <div id="room-name" class="room-name">{room.name}</div>
-                <div>
-                    <button class="btn invite-to-room-button">Invite</button>
+            <div class="sidebar-nav-wrapper">
+                <div class="sidebar-room-name-wrapper">
+                    <img id="room-image" class="room-image" src="{?room.image}{room.image}{:else}/images/icons/chat.png{/room.image}" />
+                    <div class="clear"></div>
+                    <div id="room-name" class="room-name">{room.name}</div>
+                    <div>
+                        <button class="btn invite-to-room-button">Invite</button>
+                    </div>
                 </div>
-            </div>
-            <hr/>
-            <div id="userlist">
+                <hr/>
+                <div class="user-area-wrapper">
+                    <div id="userlist">
+                    </div>
+                    <div id="userinfo">
+                        <div id="userinfoarea"></div>
+                        <a class="close" id="close-userinfo-area">x</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

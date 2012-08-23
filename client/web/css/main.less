@@ -322,6 +322,7 @@ select.menu-icon option
     position: fixed;
     right: 0px;
     top: 50px;
+    bottom: 0px;
     width: 220px;
     
     .room-name
@@ -330,6 +331,15 @@ select.menu-icon option
         font-size: 24px;
         font-weight: bold;
     }
+}
+
+.sidebar-nav-wrapper
+{
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
 }
 
 .row-fluid > .span-fixed-sidebar
@@ -361,6 +371,26 @@ select.menu-icon option
     text-rendering: optimizelegibility;  
 }
 
+.user-area-wrapper
+{
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}
+
+#userlist
+{
+    position: absolute;
+    overflow: auto;
+    top: 200px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    .transition(0.5s, ease-out);
+}
+
 #userlist .user
 {
     display: inline-block;
@@ -384,6 +414,50 @@ select.menu-icon option
     text-overflow: ellipsis;
     overflow: hidden;
     text-align: center;
+}
+
+#userinfo
+{
+    position: absolute;
+    z-index: 10;
+    background: @background;
+    border-top: 1px solid #eee;
+    bottom: 0px;
+    height: 0px;
+    left: 0px;
+    right: 0px;
+    overflow: auto;
+    .transition(0.5s, ease-out);
+}
+
+#close-userinfo-area
+{
+    z-index: 100001;
+}
+
+#userinfoarea
+{
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+}
+
+#userinfoarea .nickname-wrapper
+{
+    border-bottom: 1px solid #eee;
+    height: 40px;
+}
+
+#userinfoarea .info-wrapper
+{
+    position: absolute;
+    top: 40px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    overflow: auto;
 }
 
 .room-listing
@@ -433,4 +507,3 @@ select.menu-icon option
 	color: grey;
 	font-weight: normal;
 }
-

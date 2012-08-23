@@ -93,5 +93,42 @@ var UserlistManager = function() {
                 self.subscription = null;
             }
         });
+
+        $( document ).on( 'click', '#close-userinfo-area', function( event ) {
+            event.preventDefault();
+            $( '#userinfo' ).css( 'height', '0px' );
+            $( '#userlist' ).css( 'bottom', '0px' );
+        });
+
+        $( document ).on( 'click', '.userlist-entry', function( event ) {
+            event.preventDefault();
+            event.stopPropagation();
+            var userlistElement = this;
+
+            $( '#userinfo' ).css( 'height', '200px' );
+            $( '#userlist' ).css( 'bottom', '200px' );
+            $( '#userinfoarea' ).spin( 'medium' );
+            self.app.GetAPI( function( api ) {
+                jsonCall({
+                    url: api.user + '/' + $( userlistElement ).data( 'userid' ),
+                    type: 'GET',
+                    success: function( user ) {
+                        dust.render( 'short_profile', user, function( error, output ) {
+                            if ( error )
+                            {
+                                self.app.ShowError( error );
+                                return;
+                            }
+                            
+                            $( '#userinfoarea' ).html( output );
+                            $( '#userinfoarea' ).spin( false );
+                        });
+                    },
+                    error: function( xhr ) {
+                        self.app.ShowError( xhr.responseText );
+                    }
+                });
+            });
+        });
     }
 }

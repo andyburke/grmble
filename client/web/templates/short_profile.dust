@@ -1,0 +1,12 @@
+<div class="nickname-wrapper">
+    <h1>{nickname}</h1>
+</div>
+<div class="info-wrapper">
+    <h3>Location: </h3>
+    <p/>
+    {location}
+    <p/>
+    <h3>Bio:</h3>
+    <p/>
+    {bio}
+</div>
