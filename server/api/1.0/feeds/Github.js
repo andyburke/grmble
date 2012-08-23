@@ -39,49 +39,57 @@ var FeedGithub = function() {
                     return;
                 }
 
-                dust.render( 'github_commit', request.body, function( error, output ) {
-                    if ( error )
-                    {
-                        response.json( error, 500 )
-                        return;
-                    }
-
-                    if ( app.bayeux )
-                    {
-                        var message = {
-                            _id: new mongoose.Types.ObjectId(),
-                            kind: 'say',
-                            clientId: app.bayeux.getClient().getClientId(),
-                            createdAt: new Date(),
-                            roomId: request.params.roomId,
-                            senderId: null,
-                            nickname: 'github',
-                            userHash: null,
-                            avatar: 'http://' + request.headers.host + '/images/services/github.png',
-                            content: output
-                        };
-                        
-                        app.bayeux.getClient().publish( '/room/' + request.params.roomId, message );
-
-                        if ( room.features.logs )
+                try
+                {
+                    var data = JSON.parse( request.param( 'payload' ) );
+                    dust.render( 'github_commit', data, function( error, output ) {
+                        if ( error )
                         {
-                            var newMessage = new models.Message();
-                            models.update( newMessage, message );
-                            newMessage._id = message._id;
-                            newMessage.createdAt = message.createdAt.toJSON();
-                            
-                            newMessage.save( function( error ) {
-                                if ( error )
-                                {
-                                    log.channels.db.error( error );
-                                    return;
-                                }
-                            });
+                            response.json( error, 500 )
+                            return;
                         }
-                    }
-                    
-                    response.json( {} );
-                });
+    
+                        if ( app.bayeux )
+                        {
+                            var message = {
+                                _id: new mongoose.Types.ObjectId(),
+                                kind: 'say',
+                                clientId: app.bayeux.getClient().getClientId(),
+                                createdAt: new Date(),
+                                roomId: request.params.roomId,
+                                senderId: null,
+                                nickname: 'github',
+                                userHash: null,
+                                avatar: 'http://' + request.headers.host + '/images/services/github.png',
+                                content: output
+                            };
+                            
+                            app.bayeux.getClient().publish( '/room/' + request.params.roomId, message );
+    
+                            if ( room.features.logs )
+                            {
+                                var newMessage = new models.Message();
+                                models.update( newMessage, message );
+                                newMessage._id = message._id;
+                                newMessage.createdAt = message.createdAt.toJSON();
+                                
+                                newMessage.save( function( error ) {
+                                    if ( error )
+                                    {
+                                        log.channels.db.error( error );
+                                        return;
+                                    }
+                                });
+                            }
+                        }
+                        
+                        response.json( {} );
+                    });
+                }
+                catch( e )
+                {
+                    log.channels.server.error( e.toString () );
+                }
             });
         });
     }
