@@ -69,6 +69,7 @@ var Room = function() {
                 if ( !user )
                 {
                     $( '#signup-modal' ).modal( { 'backdrop': 'static' } );
+                    mixpanel.track( "View: SignUp Modal" );
                     return;
                 }
                 
