@@ -1,0 +1,4 @@
+[{repository.name} - {repository.url}]{~n}
+{#commits}
+ * {message} - {author.name} ( {url} ){~n}
+{/commits}

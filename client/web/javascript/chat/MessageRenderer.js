@@ -15,7 +15,7 @@ moment.relativeTime = {
 };
 
 function escapeHTML( text ) {
-    return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" );
+    return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" ).replace( /\n/g, "<br/>" );
 }
 
 function processTextHref(text, href) {

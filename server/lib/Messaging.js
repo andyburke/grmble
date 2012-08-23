@@ -37,6 +37,7 @@ var Messaging = function() {
         });
 
         self.bayeux.attach( app );
+        self.app.bayeux = self.bayeux;
         
         // we listen for joins/leaves across any of our servers so that all servers have full lists
         // of users in rooms
@@ -149,6 +150,7 @@ var Messaging = function() {
 
                 (function() {
                     var capturedMessage = message;
+                    var capturedRoom = room;
                     
                     if ( !self.timeouts[ capturedMessage.clientId ] )
                     {
@@ -170,6 +172,23 @@ var Messaging = function() {
                         });
                         self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, newMessage );
                         delete self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ];
+                        
+                        if ( capturedRoom.features.logs )
+                        {
+                            var loggedMessage = new models.Message();
+                            models.update( loggedMessage, capturedMessage );
+                            loggedMessage._id = capturedMessage._id;
+                            loggedMessage.createdAt = capturedMessage.createdAt.toJSON();
+                            
+                            loggedMessage.save( function( error ) {
+                                if ( error )
+                                {
+                                    log.channels.db.error( error );
+                                    return;
+                                }
+                            });
+                        }
+
                     }, 61000 );
                 })();
                 

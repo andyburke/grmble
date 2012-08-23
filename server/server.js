@@ -83,8 +83,24 @@ topLevelDomain.run( function() {
         require( './api/1.0/Passwords.js' ),
         
         // sockets
-        require( './lib/Messaging.js' )
+        require( './lib/Messaging.js' ),
+        
+        // feeds
+        
+        require( './api/1.0/feeds/Github.js' )
     ];
+    
+    app.GetSubsystem = function( subsystemType ) {
+        for ( var index = 0; index < app.subsystems.length; ++index )
+        {
+            if ( app.subsystems[ index ] instanceof subsystemType )
+            {
+                return app.subsystems[ index ];
+            }
+        }
+        
+        return null;
+    }
     
     app.GetURLs = function( request ) {
         var result = {};

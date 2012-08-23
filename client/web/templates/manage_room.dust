@@ -1,6 +1,6 @@
 <div class="page-header">
     <h1>{name}</h1>
-            <a href="#/Room/{_id}">go to room</a>
+    <a href="#/Room/{_id}">go to room</a>
 </div>
 <div class="row-fluid">
     <div class="span7">
@@ -96,5 +96,16 @@
                 </div>
             </fieldset>
         </form>
+    </div>
+    <div class="span4 extra">
+        <h2>Postback URLs</h2>
+        <fieldset>
+            <div class="control-group">
+                <label class="control-label" for="github">github</label>
+                <div class="controls">
+                    <input class="input-xlarge disabled" id="feed-github" name="feed-github" type="text" value="{urls.feed_github}" disabled />
+                </div>
+            </div><!-- /clearfix -->
+        </fieldset>
     </div>
 </div>
