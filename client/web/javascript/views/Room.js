@@ -1,18 +1,21 @@
-function SendHeartbeat() {
-    
-}
-
 var Room = function() {
     var self = this;
     
     self.app = null;
     self.router = null;
     
+    self.heartbeatTimeout = null;
+
+    self.consistencyCheckTimeout = null;
+    self.lastConsistencyCheck = null;
+    self.consistencyCheckThreshold = 45000;
+    self.consistencyCheckFrequency = 30000;
+    
+    self.debugSubcription = null;
+
     self.Bind = function( app, router ) {
         self.app = app;
         self.router = router;
-        
-        self.heartbeatTimeout = null;
         
         self.router.on( 'after', '/Room/:roomId', function( roomId ) {
             if ( self.app.room )
@@ -22,12 +25,26 @@ var Room = function() {
                 if ( self.heartbeatTimeout )
                 {
                     clearTimeout( self.heartbeatTimeout );
+                    self.heartbeatTimeout = null;
+                }
+                
+                if ( self.consistencyCheckTimeout )
+                {
+                    clearTimeout( self.consistencyCheckTimeout );
+                    self.consistencyCheckTimeout = null;
+                    self.lastConsistencyCheck = null;
                 }
                 
                 self.app.SendMessage({
                     kind: 'leave' 
                 }, function( error, message ) {
 
+                    if ( self.debugSubcription )
+                    {
+                        self.debugSubscription.cancel();
+                        self.debugSubsription = null;
+                    }
+                    
                     self.app.room = null;
 
                     if ( error )
@@ -64,6 +81,14 @@ var Room = function() {
                     }
                     
                     self.app.room = room;
+
+                    if ( self.app.debug )
+                    {
+                        self.debugSubcription = self.app.client.subscribe( '/room/' + self.app.room._id, function( message ) {
+                            console.log( message );
+                        });
+                    }
+
                     document.title = room.name + ' on Grmble';
 
                     self.app.events.emit( 'joining room', room );
@@ -79,6 +104,10 @@ var Room = function() {
 
                         self.app.events.emit( 'joined room', message.roomId );
                         self.SendHeartbeat();
+                        self.app.SendClientMessage({
+                            kind: 'userlist request'
+                        });
+                        self.CheckConsistency();
                     });
                     
                     dust.render( 'room', { room: room }, function( error, output ) {
@@ -292,7 +321,7 @@ var Room = function() {
             idle = idleHandler && idleHandler.idle;
         }
 
-        self.app.SendMessage({
+        self.app.SendClientMessage({
             kind: 'heartbeat',
             idle: idle
         }, function( error, heartbeat ) {
@@ -304,5 +333,20 @@ var Room = function() {
             
             self.heartbeatTimeout = setTimeout( self.SendHeartbeat, 30000 );
         });
+    }
+    
+    self.CheckConsistency = function() {
+        if ( self.lastConsistencyCheck )
+        {
+            if ( new Date() - self.lastConsistencyCheck > self.consistencyCheckThreshold )
+            {
+                self.app.SendClientMessage({
+                    kind: 'userlist request'
+                });
+            }
+        }
+        
+        self.lastConsistencyCheck = new Date();
+        self.consistencyCheckTimeout = setTimeout( self.CheckConsistency, self.consistencyCheckFrequency );
     }
 }

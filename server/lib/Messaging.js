@@ -12,6 +12,8 @@ var Messaging = function() {
     self.rooms = {};
     
     self.timeouts = {};
+    
+    self.subscriptions = {};
 
     self.GetURLs = function( obj, request ) {
         return {
@@ -48,18 +50,6 @@ var Messaging = function() {
 
             switch( message.kind )
             {
-                case 'heartbeat':
-                    if ( !self.rooms[ message.roomId ][ message.senderId ] )
-                    {
-                        self.rooms[ message.roomId ][ message.senderId ] = {
-                            senderId: message.senderId,
-                            nickname: message.nickname,
-                            userHash: message.userHash,
-                            avatar: message.avatar,
-                            idle: message.idle || false
-                        };
-                    }
-                    break;
                 case 'join':
                     
                     self.rooms[ message.roomId ][ message.senderId ] = {
@@ -100,33 +90,44 @@ var Messaging = function() {
             if ( empty )
             {
                 delete self.rooms[ message.roomId ];
-                if ( self.timeouts[ message.roomId ] )
-                {
-                    for ( var senderId in self.timeouts[ message.roomId ] )
-                    {
-                        if ( self.timeouts[ message.roomId ][ senderId ] )
-                        {
-                            clearTimeout( self.timeouts[ message.roomId ][ senderId ] );
-                            self.timeouts[ message.roomId ][ senderId ] = null;
-                        }
-                    }
-                    
-                    delete self.timeouts[ message.roomId ];
-                }
             }
         });
         
+        self.bayeux.getClient().subscribe( '/client/*', function( message ) {
+            switch( message.kind )
+            {
+            case 'heartbeat':
+                if ( !self.rooms[ message.roomId ] )
+                {
+                    self.rooms[ message.roomId ] = {};
+                }
+                
+                if ( !self.rooms[ message.roomId ][ message.senderId ] )
+                {
+                    self.rooms[ message.roomId ][ message.senderId ] = {
+                        senderId: message.senderId,
+                        nickname: message.nickname,
+                        userHash: message.userHash,
+                        avatar: message.avatar,
+                        idle: message.idle || false
+                    };
+                }
+                break;
+            }
+        });
+
         // we listen only on the local server using 'bind' for handling logging and initial message emission
         //
         // if we were to subscribe, we'd end up trying to log the message from every app server and
         // emitting ( N * initial message count ) messages on the client channel where N is the number
         // of app servers
+        
         self.bayeux.bind( 'publish', function( clientId, channel, message ) {
             if ( self.bayeux.getClient().getClientId() == clientId )
             {
                 return;
             }
-            
+
             models.Room.findById( message.roomId, function( error, room ) {
                 if ( error )
                 {
@@ -145,75 +146,48 @@ var Messaging = function() {
                     });
                     return;
                 }
-                
-                if ( message.kind == 'leave' )
-                {
-                    if ( self.timeouts[ message.roomId ] && self.timeouts[ message.roomId ][ message.senderId ] )
-                    {
-                        clearTimeout( self.timeouts[ message.roomId ][ message.senderId ] );
-                        self.timeouts[ message.roomId ][ message.senderId ] = null;
-                    }
-                }
-                else
-                {
-                    (function() {
-                        var capturedMessage = message;
-                        
-                        if ( !self.timeouts[ capturedMessage.roomId ] )
-                        {
-                            self.timeouts[ capturedMessage.roomId ] = {};
-                        }
-                        
-                        if ( self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] )
-                        {
-                            clearTimeout( self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] );
-                            self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] = null;
-                        }
-                        
-                        self.timeouts[ capturedMessage.roomId ][ capturedMessage.senderId ] = setTimeout( function() {
-                            capturedMessage._id = new mongoose.Types.ObjectId();
-                            capturedMessage.kind = 'leave';
-                            capturedMessage.createdAt = new Date();
-                            capturedMessage.content = 'timeout';
-                            self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, capturedMessage );
-                        }, 61000 );
-                    })();
-                }
-                
-                if ( room.features.logs )
-                {
-                    var newMessage = new models.Message();
-                    models.update( newMessage, message );
-                    newMessage._id = message._id;
+
+                (function() {
+                    var capturedMessage = message;
                     
-                    newMessage.save( function( error ) {
-                        if ( error )
-                        {
-                            log.channels.db.error( error );
-                            self.bayeux.getClient().publish( '/client/' + message.clientId, {
-                                kind: 'error',
-                                errorobj: error,
-                                error: 'message save failed',
-                                message: 'Failed to save message into database.'
-                            });
-                            return;
-                        }
-                    });
-                }
-                    
-                if ( message.kind == 'join' )
-                {
-                    if ( !self.rooms[ message.roomId ] )
+                    if ( !self.timeouts[ capturedMessage.clientId ] )
                     {
-                        self.rooms[ message.roomId ] = {};
+                        self.timeouts[ capturedMessage.clientId ] = {};
                     }
                     
-                    self.rooms[ message.roomId ][ message.senderId ] = {
-                        senderId: message.senderId,
-                        nickname: message.nickname,
-                        userHash: message.userHash,
-                        avatar: message.avatar
-                    };
+                    if ( self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ] )
+                    {
+                        clearTimeout( self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ] );
+                        self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ] = null;
+                    }
+                    
+                    self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ] = setTimeout( function() {
+                        capturedMessage._id = new mongoose.Types.ObjectId();
+                        capturedMessage.kind = 'leave';
+                        capturedMessage.createdAt = new Date();
+                        capturedMessage.content = 'timeout';
+                        self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, capturedMessage );
+                        delete self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ];
+                    }, 61000 );
+                })();
+                
+                
+                switch( message.kind )
+                {
+                case 'leave':
+                    if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.roomId ] )
+                    {
+                        clearTimeout( self.timeouts[ message.clientId ][ message.roomId ] );
+                        delete self.timeouts[ message.clientId ][ message.roomId ];
+                    }
+
+                    break;
+                
+                case 'heartbeat':
+                    // don't want to log this
+                    return;
+                
+                case 'userlist request':
                     
                     var users = [];
                     for ( var id in self.rooms[ message.roomId ] )
@@ -226,11 +200,17 @@ var Messaging = function() {
                         roomId: message.roomId,
                         users: users
                     });
-                    
+
+                    // don't log
+                    return;
+
+                case 'recent messages request':
+
                     // TODO: the performance on this will likely be terrible as rooms grow,
                     //       we really need a better way to get the last N messages and send
                     //       them to the client in the proper order
                     
+                    // TODO: let client decide kinds?
                     // Send existing messages in room
                     var kinds = [ 'say' ]; //, 'join', 'leave' ];
                     models.Message.count( { roomId: room._id, kind: { $in: kinds } }, function( error, numMessages ) {
@@ -270,6 +250,30 @@ var Messaging = function() {
                                 error: error
                             });
                         });
+                    });
+
+                    // don't log
+                    return;
+                }
+                
+                if ( room.features.logs )
+                {
+                    var newMessage = new models.Message();
+                    models.update( newMessage, message );
+                    newMessage._id = message._id;
+                    
+                    newMessage.save( function( error ) {
+                        if ( error )
+                        {
+                            log.channels.db.error( error );
+                            self.bayeux.getClient().publish( '/client/' + message.clientId, {
+                                kind: 'error',
+                                errorobj: error,
+                                error: 'message save failed',
+                                message: 'Failed to save message into database.'
+                            });
+                            return;
+                        }
                     });
                 }
             });

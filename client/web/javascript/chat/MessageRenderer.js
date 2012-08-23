@@ -121,7 +121,6 @@ var MessageRenderer = function() {
     self.RenderMessage = function( message, append ) {
         switch( message.kind )
         {
-            case 'heartbeat':
             case 'idle':
             case 'active':
             case 'startedTyping':

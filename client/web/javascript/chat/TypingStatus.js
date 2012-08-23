@@ -12,16 +12,6 @@ var TypingStatus = function() {
         $( document ).on( 'change', '#message-entry-content', self.HandleChangedInput );
         $( document ).on( 'paste', '#message-entry-content', self.HandleChangedInput );
         $( document ).on( 'cut', '#message-entry-content', self.HandleChangedInput );
-        
-        self.app.events.addListener( 'message sent', function() {
-            if ( self.typingTimeout )
-            {
-                clearTimeout( self.typingTimeout );
-                self.typingTimeout = null;
-            }
-
-            self.SendUserTypingStatus( 'cancelledTyping' );
-        });
     }
     
     self.HandleChangedInput = function( event ) {
@@ -43,8 +33,12 @@ var TypingStatus = function() {
                 self.typingTimeout = null;
             }, self.typingIdleTime );
         }
-        else 
+        else
         {
+            
+            // this happens either when they remove all the text in the field OR when the message
+            // is sent and the field is cleared in code
+            
             if ( self.typingTimeout )
             {
                 clearTimeout( self.typingTimeout );

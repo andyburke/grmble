@@ -1,5 +1,7 @@
 var App = function( apiURL, router ) {
     var self = this;
+
+    self.debug = true;
     
     self.apiURL = apiURL;
     self.router = router;
@@ -142,6 +144,13 @@ var App = function( apiURL, router ) {
 		});
 		self.events.emit( 'client created', self.client );
 		
+		if ( self.debug )
+		{
+		    self.client.subscribe( '/client/' + self.clientId, function( message ) {
+			console.log( message );
+		    });
+		}
+
 		self.client.subscribe( '/client/' + self.clientId, function( message ) {
 		    if ( message.kind == 'error' )
 		    {
@@ -287,6 +296,12 @@ var App = function( apiURL, router ) {
     self.SendMessage = function( message, callback ) {
 	callback = callback || function() {};
 
+	if ( !self.user )
+	{
+	    callback( { 'error': 'no user', 'message': 'You are not currently logged in.' }, message );
+	    return;
+	}
+
 	if ( !self.room )
 	{
 	    callback( { 'error': 'no room', 'message': 'You are not currently in a room.' }, message );
@@ -313,4 +328,29 @@ var App = function( apiURL, router ) {
 	    callback( error, newMessage ); 
 	});
     }
+
+    self.SendClientMessage = function( message, callback ) {
+	callback = callback || function() {};
+
+	var newMessage = $.extend({
+	    _id: new ObjectId().toString(),
+	    clientId: self.clientId,
+	    createdAt: new Date(),
+	    roomId: self.room ? self.room._id : null,
+	    senderId: self.user ? self.user._id : null,
+	    nickname: self.user ? self.user.nickname : null,
+	    userHash: self.user ? self.user.hash : null,
+	    avatar: self.user ? self.user.avatar : null,
+	    content: null
+	}, message );
+	
+	var publication = self.client.publish( '/client/' + self.clientId, newMessage );
+	publication.callback( function() {
+	    callback( null, newMessage ); 
+	});
+	publication.errback( function( error ) {
+	    callback( error, newMessage ); 
+	});
+    }
+
 }
