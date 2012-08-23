@@ -10,8 +10,6 @@ var IdleHandler = function() {
     
     self.normalIcon = null;
     self.icons = {};
-    self.canvas = null;
-    self.context = null;
     
     self.Bind = function( app ) {
         self.app = app;
@@ -25,38 +23,8 @@ var IdleHandler = function() {
             
             if ( api.icons )
             {
-                function CreateCanvas() {
-                    self.canvas = document.createElement( 'canvas' );
-                    if ( !self.canvas.getContext )
-                    {
-                        self.canvas = null;
-                        return;
-                    }
-
-                    self.canvas.height = self.canvas.width = 16; // set the size
-                    self.context = self.canvas.getContext( '2d' );
-                    self.context.font = 'bold 10px sans-serif';
-                }
-                
-                var activeImg = document.createElement( 'img' );
-                activeImg.onload = function() {
-                    self.icons[ 'active' ] = this;
-                    if ( self.icons[ 'active' ] && self.icons[ 'inactive' ] )
-                    {
-                        CreateCanvas();
-                    }
-                }
-                activeImg.src = api.icons.active;
-
-                var inactiveImg = document.createElement( 'img' );
-                inactiveImg.onload = function() {
-                    self.icons[ 'inactive' ] = this;
-                    if ( self.icons[ 'active' ] && self.icons[ 'inactive' ] )
-                    {
-                        CreateCanvas();
-                    }
-                }
-                inactiveImg.src = api.icons.inactive;
+                self.icons[ 'active' ] = api.icons.active;
+                self.icons[ 'inactive' ] = api.icons.inactive;
             }
         });
         
@@ -86,7 +54,7 @@ var IdleHandler = function() {
                 var favIcon = document.getElementById( 'favicon' );
                 if ( favIcon )
                 {
-                    self.DrawFavicon( favIcon, 'inactive', self.unreadMessages );
+                    favIcon.setAttribute( 'href', self.normalIcon );
                 }
 
                 self.idle = false;
@@ -136,13 +104,13 @@ var IdleHandler = function() {
     
     self.IndicateActivity = function() {
         var favIcon = document.getElementById( 'favicon' );
-        if ( self.canvas && favIcon )
+        if ( favIcon )
         {
             if ( $.data( document, 'idleTimer' ) == 'idle' )
             {
                 var state = favIcon.getAttribute( 'data-icon' ) == 'active' ? 'inactive' : 'active';
                 favIcon.setAttribute( 'data-icon', state );
-                self.DrawFavicon( favIcon, state, self.unreadMessages );
+                favIcon.setAttribute( 'href', self.icons[ state ] );
 
                 self.activityIndicatorTimeout = setTimeout( self.IndicateActivity, 1000 );
             }
@@ -151,20 +119,5 @@ var IdleHandler = function() {
                 self.activityIndicatorTimeout = null;
             }
         }
-    }
-    
-    self.DrawFavicon = function( favIcon, state, unread ) {
-        self.context.clearRect( 0, 0, 16, 16 );
-        self.context.drawImage( self.icons[ state ], 0, 0, 16, 16 );
-        if ( unread )
-        {
-            //self.context.fillText( unread, 2, 9 );
-            self.context.fillStyle = '#000000';
-            self.context.fillText( '22', 3, 10 );
-            
-            self.context.fillStyle = '#FFFFFF';
-            self.context.fillText( '22', 2, 9 );
-        }
-        favIcon.setAttribute( 'href', self.canvas.toDataURL( 'image/png' ) );
     }
 }
