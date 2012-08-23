@@ -168,7 +168,7 @@ var ManageRoom = function() {
                                 return;
                             }
                             
-                            if ( prices.total > 0 && !user.stripe )
+                            if ( prices.total > 0 && !user.stripeToken )
                             {
                                 var billing = self.app.GetSubsystem( Billing );
                                 function HandleBillingUpdated() {
