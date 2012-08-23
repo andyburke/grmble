@@ -176,19 +176,13 @@ var Messaging = function() {
                 
                 switch( message.kind )
                 {
-                case 'leave':
-                    if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.roomId ] )
-                    {
-                        clearTimeout( self.timeouts[ message.clientId ][ message.roomId ] );
-                        delete self.timeouts[ message.clientId ][ message.roomId ];
-                    }
-
-                    break;
-                
                 case 'heartbeat':
+                case 'startedTyping':
+                case 'stoppedTyping':
+                case 'cancelledTyping':
                     // don't log
                     return;
-                
+
                 case 'userlist request':
                     
                     var users = [];
@@ -256,6 +250,15 @@ var Messaging = function() {
 
                     // don't log
                     return;
+
+                case 'leave':
+                    if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.roomId ] )
+                    {
+                        clearTimeout( self.timeouts[ message.clientId ][ message.roomId ] );
+                        delete self.timeouts[ message.clientId ][ message.roomId ];
+                    }
+
+                    break;
                 }
                 
                 if ( room.features.logs )
