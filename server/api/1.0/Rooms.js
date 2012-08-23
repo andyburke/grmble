@@ -83,7 +83,7 @@ var Rooms = function() {
             var oldCost = 0;
             oldCost += request.room.features.logs ? config.pricing.logs : 0;
             oldCost += request.room.features.privacy ? config.pricing.privacy : 0;
-            oldCost += request.room.features.advertising ? config.pricing.advertising : 0;
+            oldCost += request.room.features.advertising ? 0 : config.pricing.advertising;
             oldCost += request.room.features.search ? config.pricing.search : 0;
             
             models.update( request.room, request.body );
@@ -91,7 +91,7 @@ var Rooms = function() {
             var totalCost = 0;
             totalCost += request.room.features.logs ? config.pricing.logs : 0;
             totalCost += request.room.features.privacy ? config.pricing.privacy : 0;
-            totalCost += request.room.features.advertising ? config.pricing.advertising : 0;
+            totalCost += request.room.features.advertising ? 0 : config.pricing.advertising;
             totalCost += request.room.features.search ? config.pricing.search : 0;
 
             if ( totalCost > 0 && !request.user.stripeToken )
