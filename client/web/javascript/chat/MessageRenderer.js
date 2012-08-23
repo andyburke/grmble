@@ -105,7 +105,7 @@ var MessageRenderer = function() {
             });
         });
         
-        self.app.events.addListener( 'leaving room', function( room ) {
+        self.app.events.addListener( 'left room', function( room ) {
             if ( self.subscriptions[ room._id ] )
             {
                 self.subscriptions[ room._id ].cancel();

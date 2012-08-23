@@ -2,6 +2,7 @@ var faye = require( 'faye' );
 var fayeRedis = require( 'faye-redis' );
 
 var mongoose = require( 'mongoose' );
+var extend = require( 'node.extend' );
 
 var Messaging = function() {
     var self = this;
@@ -51,13 +52,12 @@ var Messaging = function() {
             switch( message.kind )
             {
                 case 'join':
-                    
                     self.rooms[ message.roomId ][ message.senderId ] = {
                         senderId: message.senderId,
                         nickname: message.nickname,
                         userHash: message.userHash,
                         avatar: message.avatar,
-                        idle: false
+                        idle: message.idle || false
                     };
                     break;
                 case 'leave':
@@ -162,11 +162,13 @@ var Messaging = function() {
                     }
                     
                     self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ] = setTimeout( function() {
-                        capturedMessage._id = new mongoose.Types.ObjectId();
-                        capturedMessage.kind = 'leave';
-                        capturedMessage.createdAt = new Date();
-                        capturedMessage.content = 'timeout';
-                        self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, capturedMessage );
+                        var newMessage = extend( capturedMessage, {
+                            _id: new mongoose.Types.ObjectId(),
+                            kind: 'leave',
+                            createdAt: new Date(),
+                            content: 'timeout'
+                        });
+                        self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, newMessage );
                         delete self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ];
                     }, 61000 );
                 })();
@@ -184,7 +186,7 @@ var Messaging = function() {
                     break;
                 
                 case 'heartbeat':
-                    // don't want to log this
+                    // don't log
                     return;
                 
                 case 'userlist request':

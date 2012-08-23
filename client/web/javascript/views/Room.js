@@ -91,25 +91,25 @@ var Room = function() {
 
                     document.title = room.name + ' on Grmble';
 
-                    self.app.events.emit( 'joining room', room );
-                    
-                    self.app.SendMessage({
-                        kind: 'join' 
-                    }, function( error, message ) {
-                        if ( error )
-                        {
-                            self.app.ShowError( error );
-                            return;
-                        }
+                    self.app.events.emit( 'joining room', self.app.room );
 
-                        self.app.events.emit( 'joined room', message.roomId );
-                        self.SendHeartbeat();
+                    self.SendHeartbeat();
+                    self.app.SendMessage({
+                        kind: 'join'
+                    }, function( message ) {
                         self.app.SendClientMessage({
                             kind: 'userlist request'
                         });
+
+                        self.app.SendClientMessage({
+                            kind: 'recent messages request'
+                        });
+
                         self.CheckConsistency();
+    
+                        self.app.events.emit( 'joined room', self.app.room );
                     });
-                    
+
                     dust.render( 'room', { room: room }, function( error, output ) {
                         if ( error )
                         {
@@ -340,8 +340,16 @@ var Room = function() {
         {
             if ( new Date() - self.lastConsistencyCheck > self.consistencyCheckThreshold )
             {
-                self.app.SendClientMessage({
-                    kind: 'userlist request'
+                self.app.SendMessage({
+                    kind: 'join'    
+                }, function( message ) {
+                    self.app.SendClientMessage({
+                        kind: 'userlist request'
+                    });
+                    
+                    self.app.SendClientMessage({
+                        kind: 'recent messages request' 
+                    });
                 });
             }
         }

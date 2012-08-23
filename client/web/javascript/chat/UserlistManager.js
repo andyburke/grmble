@@ -5,8 +5,6 @@ var UserlistManager = function() {
     self.clientSubscription = null;
     self.roomSubscription = null;
 
-    self.userlistUpdateTimeout = null;
-    
     self.Bind = function( app ) {
         self.app = app;
 
@@ -34,18 +32,6 @@ var UserlistManager = function() {
                         });
                     }
                     $( '#userlist-container' ).spin( false );
-                    
-                    if ( self.userlistUpdateTimeout )
-                    {
-                        clearTimeout( self.userlistUpdateTimeout );
-                        self.userlistUpdateTimeout = null;
-                    }
-                    
-                    self.userlistUpdateTimeout = setTimeout( function() {
-                        self.app.SendClientMessage({
-                            kind: 'userlist request'
-                        });
-                    }, 60000 );
                 }
             });
         });
@@ -105,12 +91,6 @@ var UserlistManager = function() {
             {
                 self.subscription.cancel();
                 self.subscription = null;
-            }
-            
-            if ( self.userlistUpdateTimeout )
-            {
-                clearTimeout( self.userlistUpdateTimeout );
-                self.userlistUpdateTimeout = null;
             }
         });
     }
