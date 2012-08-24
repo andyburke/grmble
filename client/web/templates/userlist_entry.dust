@@ -1,4 +1,4 @@
-<div class="user userlist-entry" id="userlist-entry-{senderId}" title="{nickname}" data-userid="{senderId}">
+<div class="user userlist-entry" id="userlist-entry-{senderId}" title="{nickname}" data-userid="{senderId}" data-nickname="{nickname}">
     <img class="user-avatar" id="userlist-entry-avatar-{senderId}" src="{^avatar}/images/icons/user_64x64.png{/avatar}{avatar}" title="{nickname}" />
     <div class="userlist-entry-nickname" id="userlist-entry-nickname-{senderId}">
         {nickname}

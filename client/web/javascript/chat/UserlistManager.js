@@ -16,24 +16,27 @@ var UserlistManager = function() {
                 {
                     $( '#userlist-container' ).spin( 'medium' );
                     $( '#userlist' ).html( '' );
-                    for ( var index = 0; index < message.users.length; ++index )
-                    {
-                        dust.render( 'userlist_entry', message.users[ index ], function( error, output ) {
+                    var index = 0;
+                    function InsertNextUser() {
+                        self.InsertUserlistEntry( message.users[ index ], function( error, newEntry ) {
+                            ++index;
+                            
                             if ( error )
                             {
                                 self.app.ShowError( error );
-                                return;
                             }
                             
-                            var newEntry = $( output );
-                            $( '#userlist' ).append( newEntry );
-                            if ( message.users[ index ].idle )
+                            if ( index == message.users.length )
                             {
-                                $( newEntry ).fadeTo( 'fast', 0.3 );
+                                $( '#userlist-container' ).spin( false );
+                            }
+                            else
+                            {
+                                InsertNextUser();
                             }
                         });
                     }
-                    $( '#userlist-container' ).spin( false );
+                    InsertNextUser();
                 }
             });
         });
@@ -62,23 +65,7 @@ var UserlistManager = function() {
                         $( '#userlist-entry-typingstatus-' + message.senderId ).text('');
                         return;
                     case 'join':
-                        if ( $( '#userlist-entry-' + message.senderId ).length == 0 )
-                        {
-                            dust.render( 'userlist_entry', message, function( error, output ) {
-                                if ( error )
-                                {
-                                    self.app.ShowError( error );
-                                    return;
-                                }
-
-                                var newEntry = $( output );
-                                $( '#userlist' ).append( newEntry );
-                                if ( message.idle )
-                                {
-                                    $( newEntry ).fadeTo( 'fast', 0.3 );
-                                }
-                            });
-                        }
+                        self.InsertUserlistEntry( message );
                         break;
                     case 'leave':
                         $( '#userlist-entry-' + message.senderId ).remove();
@@ -147,5 +134,49 @@ var UserlistManager = function() {
                 });
             }
         });
+        
+        self.InsertUserlistEntry = function( message, callback ) {
+            callback = callback || function() {};
+            if ( $( '#userlist-entry-' + message.senderId ).length > 0 )
+            {
+                callback( null, $( '#userlist-entry-' + message.senderId ) );
+                return;
+            }
+
+            dust.render( 'userlist_entry', message, function( error, output ) {
+                if ( error )
+                {
+                    callback( error, null );
+                    return;
+                }
+                
+                var elements = $( '#userlist' ).find( '.userlist-entry' );
+                var inserted = false;
+                var newEntry = null;
+                
+                for ( var index = 0; index < elements.length; ++index )
+                {
+                    var nickname = $( elements[ index ] ).data( 'nickname' ).toLowerCase();
+                    if ( nickname > message.nickname.toLowerCase() )
+                    {
+                        newEntry = $( elements[ index ] ).before( output );
+                        inserted = true;
+                        break;
+                    }
+                }
+                
+                if ( !inserted )
+                {
+                    newEntry = $( '#userlist' ).append( output );
+                }
+                
+                if ( message.idle )
+                {
+                    $( newEntry ).fadeTo( 'fast', 0.3 );
+                }
+                
+                callback( null, newEntry );
+            });
+        }
     }
 }
