@@ -45,7 +45,8 @@ var App = function( apiURL, router ) {
         new NameHighlighter(),
         new ScrollHandler(),
         new TypingStatus(),
-        new TabCompletion()
+        new TabCompletion(),
+	new InlineAds()
     ];
 
     self.GetSubsystem = function( subsystemType ) {

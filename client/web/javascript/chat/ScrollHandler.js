@@ -17,6 +17,10 @@ var ScrollHandler = function() {
         self.app.events.addListener( 'message rendered', function() {
             self.ScrollToBottom();
         });
+        
+        self.app.events.addListener( 'chatlog modified', function() {
+            self.ScrollToBottom(); 
+        });
     }
     
     self.ScrollToBottom = function( force ) {

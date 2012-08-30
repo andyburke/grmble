@@ -23,7 +23,6 @@ var UserManager = function() {
             
             $( form ).spin( 'small' );
             
-            var authString = 
             self.app.GetAPI( function( api ) {
                 jsonCall({
                     url: api.session,
