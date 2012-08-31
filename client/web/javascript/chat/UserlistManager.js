@@ -152,14 +152,14 @@ var UserlistManager = function() {
                 
                 var elements = $( '#userlist' ).find( '.userlist-entry' );
                 var inserted = false;
-                var newEntry = null;
+                var newEntry = $( output );
                 
                 for ( var index = 0; index < elements.length; ++index )
                 {
                     var nickname = $( elements[ index ] ).data( 'nickname' ).toLowerCase();
                     if ( nickname > message.nickname.toLowerCase() )
                     {
-                        newEntry = $( elements[ index ] ).before( output );
+                        $( elements[ index ] ).before( newEntry );
                         inserted = true;
                         break;
                     }
@@ -167,7 +167,7 @@ var UserlistManager = function() {
                 
                 if ( !inserted )
                 {
-                    newEntry = $( '#userlist' ).append( output );
+                    $( '#userlist' ).append( newEntry );
                 }
                 
                 if ( message.idle )
