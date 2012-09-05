@@ -163,7 +163,7 @@
                     <ul class="nav pull-right">
                         <li class="navItem"><a href="" onclick="return false;"><i id="server-connection-status" class=""></i> &nbsp;</a></li>
                     </ul>
-                    <form id="topbar-signin-form" class="navbar-form pull-right form-inline unauthenticated">
+                    <form id="topbar-signin-form" class="navbar-form pull-right form-inline unauthenticated" method="POST">
                         <input class="input-medium" type="text" name="email" placeholder="Email">
                         <input class="input-medium" type="password" name="password" placeholder="Password">
                         <button class="btn button-signin" type="submit"><i class="icon-user"></i> Sign In</button>
@@ -183,7 +183,7 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="span3">
-                        <form id="signup-form">
+                        <form id="signup-form" method="POST">
                             <fieldset>
                                 <input type="text" class="pull-right" name="email" placeholder="Email" />
                                 <div class="clear"></div>
@@ -206,7 +206,7 @@
                         Already have an account?
                     </div>
                     <div class="span6 extra">
-                        <form id="modal-signin-form" class="navbar-form pull-right form-inline">
+                        <form id="modal-signin-form" class="navbar-form pull-right form-inline" method="POST">
                             <input class="input-medium" type="text" name="email" placeholder="Email">
                             <input class="input-medium" type="password" name="password" placeholder="Password">
                             <button class="btn button-signin" type="submit"><i class="icon-user"></i> Sign In</button>

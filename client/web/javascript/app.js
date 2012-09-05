@@ -176,6 +176,10 @@ var App = function( apiURL, router ) {
     }
     
     self.ShowError = function( error ) {
+	mixpanel.track( "ShowError", {
+	    error: error
+	});
+	
         // TODO: improve this
         alert( error );
     }

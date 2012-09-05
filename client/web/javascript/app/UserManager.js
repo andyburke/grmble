@@ -9,7 +9,9 @@ var UserManager = function() {
         self.router = router;
 
         $( document ).on( 'click', '.button-signin', function( event ) {
-            event.preventDefault();    
+            event.preventDefault();
+            event.stopPropagation();
+            
             var form = $( this ).parents( 'form:first' );
         
             var email = $( form ).find( "input[type=text][name=email]" ).val().trim();
@@ -18,7 +20,7 @@ var UserManager = function() {
             if ( !email.length || !password.length )
             {
                 alert( 'You must enter an email and a password to log in!' );
-                return;
+                return false;
             }
             
             $( form ).spin( 'small' );
@@ -46,10 +48,12 @@ var UserManager = function() {
                         window.location.hash = lastHash;
             
                         $(form).spin( false );
+                        return false;
                     },
                     error: function( response, status, error ) {
                         $(form).spin( false );
                         self.app.ShowError( response.responseText );
+                        return false;
                     }
                 });
             });
@@ -57,6 +61,7 @@ var UserManager = function() {
         
         $( document ).on( 'click', '.button-signout', function( event ) {
             event.preventDefault();
+            event.stopPropagation();
             
             self.app.GetAPI( function( api ) {
                 jsonCall({
@@ -66,9 +71,11 @@ var UserManager = function() {
                         var oldUser = self.app.user;
                         self.app.user = null;
                         self.app.events.emit( 'logged out', oldUser );
+                        return false;
                     },
                     error: function( response, status, error ) {
                         self.app.ShowError( response.responseText );
+                        return false;
                     }
                 });    
             });
