@@ -4,6 +4,10 @@
         {#rooms}
             <div class="room-listing">
                 <a href="#/Room/{_id}">
+                    <div class="room-user-count">
+                        <div class="user-count">{users}</div>
+                        <div class="default-avatar" style="width: 20px; height: 20px;"></div>
+                    </div>
                     <div class="centered" style="width: 128px;">
 	                <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
 	            </div>

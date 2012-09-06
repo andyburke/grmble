@@ -48,24 +48,26 @@ var oldest = "1970-01-01";
 var newest = "2100-01-01";
 var query = exports.query = {
     HandleSearchParams: function( request, response, next ) {
-        // backwards compat for 'since'/'until'
-        request.createdSince = request.param( 'createdSince', oldest );
-        request.createdUntil = request.param( 'createdUntil', newest );
+        request.query.createdSince = request.param( 'createdSince', oldest );
+        request.query.createdUntil = request.param( 'createdUntil', newest );
         
-        request.updatedSince = request.param( 'updatedSince', oldest );
-        request.updatedUntil = request.param( 'updatedUntil', newest );
+        request.query.updatedSince = request.param( 'updatedSince', oldest );
+        request.query.updatedUntil = request.param( 'updatedUntil', newest );
 
-        request.deletedSince = request.param( 'deletedSince', oldest );
-        request.deletedUntil = request.param( 'deletedUntil', newest );
+        request.query.deletedSince = request.param( 'deletedSince', oldest );
+        request.query.deletedUntil = request.param( 'deletedUntil', newest );
 
-        request.startedSince = request.param( 'startedSince', oldest );
-        request.startedUntil = request.param( 'startedUntil', newest );
+        request.query.startedSince = request.param( 'startedSince', oldest );
+        request.query.startedUntil = request.param( 'startedUntil', newest );
         
-        request.endedSince = request.param( 'endedSince', oldest );
-        request.endedUntil = request.param( 'endedUntil', newest );
+        request.query.endedSince = request.param( 'endedSince', oldest );
+        request.query.endedUntil = request.param( 'endedUntil', newest );
 
-        request.offset = request.param( 'offset', 0 );
-        request.limit = request.param( 'limit', 100 );
+        request.query.offset = request.param( 'offset', 0 );
+        request.query.limit = request.param( 'limit', 100 );
+
+        request.query.sortBy = request.param( 'sortBy', 'createdAt' );
+        request.query.sort = request.param( 'sort', 'asc' );
 
         next();
     }

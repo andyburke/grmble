@@ -172,6 +172,14 @@ var Messaging = function() {
                         });
                         self.bayeux.getClient().publish( '/room/' + capturedMessage.roomId, newMessage );
                         delete self.timeouts[ capturedMessage.clientId ][ capturedMessage.roomId ];
+
+                        capturedRoom.users--;
+                        capturedRoom.save( function( error ) {
+                            if ( error )
+                            {
+                                log.channels.db.error( error );
+                            }
+                        });
                         
                         if ( capturedRoom.features.logs )
                         {
@@ -272,12 +280,30 @@ var Messaging = function() {
                     // don't log
                     return;
 
+                case 'join':
+                    room.users++;
+                    room.save( function( error ) {
+                        if ( error )
+                        {
+                            log.channels.db.error( error );
+                        }
+                    });
+                    
+                    break;
                 case 'leave':
                     if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.roomId ] )
                     {
                         clearTimeout( self.timeouts[ message.clientId ][ message.roomId ] );
                         delete self.timeouts[ message.clientId ][ message.roomId ];
                     }
+                    
+                    room.users--;
+                    room.save( function( error ) {
+                        if ( error )
+                        {
+                            log.channels.db.error( error );
+                        }
+                    });
 
                     break;
                 }

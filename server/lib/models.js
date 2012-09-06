@@ -94,6 +94,7 @@ exports.RoomSchema = new mongoose.Schema({
     description: { type: String },
     tags: { type: Array, index: true },
     image: { type: String },
+    users: { type: Number, default: 0 },
     features: {
         privacy: { type: Boolean, default: false },
         advertising: { type: Boolean, default: true },

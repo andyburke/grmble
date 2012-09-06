@@ -292,8 +292,23 @@ var Rooms = function() {
         });
         
         // TODO: we will need some kind of filtering/cursoring here
-        app.get( '/api/1.0/Rooms', function( request, response ) {
-            models.Room.find( { 'features.privacy': false }, function( error, rooms ) {
+        app.get( '/api/1.0/Rooms', utils.query.HandleSearchParams, function( request, response ) {
+            var criteria = {
+                'features.privacy': false
+            };
+            
+            var query = models.Room.find( criteria );
+            
+            query.limit( request.query.limit );
+            query.skip( request.query.offset );
+            query.gt( 'createdAt', request.query.createdSince );
+            query.lt( 'createdAt', request.query.createdUntil );
+    
+            var sort = {};
+            sort[ request.query.sortBy ] = request.query.sort;
+            query.sort( sort );
+            
+            query.exec( function( error, rooms ) {
                 if ( error )
                 {
                     response.json( error, 500 );

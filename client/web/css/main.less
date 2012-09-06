@@ -463,11 +463,37 @@ select.menu-icon option
 .room-listing
 {
     display: inline-block;
+    position: relative;
     padding: 10px;
     margin: 4px;
     border: 10px solid #ddd;
     width: 160px;
     height: 160px;
+}
+
+.default-avatar
+{
+    display: inline-block;
+    background-image: url( '/images/icons/user_64x64.png' );
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.room-user-count
+{
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    text-align: right;
+    text-decoration: none;
+}
+
+.user-count
+{
+    display: inline-block;
+    color: #888;
+    font-size: 24px;
+    padding-right: 2px;
 }
 
 .room-image
