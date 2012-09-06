@@ -21,49 +21,7 @@ var ManageRoom = function() {
                     return;
                 }
 
-                room.joinedTags = room.tags.join( ', ' );
-
-                dust.render( 'manage_room', room, function( error, output ) {
-                    if ( error )
-                    {
-                        self.app.ShowError( error );
-                        return;
-                    }
-    
-                    $( '#main' ).html( output );
-
-                    $( '#privacy-slider' ).noUiSlider( 'init', {
-                        knobs: 1,
-                        connect: "lower",
-                        scale: [ 0, 1 ],
-                        start: [ room.features.privacy ? 1 : 0 ],
-                        step: 1,
-                        change: self.UpdatePrices,
-                        end: self.UpdatePrices
-                    });
-
-                    $( '#logs-slider' ).noUiSlider( 'init', {
-                        knobs: 1,
-                        connect: "lower",
-                        scale: [ 0, 1 ],
-                        start: [ room.features.logs ? 1 : 0 ],
-                        step: 1,
-                        change: self.UpdatePrices,
-                        end: self.UpdatePrices
-                    });
-
-                    $( '#advertising-slider' ).noUiSlider( 'init', {
-                        knobs: 1,
-                        connect: "lower",
-                        scale: [ 0, 1 ],
-                        start: [ room.features.advertising ? 0 : 1 ],
-                        step: 1,
-                        change: self.UpdatePrices,
-                        end: self.UpdatePrices
-                    });
-
-                    self.UpdatePrices();
-                });
+                self.RenderRoom( room );
             });
         });
         
@@ -100,7 +58,7 @@ var ManageRoom = function() {
                     toBeUpdated.description = description;
                 }
             
-                var tags = $(form).find( "#tags" ).val().split( new RegExp( '[,;]' ) ).map( function( tag ) { return tag.trim() } );
+                var tags = $(form).find( '#tags' ).val().split( new RegExp( '[,;\\s]+' ) ).map( function( tag ) { return tag.trim().toLowerCase(); } ) || [];
                 if ( tags != room.tags )
                 {
                     toBeUpdated.tags = tags;
@@ -142,10 +100,8 @@ var ManageRoom = function() {
                                 data: toBeUpdated,
                                 success: function( room ) {
                                     
-                                    $( form ).find( "#image-preview" ).attr( 'src', room.image ? room.image : '/images/icons/chat.png' );
+                                    self.UpdateRoomSettings( form, room );
 
-                                    if ( room.image )
-                                    
                                     self.app.rooms[ room._id ] = room;
                                     $(form).spin( false );
                                     $(button).button( 'complete' );
@@ -241,6 +197,66 @@ var ManageRoom = function() {
                 self.UpdatePrices();
             });
         });
+    }
+    
+    self.RenderRoom = function( room, callback ) {
+        callback = callback || function() {};
+
+        room.joinedTags = room.tags.join( ', ' );
+
+        dust.render( 'manage_room', room, function( error, output ) {
+            if ( error )
+            {
+                self.app.ShowError( error );
+                return;
+            }
+
+            $( '#main' ).html( output );
+
+            $( '#privacy-slider' ).noUiSlider( 'init', {
+                knobs: 1,
+                connect: "lower",
+                scale: [ 0, 1 ],
+                start: [ room.features.privacy ? 1 : 0 ],
+                step: 1,
+                change: self.UpdatePrices,
+                end: self.UpdatePrices
+            });
+
+            $( '#logs-slider' ).noUiSlider( 'init', {
+                knobs: 1,
+                connect: "lower",
+                scale: [ 0, 1 ],
+                start: [ room.features.logs ? 1 : 0 ],
+                step: 1,
+                change: self.UpdatePrices,
+                end: self.UpdatePrices
+            });
+
+            $( '#advertising-slider' ).noUiSlider( 'init', {
+                knobs: 1,
+                connect: "lower",
+                scale: [ 0, 1 ],
+                start: [ room.features.advertising ? 0 : 1 ],
+                step: 1,
+                change: self.UpdatePrices,
+                end: self.UpdatePrices
+            });
+
+            self.UpdatePrices();
+            callback();
+        });        
+    }
+    
+    self.UpdateRoomSettings = function( form, room ) {
+
+        $( form ).find( "#name" ).val( room.name );
+        $( form ).find( "#image" ).val( room.image );
+        $( form ).find( "#image-preview" ).attr( 'src', room.image ? room.image : '/images/icons/chat.png' );
+        $( form ).find( "#description" ).val( room.description );
+        $( form ).find( "#tags" ).val( room.tags.join( ', ' ) );
+
+        // TODO: update sliders?
     }
     
     self.GetPrices = function( callback ) {

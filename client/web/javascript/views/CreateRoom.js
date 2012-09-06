@@ -32,7 +32,7 @@ var CreateRoom = function() {
         
             var name = $(form).find( '#name' ).val();
             var description = $(form).find( '#description' ).val();
-            var tags = $(form).find( '#tags' ).val().split( new RegExp( '[,;]' ) ).map( function( tag ) { return tag.trim(); } ) || [];
+            var tags = $(form).find( '#tags' ).val().split( new RegExp( '[,;\s+]' ) ).map( function( tag ) { return tag.trim().toLowerCase(); } ) || [];
             var isPublic = $(form).find( '#protection' ).val() == 'Public';
             
             self.app.GetAPI( function( api ) {

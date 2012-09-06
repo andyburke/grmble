@@ -297,6 +297,11 @@ var Rooms = function() {
                 'features.privacy': false
             };
             
+            if ( request.param( 'tags' ) )
+            {
+                criteria[ 'tags' ] = { $in: request.param( 'tags' ).split( ',' ) };
+            }
+            
             var query = models.Room.find( criteria );
             
             query.limit( request.query.limit );
