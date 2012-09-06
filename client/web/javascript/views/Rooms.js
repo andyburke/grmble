@@ -17,6 +17,10 @@ var Rooms = function() {
                 jsonCall({
                     url: api.rooms,
                     type: 'GET',
+                    data: {
+                        'sortBy': 'users',
+                        'sort': 'desc'
+                    },
                     success: function( rooms ) {
                         dust.render( 'room_list', { subtitle: 'List of all public rooms.', rooms: rooms }, function( error, output ) {
                             if ( error )
@@ -51,7 +55,9 @@ var Rooms = function() {
                     url: api.rooms,
                     type: 'GET',
                     data: {
-                        tags: tags  
+                        tags: tags,
+                        sortBy: 'users',
+                        sort: 'desc'
                     },
                     success: function( rooms ) {
                         dust.render( 'room_list', { subtitle: 'List of all public rooms.', rooms: rooms }, function( error, output ) {
