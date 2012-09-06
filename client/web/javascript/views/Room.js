@@ -118,6 +118,8 @@ var Room = function() {
                         self.app.events.emit( 'joined room', self.app.room );
                     });
 
+                    room.roomUrl = window.location.href;
+                    
                     dust.render( 'room', { room: room }, function( error, output ) {
                         if ( error )
                         {
