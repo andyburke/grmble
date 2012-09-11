@@ -33,32 +33,68 @@ var IdleHandler = function() {
         $.idleTimer( self.idleTimeout, document, {
             events: 'mousemove keydown mousewheel mousedown touchstart touchmove' // DOMMouseScroll, nope, scroll to bottom emits this
         });
-    
-        $( document ).bind( 'idle.idleTimer', function() {
-            if ( self.app.client && self.app.room && self.app.user )
-            {
-                self.idle = true;
 
-                self.app.SendMessage({
-                    kind: 'idle'
-                });
+        if ( document.addEventListener )
+        {
+            var changeEvents = {
+                hidden: "visibilitychange",
+                mozHidden: "mozvisibilitychange",
+                webkitHidden: "webkitvisibilitychange",
+                msHidden: "msvisibilitychange",
+                oHidden: "ovisibilitychange"
+            };
+            
+            for ( var changeEvent in changeEvents )
+            {
+                if ( changeEvent in document )
+                {
+                    document.addEventListener( changeEvents[ changeEvent ], function() {
+                        if ( document[ changeEvent ] )
+                        {
+                            self.SetIdle();
+                        }
+                        else
+                        {
+                            self.SetActive();
+                        }
+                    });
+                    break;
+                }
             }
-        });
+        }
         
-        $( document ).bind( 'active.idleTimer', function() {
-            if ( self.app.client && self.app.room && self.app.user )
-            {
-                self.unreadMessages = 0;
-                document.title = self.app.room.name + ' on Grmble';
+        $( document ).bind( 'idle.idleTimer', self.SetIdle );
+        $( document ).bind( 'active.idleTimer', self.SetActive );
+    }
+    
+    self.SetIdle = function() {
+        if ( self.idle || !self.app.client || !self.app.room || !self.app.user )
+        {
+            return;
+        }
+        
+        self.idle = true;
 
-                self.SetFavIcon( self.normalIcon );
+        self.app.SendMessage({
+            kind: 'idle'
+        });
+    }
+    
+    self.SetActive = function() {
+        if ( !self.idle || !self.app.client || !self.app.room || !self.app.user )
+        {
+            return;
+        }
+        
+        self.idle = false;
 
-                self.idle = false;
+        self.unreadMessages = 0;
+        document.title = self.app.room.name + ' on Grmble';
 
-                self.app.SendMessage({
-                    kind: 'active'
-                });
-            }
+        self.SetFavIcon( self.normalIcon );
+
+        self.app.SendMessage({
+            kind: 'active'
         });
     }
     
