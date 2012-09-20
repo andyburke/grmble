@@ -21,10 +21,17 @@ function escapeHTML( text ) {
 function processTextHref(text, href) {
     if ( href )
     {
+        var matched = null;
         var result = '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
         if ( href.match( /(?:png|gif|jpg)$/i ) )
         {
             result = '<a href="' + href + '" title="' + href + '" target="_blank"><img class="dynamic-embed" src="' + escapeHTML( text ) + '" /></a>';
+        }
+        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?mlkshk\.com\/[rp]\/.*?/i ) ) 
+        {
+            var imgUrl = href.replace( 'com/p/', 'com/r/' );
+            var pageUrl = href.replace( 'com/r/', 'com/p/');
+            result = '<a href="' + pageUrl + '" title="' + href + '" target="_blank"><img class="dynamic-embed" src="' + escapeHTML( imgUrl ) + '" /></a>';
         }
         else if ( href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i ) )
         {
