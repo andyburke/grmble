@@ -46,7 +46,17 @@ var App = function( apiURL, router ) {
         new ScrollHandler(),
         new TypingStatus(),
         new TabCompletion(),
-	new InlineAds()
+	new InlineAds(),
+	
+	// message handlers
+	// TODO: we really shouldn't need the app to know about all the subsystems, they should register themselves
+	new AudioHandler(),
+	new ImagesHandler(),
+	new MlkshkHandler(),
+	new SpotifyHandler(),
+	new VimeoHandler(),
+	new YouTubeHandler()
+	
     ];
 
     self.GetSubsystem = function( subsystemType ) {

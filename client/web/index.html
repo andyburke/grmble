@@ -69,6 +69,7 @@
             .script( "/javascript/lib/jquery.nouislider.min.js" )
             .script( "/javascript/lib/Math.uuid.js" )
             .script( "/javascript/lib/ObjectId.js" )
+            .script( "/javascript/lib/audiojs/audio.min.js" )
 
             .wait() // wait for all our stock libs to be downloaded
             
@@ -86,6 +87,13 @@
             .script( "/javascript/chat/TypingStatus.js" )
             .script( "/javascript/chat/TabCompletion.js" )
 
+            .script( "/javascript/chat/MessageHandlers/AudioHandler.js" )
+            .script( "/javascript/chat/MessageHandlers/ImagesHandler.js" )
+            .script( "/javascript/chat/MessageHandlers/MlkshkHandler.js" )
+            .script( "/javascript/chat/MessageHandlers/SpotifyHandler.js" )
+            .script( "/javascript/chat/MessageHandlers/VimeoHandler.js" )
+            .script( "/javascript/chat/MessageHandlers/YouTubeHandler.js" )
+            
             .script( "/javascript/chat/InlineAds.js" )
             
             .script( "/javascript/views/compiled_templates.js" )

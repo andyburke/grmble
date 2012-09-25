@@ -14,70 +14,36 @@ moment.relativeTime = {
     yy: "%dY"
 };
 
-function escapeHTML( text ) {
-    return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" ).replace( /\n/g, "<br/>" );
-}
-
-function processTextHref(text, href) {
-    if ( href )
-    {
-        var matched = null;
-        var result = '<a href="' + href + '" title="' + href + '" target="_blank">' + escapeHTML( text ) + '</a>';
-        if ( href.match( /(?:png|gif|jpg)$/i ) )
-        {
-            result = '<a href="' + href + '" title="' + href + '" target="_blank"><img class="dynamic-embed" src="' + escapeHTML( text ) + '" /></a>';
-        }
-        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?mlkshk\.com\/[rp]\/.*?/i ) ) 
-        {
-            var imgUrl = href.replace( 'com/p/', 'com/r/' );
-            var pageUrl = href.replace( 'com/r/', 'com/p/');
-            result = '<a href="' + pageUrl + '" title="' + href + '" target="_blank"><img class="dynamic-embed" src="' + escapeHTML( imgUrl ) + '" /></a>';
-        }
-        else if ( href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i ) )
-        {
-            var matched = href.match( /(?:http?:\/\/)?(?:open\.)?spotify\.com\/track\/(\w*)/i );
-
-            if ( matched && matched.length == 2 )
-            {
-                result = '<iframe class="dynamic-embed" src="https://embed.spotify.com/?theme=white&view=coverart&uri=spotify:track:' + matched[1] + '" width="250" height="80" frameborder="0" allowtransparency="true"></iframe>';
-            }
-        }
-        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?.*?v=\S+/i ) )
-        {
-            var matched = href.match( /[\?|\&]v=(\w[\w|-]*)/i );
-            if ( matched && matched.length == 2 )
-            {
-                result = '<iframe class="youtube-player dynamic-embed" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-            }
-        }
-        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/.*?/i ) )
-        {
-            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?youtu\.be\/(\w[\w|-]*)/i );
-            if ( matched && matched.length == 2 )
-            {
-                result = '<iframe class="youtube-player dynamic-embed" type="text/html" width="640" height="360" src="http://www.youtube.com/embed/' + matched[ 1 ] + '?wmode=transparent" frameborder="0"></iframe>';
-            }
-        }
-        else if ( href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/.*?/i ) )
-        {
-            var matched = href.match( /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\w[\w|-]*)/i);
-            if ( matched && matched.length == 2 )
-            {
-                result = '<iframe class="dynamic-embed" src="http://player.vimeo.com/video/' + matched[1] + '?autoplay=0&amp;api=1" width="640" height="360" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
-            }
-        }
-        
-        return result;
-    }
-
-    return escapeHTML( text );
-}
-
 var MessageRenderer = function() {
     var self = this;
     
     self.app = null;
     self.subscriptions = {};
+    
+    self.handlers = [];
+    
+    self.AddHandler = function( handler ) {
+        for ( var index = 0; index < self.handlers.length; ++index )
+        {
+            if ( self.handlers[ index ] === handler )
+            {
+                return;
+            }
+        }
+        
+        self.handlers.push( handler );
+    }
+    
+    self.RemoveHandler = function( handler ) {
+        for ( var index = 0; index < self.handlers.length; ++index )
+        {
+            if ( self.handlers[ index ] === renderer )
+            {
+                self.handlers.splice( index, 1 );
+                return;
+            }
+        }
+    }
     
     self.Bind = function( app ) {
         self.app = app;
@@ -107,7 +73,9 @@ var MessageRenderer = function() {
         self.UpdateMessageTimes();
     }
 
-    self.RenderMessage = function( message, append ) {
+    self.RenderMessage = function( message, append, callback ) {
+        callback = callback || function() {};
+        
         switch( message.kind )
         {
             case 'idle':
@@ -130,19 +98,38 @@ var MessageRenderer = function() {
                 {
                     return;
                 }
-                
+
                 // TODO: move this to a handler
                 message.processed = message.content == null ? null : linkify( message.content,  {
                     callback: function(text, href) {
-                        return processTextHref(text, href);
+                        if ( href )
+                        {
+                            
+                            var result = '<a href="' + href + '" title="' + href + '" target="_blank">' + self.EscapeHTML( text ) + '</a>';
+
+                            for ( var index = 0; index < self.handlers.length; ++index )
+                            {
+                                var handlerResult = null;
+                                if ( ( handlerResult = self.handlers[ index ].Handle( href ) ) )
+                                {
+                                    result = handlerResult;
+                                    break;
+                                }
+                            }
+
+                            return result;
+                        }
+                    
+                        return self.EscapeHTML( text );
                     }
                 });
-        
+            
                 message.time = moment( message.createdAt ).fromNow( true );
                 dust.render( 'message', message, function( error, output ) {
                     if ( error )
                     {
                         self.app.ShowError( error );
+                        callback( error, null );
                         return;
                     }
                     
@@ -173,6 +160,8 @@ var MessageRenderer = function() {
                         }
                     }
                     
+                    callback( null, renderedMessage );
+                    
                     self.app.events.emit( 'message rendered', message, renderedMessage );
                 });
                 break;
@@ -187,4 +176,9 @@ var MessageRenderer = function() {
 
         setTimeout( self.UpdateMessageTimes, 10000 );
     }
+    
+    self.EscapeHTML = function ( text ) {
+        return text.replace( /&/g, "&amp;" ).replace( />/g, "&gt;" ).replace( /</g, "&lt;" ).replace( /\n/g, "<br/>" );
+    }
+
 }
