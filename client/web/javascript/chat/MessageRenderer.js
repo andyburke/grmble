@@ -133,10 +133,10 @@ var MessageRenderer = function() {
                         return;
                     }
                     
-                    var renderedMessage = null;
+                    var renderedMessage = $( output );
                     if ( append )
                     {
-                        renderedMessage = $( '#chatlog' ).append( output );
+                        $( '#chatlog' ).append( renderedMessage );
                     }
                     else
                     {
@@ -148,7 +148,7 @@ var MessageRenderer = function() {
                             var time = $( elements[ index ] ).data( 'time' );
                             if ( time > message.createdAt )
                             {
-                                renderedMessage = $( elements[ index ] ).before( output );
+                                $( elements[ index ] ).before( renderedMessage );
                                 inserted = true;
                                 break;
                             }
@@ -156,7 +156,7 @@ var MessageRenderer = function() {
                         
                         if ( !inserted )
                         {
-                            renderedMessage = $( '#chatlog' ).append( output );
+                            $( '#chatlog' ).append( renderedMessage );
                         }
                     }
                     
