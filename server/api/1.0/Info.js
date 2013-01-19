@@ -18,14 +18,7 @@ var Info = function() {
 
         app.get( '/api/1.0', function( request, response ) {
             var urls = app.GetURLs ? app.GetURLs( request ) : {};
-            
-            for ( var urlKey in urls )
-            {
-                if ( urls[ urlKey ][ 0 ] == '/' )
-                {
-                    urls[ urlKey ] = 'http://' + request.headers.host + urls[ urlKey ];
-                }
-            }
+            app.FixURLs( request, urls );
             
             var result = {
                 urls: urls,
@@ -33,6 +26,9 @@ var Info = function() {
                 version: "1.0",
                 stripe: {
                     publishablekey: config.stripe.publishable[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ]
+                },
+                amazon: {
+                    AWSAccessKeyID: config.aws.AccessKeyID
                 }
             };
 

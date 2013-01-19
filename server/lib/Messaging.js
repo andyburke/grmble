@@ -8,6 +8,7 @@ var Messaging = function() {
     var self = this;
 
     self.app = null;
+    self.servers = [];
     self.bayeux = null;
 
     self.rooms = {};
@@ -18,12 +19,13 @@ var Messaging = function() {
 
     self.GetURLs = function( obj, request ) {
         return {
-            'faye': 'http://' + ( ( request.headers.host.indexOf( ':' ) != -1 ) ? request.headers.host : ( request.headers.host + ':' + config.server.port ) ) + '/faye'
+            'faye': '/faye'
         };
     };
     
-    self.postbind = function( app ) {
+    self.postbind = function( app, servers ) {
         self.app = app;
+        self.servers = servers;
 
         self.bayeux = new faye.NodeAdapter({
             mount: '/faye',
@@ -36,7 +38,11 @@ var Messaging = function() {
             }
         });
 
-        self.bayeux.attach( app );
+        for ( var serverIndex = 0; serverIndex < self.servers.length; ++serverIndex )
+        {
+            self.bayeux.attach( self.servers[ serverIndex ] );
+        }
+        
         self.app.bayeux = self.bayeux;
         
         // we listen for joins/leaves across any of our servers so that all servers have full lists

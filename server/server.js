@@ -28,6 +28,9 @@ topLevelDomain.run( function() {
     var express = require( 'express' );
     var events = require( 'events' );
     var extend = require( 'node.extend' );
+    var fs = require( 'fs' );
+    var http = require( 'http' );
+    var https = require( 'https' );
     
     global.models = require( './lib/models.js' );
     global.checks = require( './lib/checks.js' );
@@ -35,40 +38,33 @@ topLevelDomain.run( function() {
     express.logger.token( 'bytes-written', function( request, response ) {
         return response.req.client.bytesWritten;
     });
+
+    var SSL = {
+        key: fs.readFileSync( 'ssl/grmble.key' ),
+        cert: fs.readFileSync( 'ssl/grmble.crt' )
+    };
     
-    var app = express.createServer(
-        express.logger({
-            format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
-            stream: {
-                write: function( str ) {
-                    try
-                    {
-                        log.channels.access.info( JSON.parse( str ) );
-                    }
-                    catch( e )
-                    {
-                        log.channels.access.error( e.toString() );
-                    }
+    var app = express();
+    app.use( express.logger({
+        format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
+        stream: {
+            write: function( str ) {
+                try
+                {
+                    log.channels.access.info( JSON.parse( str ) );
+                }
+                catch( e )
+                {
+                    log.channels.access.error( e.toString() );
                 }
             }
-        }),
-        express.bodyParser(),
-        express.cookieParser(),
-        express.static( __dirname + '/../client/web' )
-    );
-    
-    var faye = require( 'faye' );
-    var fayeRedis = require( 'faye-redis' );
-    var bayeux = new faye.NodeAdapter({
-        mount: '/faye',
-        timeout: 45,
-        engine: {
-            type:   fayeRedis,
-            host:   config.redis.host,
-            port:   config.redis.port
         }
-    });
-    
+    }) );
+
+    app.use( express.bodyParser() );
+    app.use( express.cookieParser() );
+    app.use( express.static( __dirname + '/../client/web' ) );
+
     app.eventEmitter = new events.EventEmitter();
     
     app.subsystems = [
@@ -119,6 +115,29 @@ topLevelDomain.run( function() {
         function AddURLs( obj ) {
             var result = obj._doc ? obj.toObject().clone() : obj.clone();
             result.urls = {};
+            
+            if ( obj._doc )
+            {
+                for ( var field in obj._doc )
+                {
+                    if ( result[ field ] )
+                    {
+                        if ( obj._doc[ field ]._doc )
+                        {
+                            result[ field ] = AddURLs( obj[ field ] );
+                        }
+                        else if ( typeof( obj._doc[ field ] === 'array' ) && obj._doc[ field ].length && obj._doc[ field ][ 0 ]._doc )
+                        {
+                            result[ field ] = [];
+                            for ( var i = 0; i < obj._doc[ field ].length; ++i )
+                            {
+                                result[ field ].push( AddURLs( obj[ field ][ i ] ) );
+                            }
+                        }
+                    }
+                }
+            }
+            
             for ( var subsystem in app.subsystems )
             {
                 if ( app.subsystems[ subsystem ].GetURLs )
@@ -127,13 +146,7 @@ topLevelDomain.run( function() {
                 }
             }
             
-            for ( var urlKey in result.urls )
-            {
-                if ( result.urls[ urlKey ][ 0 ] == '/' )
-                {
-                    result.urls[ urlKey ] = 'http://' + request.headers.host + result.urls[ urlKey ];
-                }
-            }
+            app.FixURLs( request, result.urls );
     
             return postprocess ? postprocess( result ) : result;
         }
@@ -151,6 +164,22 @@ topLevelDomain.run( function() {
             return AddURLs( ref );
     }
     
+    app.FixURLs = function( request, urls ) {
+        urls = urls || {};
+        for ( var urlKey in urls )
+        {
+            if ( urls[ urlKey ] instanceof Array || urls[ urlKey ] instanceof Object )
+            {
+                app.FixURLs( request, urls[ urlKey ] );
+            }
+            else if ( urls[ urlKey ][ 0 ] == '/' )
+            {
+                urls[ urlKey ] = 'http' + ( request.connection.encrypted ? 's' : '' ) + '://' + request.headers.host + urls[ urlKey ];
+            }
+        }
+    }
+
+    
     for ( var index = 0; index < app.subsystems.length; ++index )
     {
         if ( typeof( app.subsystems[ index ].bind ) == 'function' )
@@ -159,15 +188,20 @@ topLevelDomain.run( function() {
         }
     }
     
+    log.channels.server.info( 'Grmble Environment: ' + ( process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ) );
+    log.channels.server.info( 'Server loaded...' );
+
+    log.channels.server.info( 'HTTP listening on port ' + config.server.port + ' ...' );
+    var httpServer = http.createServer( app ).listen( config.server.port );
+
+    log.channels.server.info( 'HTTPS listening on port ' + config.server.sslport + ' ...' );
+    var httpsServer = https.createServer( SSL, app ).listen( config.server.sslport );
+
     for ( var index = 0; index < app.subsystems.length; ++index )
     {
         if ( typeof( app.subsystems[ index ].postbind ) == 'function' )
         {
-            app.subsystems[ index ].postbind( app );
+            app.subsystems[ index ].postbind( app, [ httpServer, httpsServer ] );
         }
     }
-    
-    log.channels.server.info( 'Grmble Environment: ' + ( process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ) );
-    log.channels.server.info( 'Server loaded, listening on port ' + config.server.port + ' ...' );
-    app.listen( config.server.port );
 });

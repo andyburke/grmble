@@ -1,5 +1,7 @@
 node_modules
 .monitor
 .DS_Store
-server.config.js
 
+server.config.js
+server/ssl/*.key
+server/ssl/*.private_key
