@@ -58,7 +58,7 @@ topLevelDomain.run( function() {
                 }
                 catch( e )
                 {
-                    log.channels.access.error( e.toString() );
+                    log.channels.access.error( "str: " + str + "\n\n" + e.toString() );
                 }
             }
         }
