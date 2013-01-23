@@ -43,7 +43,8 @@ topLevelDomain.run( function() {
     var app = express();
 
     express.logger.token( 'bytes-written', function( request, response ) {
-        return isNaN( response.req.client.bytesWritten ) ? -1 : response.req.client.bytesWritten;
+        console.log( response.req.connection.bytesWritten );
+        return isNaN( response.req.connection.bytesWritten ) ? -1 : response.req.connection.bytesWritten;
     });
     app.use( express.logger({
         format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
