@@ -35,16 +35,16 @@ topLevelDomain.run( function() {
     global.models = require( './lib/models.js' );
     global.checks = require( './lib/checks.js' );
     
-    express.logger.token( 'bytes-written', function( request, response ) {
-        return response.req.client.bytesWritten;
-    });
-
     var SSL = {
         key: fs.readFileSync( 'ssl/grmble.key' ),
         cert: fs.readFileSync( 'ssl/grmble.crt' )
     };
     
     var app = express();
+
+    express.logger.token( 'bytes-written', function( request, response ) {
+        return isNaN( response.req.client.bytesWritten ) ? -1 : response.req.client.bytesWritten;
+    });
     app.use( express.logger({
         format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
         stream: {
