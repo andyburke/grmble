@@ -32,6 +32,7 @@ topLevelDomain.run( function() {
     var http = require( 'http' );
     var https = require( 'https' );
     var net = require( 'net' );
+    var uuid = require( 'node-uuid' );
     
     global.models = require( './lib/models.js' );
     global.checks = require( './lib/checks.js' );
@@ -43,27 +44,31 @@ topLevelDomain.run( function() {
     
     var app = express();
 
-    express.logger.token( 'bytes-written', function( request, response ) {
-        // FIXME: why is the socket at different places for HTTP/HTTPS requests?
-        var socket = response.req.connection instanceof net.Socket ? response.req.connection : response.req.connection.socket;
-        return isNaN( socket.bytesWritten ) ? -1 : socket.bytesWritten;
-    });
-    app.use( express.logger({
-        format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
-        stream: {
-            write: function( str ) {
-                try
-                {
-                    log.channels.access.info( JSON.parse( str ) );
-                }
-                catch( e )
-                {
-                    log.channels.access.error( "str: " + str + "\n\n" + e.toString() );
-                }
-            }
-        }
-    }) );
+    app.use( function( request, response, next ) {
+        request._startTime = new Date();
+        
+        response.on( 'finish', function() {
+            var socket = request.socket.socket ? request.socket.socket : request.socket;
 
+            log.channels.access.info({
+                ip: request.ip ? request.ip : socket.remoteAddress,
+                date: new Date().toUTCString(),
+                request: {
+                    method: request.method,
+                    url: request.url,
+                    version: "HTTP" + ( request.connection.encrypted ? 'S' : '' ) + '/' + request.httpVersionMajor + '.' + request.httpVersionMinor
+                },
+                status: response.statusCode,
+                'response-time': new Date() - request._startTime,
+                'bytes-sent': socket.bytesWritten,
+                referrer: request.headers[ 'referer' ] || request.headers[ 'referrer' ],
+                'user-agent': request.headers[ 'user-agent' ],
+                id: uuid.v4()
+            });
+        });
+        
+        next();
+    });
     app.use( express.bodyParser() );
     app.use( express.cookieParser() );
     app.use( express.static( __dirname + '/../client/web' ) );

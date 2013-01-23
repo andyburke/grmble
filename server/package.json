@@ -21,7 +21,8 @@
     "faye": "0.8.x",
     "faye-redis": "0.1.x",
     "nodemailer": "0.3.x",
-    "date-utils": "1.2.x"
+    "date-utils": "1.2.x",
+    "node-uuid": "1.4.x"
   },
   "engine": "node >= 0.8.0"
 }
