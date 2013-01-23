@@ -31,6 +31,7 @@ topLevelDomain.run( function() {
     var fs = require( 'fs' );
     var http = require( 'http' );
     var https = require( 'https' );
+    var net = require( 'net' );
     
     global.models = require( './lib/models.js' );
     global.checks = require( './lib/checks.js' );
@@ -43,8 +44,9 @@ topLevelDomain.run( function() {
     var app = express();
 
     express.logger.token( 'bytes-written', function( request, response ) {
-        console.log( response.req.connection.bytesWritten );
-        return isNaN( response.req.connection.bytesWritten ) ? -1 : response.req.connection.bytesWritten;
+        // FIXME: why is the socket at different places for HTTP/HTTPS requests?
+        var socket = response.req.connection instanceof net.Socket ? response.req.connection : response.req.connection.socket;
+        return isNaN( socket.bytesWritten ) ? -1 : socket.bytesWritten;
     });
     app.use( express.logger({
         format: '{ "ip": ":remote-addr", "date": ":date", "request": { "method": ":method", "url": ":url", "version": "HTTP/:http-version" }, "status": :status, "response-time": :response-time, "bytes-sent": :bytes-written, "referrer": ":referrer", "user-agent": ":user-agent" }',
