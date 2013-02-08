@@ -32,6 +32,12 @@
                         <div id="userinfoarea"></div>
                         <a class="close" id="close-userinfo-area">x</a>
                     </div>
+                    <div id="notificationsPermission" class="alert alert-info">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        Your browser supports popup notifications.  Would you like to enable them?
+                        
+                        <button type="button" class="btn btn-primary enableNotificationsButton">Enable Notifications</button>
+                    </div>
                 </div>
             </div>
         </div>

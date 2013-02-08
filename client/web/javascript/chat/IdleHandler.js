@@ -78,6 +78,8 @@ var IdleHandler = function() {
         self.app.SendMessage({
             kind: 'idle'
         });
+        
+        self.app.events.emit( 'idle' );
     }
     
     self.SetActive = function() {
@@ -96,6 +98,8 @@ var IdleHandler = function() {
         self.app.SendMessage({
             kind: 'active'
         });
+        
+        self.app.events.emit( 'active' );
     }
     
     self.Watch = function() {
@@ -103,7 +107,7 @@ var IdleHandler = function() {
         {
             return;
         }
-        
+
         self.unreadMessages = 0;
         
         if ( self.subscription )
@@ -119,7 +123,7 @@ var IdleHandler = function() {
                 return;
             }
             
-            if ( $.data( document, 'idleTimer' ) == 'idle' )
+            if ( self.idle )
             {
                 $( '#message-sound' )[ 0 ].play();
                 

@@ -21,7 +21,7 @@ var App = function( apiURL, router ) {
     self.subsystems = [
         new UserManager(),
         new Billing(),
-	new ConnectionStatus(),
+        new ConnectionStatus(),
 	
         // views
         
@@ -34,7 +34,7 @@ var App = function( apiURL, router ) {
         new SignUp(),
         new Settings(),
         new User(),
-	new PasswordManagement(),
+        new PasswordManagement(),
         
         // chat
         
@@ -43,19 +43,20 @@ var App = function( apiURL, router ) {
         new UserlistManager(),
         new MessageHistory(),
         new NameHighlighter(),
+        new Notifications(),
         new ScrollHandler(),
         new TypingStatus(),
         new TabCompletion(),
-	new InlineAds(),
+        new InlineAds(),
 	
-	// message handlers
-	// TODO: we really shouldn't need the app to know about all the subsystems, they should register themselves
-	new AudioHandler(),
-	new ImagesHandler(),
-	new MlkshkHandler(),
-	new SpotifyHandler(),
-	new VimeoHandler(),
-	new YouTubeHandler()
+        // message handlers
+        // TODO: we really shouldn't need the app to know about all the subsystems, they should register themselves
+        new AudioHandler(),
+        new ImagesHandler(),
+        new MlkshkHandler(),
+        new SpotifyHandler(),
+        new VimeoHandler(),
+        new YouTubeHandler()
 	
     ];
 
