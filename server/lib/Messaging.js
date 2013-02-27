@@ -18,7 +18,7 @@ var Messaging = function() {
     self.subscriptions = {};
 
     self.GetURLs = function( obj, request ) {
-        var hostInfo = request.connection.host.split( ':' );
+        var hostInfo = request.headers.host.split( ':' );
         var host = hostInfo[ 0 ];
         
         return {
