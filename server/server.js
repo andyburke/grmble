@@ -182,7 +182,9 @@ topLevelDomain.run( function() {
             }
             else if ( urls[ urlKey ][ 0 ] == '/' )
             {
-                urls[ urlKey ] = 'http' + ( request.connection.encrypted ? 's' : '' ) + '://' + request.headers.host + urls[ urlKey ];
+                var hostInfo = request.headers.host.split( ':' );
+                var host = hostInfo[ 0 ];
+                urls[ urlKey ] = 'http' + ( request.connection.encrypted ? 's' : '' ) + '://' + host + ':' + ( request.connection.encrypted ? config.server.sslport : config.server.port ) + urls[ urlKey ];
             }
         }
     }
