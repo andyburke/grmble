@@ -18,8 +18,11 @@ var Messaging = function() {
     self.subscriptions = {};
 
     self.GetURLs = function( obj, request ) {
+        var hostInfo = request.connection.host.split( ':' );
+        var host = hostInfo[ 0 ];
+        
         return {
-            'faye': '/faye'
+            'faye': 'http' + ( request.connection.encrypted ? 's' : '' ) + '://' + host + ':' + ( request.connection.encrypted ? config.server.sslport : config.server.port ) + '/faye'
         };
     };
     
