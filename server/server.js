@@ -72,6 +72,13 @@ topLevelDomain.run( function() {
     app.use( express.bodyParser() );
     app.use( express.cookieParser() );
     app.use( express.static( __dirname + '/../client/web' ) );
+    app.all( '/api/*', function( request, response, next ) {
+        response.header( 'Access-Control-Allow-Origin', '*' );
+        response.header( 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE' );
+        response.header( 'Access-Control-Allow-Headers', 'Content-Type' );
+    
+        next();
+    });
 
     app.eventEmitter = new events.EventEmitter();
     
