@@ -3,7 +3,10 @@ var passwordHash = require( 'password-hash' );
 var crypto = require( 'crypto' );
 
 function HandleAuthToken( authToken, request, response, next ) {
-    models.AuthToken.findOne( { 'token': authToken }, function( error, auth ) {
+    models.AuthToken.findOne( { 'token': authToken } ).populate({
+        path: 'owner',
+        select: 'email passwordHash stripeCustomer stripeToken'
+    }).exec( function( error, auth ) {
         if ( error )
         {
             response.json( error, 500 );
@@ -17,24 +20,8 @@ function HandleAuthToken( authToken, request, response, next ) {
             return;
         }
         
-        models.User.findById( auth.ownerId, function( error, user ) {
-            if ( error )
-            {
-                response.json( error, 500 );
-                return;
-            }
-            
-            if ( !user )
-            {
-                response.cookie( 'authtoken', '', { maxAge: -100000, httpOnly: true, path: '/' } );
-                response.json( 'Unkown user.', 404 );
-                return;
-            }
-            
-            request.user = user;
-            next();
-            return;
-        });
+        request.user = auth.owner;
+        next();
     });
 }
 
@@ -66,7 +53,7 @@ exports.user = function( request, response, next )
                 var email = credentials[ 0 ];
                 var password = credentials[ 1 ];
 
-                models.User.findOne( { 'email': email.toLowerCase() }, function( error, user ) {
+                models.User.findOne( { 'email': email.toLowerCase() } ).select( 'email passwordHash stripeToken stripeCustomer' ).exec( function( error, user ) {
                     if ( error )
                     {
                         response.json( error, 500 );
@@ -136,7 +123,7 @@ exports.ownsRoom = function( request, response, next ) {
             return;
         }
         
-        if ( !room.ownerId.equals( request.user._id ) )
+        if ( !room.owner.equals( request.user._id ) )
         {
             response.json( 'You are not authorized to access this resource.', 403 );
             return;

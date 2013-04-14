@@ -15,14 +15,17 @@ var Home = function() {
             $( '#main' ).spin( 'large' );
             self.app.GetAPI( function( api ) {
                 jsonCall({
-                    url: api.rooms,
+                    url: api.rooms.searchdynamics,
                     type: 'GET',
                     data: {
                         'sortBy': 'users',
                         'sort': 'desc'
                     },
-                    success: function( rooms ) {
-                        dust.render( 'home', { subtitle: 'List of all public rooms.', rooms: rooms }, function( error, output ) {
+                    success: function( roomDynamics ) {
+                        dust.render( 'home', {
+                            subtitle: 'List of all public rooms.',
+                            roomDynamics: roomDynamics
+                        }, function( error, output ) {
                             if ( error )
                             {
                                 self.app.ShowError( error );

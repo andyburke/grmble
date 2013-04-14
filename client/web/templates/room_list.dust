@@ -7,28 +7,28 @@
 <div class="row-fluid">
     <div class="span2"></div>
     <div class="span10">
-        {?rooms}
-            {#rooms}
+        {?roomDynamics}
+            {#roomDynamics}
                 <div class="room-listing">
-                    <a href="#/Room/{_id}">
+                    <a href="#/Room/{room._id}">
                         <div class="room-user-count">
                             <div class="user-count">{users}</div>
                             <div class="default-avatar" style="width: 20px; height: 20px; margin: 4px;"></div>
                         </div>
                         <div class="centered" style="width: 128px;">
-                            <img class="room-image" src="{?image}{image}{:else}/images/icons/chat.png{/image}" />
+                            <img class="room-image" src="{?room.image}{room.image}{:else}/images/icons/chat.png{/room.image}" />
                         </div>
                         <div class="room-name">
-                            {name}
+                            {room.name}
                         </div>
                         <div class="room-description">
-                            {?description}{description}{:else}&nbsp;{/description} <!-- wtf? why do we need an nbsp to keep css from fucking up? -->
+                            {?room.description}{room.description}{:else}&nbsp;{/room.description} <!-- wtf? why do we need an nbsp to keep css from fucking up? -->
                         </div>
                     </a>
                 </div>
-            {/rooms}
+            {/roomDynamics}
         {:else}
             No rooms found that match your criteria!
-        {/rooms}
+        {/roomDynamics}
     </div>
 </div>

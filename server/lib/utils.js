@@ -1,7 +1,7 @@
 //////////////////////
 // Object cloning, see: http://stackoverflow.com/questions/728360/copying-an-object-in-javascript
 
-Object.defineProperty( Object.prototype, "clone", {
+Object.defineProperty( Object.prototype, "__clone", {
     value: function() {
         if ( this.cloneNode )
         {
@@ -21,14 +21,14 @@ Object.defineProperty( Object.prototype, "clone", {
             }
             else
             {
-                copy[ attr ] = this[ attr ].clone();
+                copy[ attr ] = this[ attr ].__clone();
             }
         }
         return copy;
     }
 });
 
-Object.defineProperty( Date.prototype, "clone", {
+Object.defineProperty( Date.prototype, "__clone", {
     value: function() {
         var copy = new Date();
         copy.setTime( this.getTime() );
@@ -36,9 +36,9 @@ Object.defineProperty( Date.prototype, "clone", {
     }
 });
 
-Object.defineProperty( Number.prototype, "clone", { value: function() { return this; } } );
-Object.defineProperty( Boolean.prototype, "clone", { value: function() { return this; } } );
-Object.defineProperty( String.prototype, "clone", { value: function() { return this; } } );
+Object.defineProperty( Number.prototype, "__clone", { value: function() { return this; } } );
+Object.defineProperty( Boolean.prototype, "__clone", { value: function() { return this; } } );
+Object.defineProperty( String.prototype, "__clone", { value: function() { return this; } } );
 
 
 // end cloning

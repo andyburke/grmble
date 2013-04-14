@@ -1,21 +1,13 @@
-
-var Pricing = function() {
+var Pricing = module.exports = function( options ) {
     var self = this;
 
-    self.GetURLs = function( obj ) {
-        return obj ? {} : {
-            'pricing': '/api/1.0/Pricing'
-        };
-    }
-
-    self.bind = function( app ) {
-
-        app.get( '/api/1.0/Pricing', function( request, response ) {
-            response.json( config.pricing );
-        });
-    }
+    options.app.get( '/api/1.0/Pricing', function( request, response ) {
+        response.json( options.config.pricing );
+    });
 
     return self;
 }
 
-module.exports = new Pricing();
+Pricing.prototype.Interface = {
+    'pricing': '/api/1.0/Pricing'
+};

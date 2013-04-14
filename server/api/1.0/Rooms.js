@@ -1,7 +1,5 @@
 var mongoose = require( 'mongoose' );
 
-var stripe = require( 'stripe' )( config.stripe.key[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ] );
-
 require( 'date-utils' );
 var nodemailer = require( 'nodemailer' );
 var dust = require( 'dustjs-linkedin' );
@@ -10,140 +8,160 @@ var fs = require( 'fs' );
 dust.loadSource( dust.compile( fs.readFileSync( 'templates/invite_email_text.dust', 'ascii' ), 'invite_email_text' ) );
 dust.loadSource( dust.compile( fs.readFileSync( 'templates/invite_email_html.dust', 'ascii' ), 'invite_email_html' ) );
 
-var smtpTransport = nodemailer.createTransport( 'SES', {
-    AWSAccessKeyID: config.aws.AccessKeyID,
-    AWSSecretKey: config.aws.SecretKey
-});
-
-var Rooms = function() {
+var Rooms = module.exports = function( options ) {
     var self = this;
 
-    self.GetURLs = function( obj ) {
-        if ( !obj )
-        {
-            return {
-                'room': '/api/1.0/Room',
-                'rooms': '/api/1.0/Rooms',
-                'myrooms': '/api/1.0/MyRooms'
-            };
-        }
-
-        if ( obj instanceof models.Room )
-        {
-            return {
-                'self': '/api/1.0/Room/' + obj._id,
-                'invite': '/api/1.0/Room/' + obj._id + '/Invite'
-            };
-        }
-
-        return {};
-    };
+    var stripe = require( 'stripe' )( options.config.stripe.key[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ] );
     
-    self.bind = function( app ) {
-        app.post( '/api/1.0/Room', checks.user, function( request, response ) {
-            
-            var room = new models.Room();
-            models.update( room, request.body, {
-                ownerId: function( obj, params ) {
-                    return request.user._id;
-                }
-            });
+    // TODO: get this out of here, either raise an invite event or move this into some wrapper
+    //       so we're not setting up the same thing in a few places
+    var smtpTransport = nodemailer.createTransport( 'SES', {
+        AWSAccessKeyID: options.config.aws.AccessKeyID,
+        AWSSecretKey: options.config.aws.SecretKey
+    });
+
+    options.app.post( '/api/1.0/Room', options.checks.user, function( request, response ) {
         
-            room.save( function( error ) {
+        var room = new options.models.Room();
+        options.models.update( room, request.body, {
+            owner: function( obj, params ) {
+                return request.user._id;
+            }
+        });
+    
+        room.save( function( error ) {
+            if ( error )
+            {
+                response.json( error.message ? error.message : error, 500 );
+                return;
+            }
+    
+            response.json( room.toObject() );
+        });
+    });
+        
+    options.app.get( '/api/1.0/Room/:roomId', function( request, response ) {
+        options.models.Room.findById( request.params.roomId, function( error, room ) {
+            if ( error )
+            {
+                response.json( error, 500 );
+                return;
+            }
+            
+            if ( !room )
+            {
+                response.json( 'No room found with id: ' + request.params.roomId, 404 );
+                return;
+            }
+
+            response.json( room.toObject() );
+        });
+    });
+
+    options.app.put( '/api/1.0/Room/:roomId', options.checks.user, options.checks.ownsRoom, function( request, response ) {
+        
+        var oldCost = 0;
+        oldCost += request.room.features.logs ? config.pricing.logs : 0;
+        oldCost += request.room.features.privacy ? config.pricing.privacy : 0;
+        oldCost += request.room.features.advertising ? 0 : config.pricing.advertising;
+        oldCost += request.room.features.search ? config.pricing.search : 0;
+        
+        options.models.update( request.room, request.body );
+        
+        var totalCost = 0;
+        totalCost += request.room.features.logs ? config.pricing.logs : 0;
+        totalCost += request.room.features.privacy ? config.pricing.privacy : 0;
+        totalCost += request.room.features.advertising ? 0 : config.pricing.advertising;
+        totalCost += request.room.features.search ? config.pricing.search : 0;
+
+        if ( totalCost > 0 && !request.user.stripeToken )
+        {
+            response.json( { 'error': 'no billing info', 'message': 'You must have billing info associated with your account to add these settings to your room.' }, 403 );
+            return;
+        }
+
+        function SaveRoom() {
+            request.room.save( function( error ) {
                 if ( error )
                 {
                     response.json( error.message ? error.message : error, 500 );
                     return;
                 }
         
-                response.json( app.WithURLs( request, room ) );
+                response.json( request.room.toObject() );
             });
-        });
-            
-        app.get( '/api/1.0/Room/:roomId', function( request, response ) {
-            models.Room.findById( request.params.roomId, function( error, room ) {
-                if ( error )
+        }
+
+        var planId = 'sub_' + ( totalCost * 100 );
+        if ( !request.user.stripeCustomer && totalCost > 0 )
+        {
+            var planId = 'sub_' + ( totalCost * 100 );
+            stripe.plans.create({
+                id: planId,
+                amount: totalCost * 100,
+                currency: 'usd',
+                interval: 'month',
+                name: 'Grmble Monthly Subscription'
+            }, function( error ) {
+                if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
                 {
                     response.json( error, 500 );
                     return;
                 }
                 
-                if ( !room )
-                {
-                    response.json( 'No room found with id: ' + request.params.roomId, 404 );
-                    return;
-                }
-    
-                response.json( app.WithURLs( request, room ) );           
-            });
-        });
-    
-        app.put( '/api/1.0/Room/:roomId', checks.user, checks.ownsRoom, function( request, response ) {
-            
-            var oldCost = 0;
-            oldCost += request.room.features.logs ? config.pricing.logs : 0;
-            oldCost += request.room.features.privacy ? config.pricing.privacy : 0;
-            oldCost += request.room.features.advertising ? 0 : config.pricing.advertising;
-            oldCost += request.room.features.search ? config.pricing.search : 0;
-            
-            models.update( request.room, request.body );
-            
-            var totalCost = 0;
-            totalCost += request.room.features.logs ? config.pricing.logs : 0;
-            totalCost += request.room.features.privacy ? config.pricing.privacy : 0;
-            totalCost += request.room.features.advertising ? 0 : config.pricing.advertising;
-            totalCost += request.room.features.search ? config.pricing.search : 0;
-
-            if ( totalCost > 0 && !request.user.stripeToken )
-            {
-                response.json( { 'error': 'no billing info', 'message': 'You must have billing info associated with your account to add these settings to your room.' }, 403 );
-                return;
-            }
-
-            function SaveRoom() {
-                request.room.save( function( error ) {
+                stripe.customers.create({
+                    card: request.user.stripeToken.id,
+                    email: request.user.email,
+                    description: request.user.nickname,
+                    plan: planId
+                }, function( error, customer ) {
                     if ( error )
-                    {
-                        response.json( error.message ? error.message : error, 500 );
-                        return;
-                    }
-            
-                    response.json( app.WithURLs( request, request.room ) );
-                });
-            }
-
-            var planId = 'sub_' + ( totalCost * 100 );
-            if ( !request.user.stripeCustomer && totalCost > 0 )
-            {
-                var planId = 'sub_' + ( totalCost * 100 );
-                stripe.plans.create({
-                    id: planId,
-                    amount: totalCost * 100,
-                    currency: 'usd',
-                    interval: 'month',
-                    name: 'Grmble Monthly Subscription'
-                }, function( error ) {
-                    if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
                     {
                         response.json( error, 500 );
                         return;
                     }
-                    
-                    stripe.customers.create({
-                        card: request.user.stripeToken.id,
-                        email: request.user.email,
-                        description: request.user.nickname,
-                        plan: planId
-                    }, function( error, customer ) {
+             
+                    request.user.stripeCustomer = customer;
+                    request.user.markModified( 'stripeCustomer' );
+                    request.user.save( function( error ) {
                         if ( error )
                         {
                             response.json( error, 500 );
                             return;
                         }
-                 
-                        request.user.stripeCustomer = customer;
-                        request.user.markModified( 'stripeCustomer' );
-                        request.user.save( function( error ) {
+                        
+                        SaveRoom();
+                    });
+                });
+            });
+        }
+        else if ( request.user.stripeCustomer && ( oldCost != totalCost ) )
+        {
+            stripe.customers.cancel_subscription( request.user.stripeCustomer.id, false, function( error ) {
+                if ( error && ( !error.statusCode || error.statusCode != 404 ) )
+                {
+                    response.json( error, 500 );
+                    return;
+                }
+                
+                if ( totalCost > 0 )
+                {
+                    stripe.plans.create({
+                        id: planId,
+                        amount: totalCost * 100,
+                        currency: 'usd',
+                        interval: 'month',
+                        name: 'Grmble Monthly Subscription'
+                    }, function( error ) {
+                        if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
+                        {
+                            response.json( error, 500 );
+                            return;
+                        }
+                        
+                        stripe.customers.update_subscription( request.user.stripeCustomer.id, {
+                            plan: planId
+                        }, function( error ) {
                             if ( error )
                             {
                                 response.json( error, 500 );
@@ -153,190 +171,209 @@ var Rooms = function() {
                             SaveRoom();
                         });
                     });
-                });
-            }
-            else if ( request.user.stripeCustomer && ( oldCost != totalCost ) )
-            {
-                stripe.customers.cancel_subscription( request.user.stripeCustomer.id, false, function( error ) {
-                    if ( error && ( !error.statusCode || error.statusCode != 404 ) )
-                    {
-                        response.json( error, 500 );
-                        return;
-                    }
-                    
-                    if ( totalCost > 0 )
-                    {
-                        stripe.plans.create({
-                            id: planId,
-                            amount: totalCost * 100,
-                            currency: 'usd',
-                            interval: 'month',
-                            name: 'Grmble Monthly Subscription'
-                        }, function( error ) {
-                            if ( error && ( !error.response || !error.response.error || !error.response.error.message || error.response.error.message != 'Plan already exists.' ) )
-                            {
-                                response.json( error, 500 );
-                                return;
-                            }
-                            
-                            stripe.customers.update_subscription( request.user.stripeCustomer.id, {
-                                plan: planId
-                            }, function( error ) {
-                                if ( error )
-                                {
-                                    response.json( error, 500 );
-                                    return;
-                                }
-                                
-                                SaveRoom();
-                            });
-                        });
-                    }
-                    else
-                    {
-                        SaveRoom();
-                    }
-                });
-            }
-            else
-            {
-                SaveRoom();
-            }
-        });
+                }
+                else
+                {
+                    SaveRoom();
+                }
+            });
+        }
+        else
+        {
+            SaveRoom();
+        }
+    });
 
-        app.post( '/api/1.0/Room/:roomId/Invite', checks.user, function( request, response ) {
-            models.Room.findById( request.params.roomId, function( error, room ) {
+    options.app.get( '/api/1.0/Room/:roomId/Dynamics', function( request, response ) {
+        options.models.RoomDynamics.findOne( { room: request.param( 'roomId' ) } ).lean().exec( function( error, roomDynamics ) {
+            if ( error )
+            {
+                response.json( error, 500 );
+                return;
+            }
+            
+            if ( !roomDynamics )
+            {
+                response.json( 'No room dynamis found for room with id: ' + request.param( 'roomId' ), 404 );
+                return;
+            }
+
+            response.json( roomDynamics );
+        });
+    });
+    
+    options.app.post( '/api/1.0/Room/:roomId/Invite', options.checks.user, function( request, response ) {
+        options.models.Room.findById( request.params.roomId, function( error, room ) {
+            if ( error )
+            {
+                response.json( error, 500 );
+                return;
+            }
+            
+            if ( !room )
+            {
+                response.json( 'No room found with id: ' + request.params.roomId, 404 );
+                return;
+            }
+
+            options.models.Invite.find( { senderId: request.user._id } ).sort( '-createdAt' ).limit( 1 ).exec( function( error, invites ) {
                 if ( error )
                 {
                     response.json( error, 500 );
                     return;
                 }
                 
-                if ( !room )
+                if ( invites.length )
                 {
-                    response.json( 'No room found with id: ' + request.params.roomId, 404 );
-                    return;
+                    if ( new Date() - invites[ 0 ].createdAt < 10000 )
+                    {
+                        response.json( { 'error': 'invite spam', 'message': 'You must wait 10 seconds to send another invite.' }, 400 );
+                        return;
+                    }
                 }
 
-                models.Invite.find( { senderId: request.user._id } ).sort( '-createdAt' ).limit( 1 ).exec( function( error, invites ) {
+                var invite = new options.models.Invite();
+                invite.senderId = request.user._id;
+                invite.email = request.param( 'email' ).toLowerCase().trim();
+                invite.roomId = room._id;
+                invite.save( function( error ) {
                     if ( error )
                     {
                         response.json( error, 500 );
                         return;
                     }
                     
-                    if ( invites.length )
-                    {
-                        if ( new Date() - invites[ 0 ].createdAt < 10000 )
-                        {
-                            response.json( { 'error': 'invite spam', 'message': 'You must wait 10 seconds to send another invite.' }, 400 );
-                            return;
-                        }
-                    }
+                    // TODO: https, not just generate this link this way
+                    var link = 'http://' + request.headers.host + '/#/Room/' + room._id;
+                    var data = {
+                        link: link,
+                        message: request.param( 'message' ),
+                        user: request.user,
+                        room: room
+                    };
 
-                    var invite = new models.Invite();
-                    invite.senderId = request.user._id;
-                    invite.email = request.param( 'email' ).toLowerCase().trim();
-                    invite.roomId = room._id;
-                    invite.save( function( error ) {
+                    dust.render( 'invite_email_text', data, function( error, text ) {
                         if ( error )
                         {
-                            response.json( error, 500 );
+                            response.json( error, 500 )
                             return;
                         }
                         
-                        // TODO: https, not just generate this link this way
-                        var link = 'http://' + request.headers.host + '/#/Room/' + room._id;
-                        var data = {
-                            link: link,
-                            message: request.param( 'message' ),
-                            user: request.user,
-                            room: room
-                        };
-
-                        dust.render( 'invite_email_text', data, function( error, text ) {
+                        dust.render( 'invite_email_html', data, function( error, html ) {
                             if ( error )
                             {
                                 response.json( error, 500 )
                                 return;
                             }
-                            
-                            dust.render( 'invite_email_html', data, function( error, html ) {
+
+                            smtpTransport.sendMail({
+                                from: "Grmble <support@grmble.com>",
+                                to: invite.email,
+                                subject: "Come chat with " + request.user.nickname + " on Grmble.com!",
+                                text: text,
+                                html: html
+                            }, function( error, smtpResponse ) {
                                 if ( error )
                                 {
-                                    response.json( error, 500 )
+                                    response.json( error, 500 );
                                     return;
                                 }
-    
-                                smtpTransport.sendMail({
-                                    from: "Grmble <support@grmble.com>",
-                                    to: invite.email,
-                                    subject: "Come chat with " + request.user.nickname + " on Grmble.com!",
-                                    text: text,
-                                    html: html
-                                }, function( error, smtpResponse ) {
-                                    if ( error )
-                                    {
-                                        response.json( error, 500 );
-                                        return;
-                                    }
-    
-                                    response.json( { 'sent': true } );
-                                });
+
+                                response.json( { 'sent': true } );
                             });
                         });
-                        
                     });
+                    
                 });
             });
         });
+    });
+    
+    options.app.get( '/api/1.0/Rooms', options.utils.query.HandleSearchParams, function( request, response ) {
+        var criteria = {
+            'room.features.privacy': false
+        };
         
-        // TODO: we will need some kind of filtering/cursoring here
-        app.get( '/api/1.0/Rooms', utils.query.HandleSearchParams, function( request, response ) {
-            var criteria = {
-                'features.privacy': false
-            };
-            
-            if ( request.param( 'tags' ) )
+        if ( request.param( 'tags' ) )
+        {
+            criteria[ 'tags' ] = { $in: request.param( 'tags' ).split( ',' ) };
+        }
+        
+        var query = options.models.Room.find( criteria );
+        
+        query.limit( request.query.limit );
+        query.skip( request.query.offset );
+        query.gt( 'createdAt', request.query.createdSince );
+        query.lt( 'createdAt', request.query.createdUntil );
+
+        var sort = {};
+        sort[ request.query.sortBy ] = request.query.sort;
+        query.sort( sort );
+        
+        query.lean().exec( function( error, rooms ) {
+            if ( error )
             {
-                criteria[ 'tags' ] = { $in: request.param( 'tags' ).split( ',' ) };
+                response.json( error.message || error, 500 );
+                return;
+            }
+
+            response.json( rooms );
+        });
+    });
+
+    options.app.get( '/api/1.0/MyRooms', options.checks.user, function( request, response ) {
+        options.models.Room.find( { owner: request.user._id } ).lean().exec( function( error, rooms ) {
+            if ( error )
+            {
+                response.json( error, 500 );
+                return;
             }
             
-            var query = models.Room.find( criteria );
-            
-            query.limit( request.query.limit );
-            query.skip( request.query.offset );
-            query.gt( 'createdAt', request.query.createdSince );
-            query.lt( 'createdAt', request.query.createdUntil );
-    
-            var sort = {};
-            sort[ request.query.sortBy ] = request.query.sort;
-            query.sort( sort );
-            
-            query.exec( function( error, rooms ) {
-                if ( error )
-                {
-                    response.json( error, 500 );
-                    return;
-                }
-                
-                response.json( app.WithURLs( request, rooms ) );
-            });
+            response.json( rooms );
         });
+    });
     
-        app.get( '/api/1.0/MyRooms', checks.user, function( request, response ) {
-            models.Room.find( { 'ownerId': request.user._id }, function( error, rooms ) {
-                if ( error )
-                {
-                    response.json( error, 500 );
-                    return;
-                }
-                
-                response.json( app.WithURLs( request, rooms ) );
-            });
+    options.app.get( '/api/1.0/RoomDynamics', options.utils.query.HandleSearchParams, function( request, response ) {
+        var criteria = {
+            privacy: false
+        };
+        
+        if ( request.param( 'tags' ) )
+        {
+            criteria[ 'tags' ] = { $in: request.param( 'tags' ).split( ',' ) };
+        }
+        
+        var query = options.models.RoomDynamics.find( criteria ).populate( 'room' );
+        
+        query.limit( request.query.limit );
+        query.skip( request.query.offset );
+        query.gt( 'createdAt', request.query.createdSince );
+        query.lt( 'createdAt', request.query.createdUntil );
+
+        var sort = {};
+        sort[ request.query.sortBy ] = request.query.sort;
+        query.sort( sort );
+        
+        query.lean().exec( function( error, roomDynamicList ) {
+            if ( error )
+            {
+                response.json( error.message || error, 500 );
+                return;
+            }
+            
+            response.json( roomDynamicList );
         });
-    }
-    
+    });
+
 }
 
-module.exports = new Rooms();
+Rooms.prototype.Interface = {
+    rooms: {
+        room: '/api/1.0/Room',
+        search: '/api/1.0/Rooms',
+        searchdynamics: '/api/1.0/RoomDynamics',
+        mine: '/api/1.0/MyRooms',
+        dynamics: '/api/1.0/Room/{{roomid}}/Dynamics',
+        invite: '/api/1.0/Room/{{roomid}}/Invite'
+    }
+};

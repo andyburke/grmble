@@ -206,12 +206,11 @@ var App = function( apiURL, router ) {
         jsonCall({
             url: self.apiURL,
             type: 'GET',
-            success: function( apiInfo ) {
-                self.api = apiInfo.urls;
+            success: function( api ) {
+                self.api = api;
                 callback( self.api );
                 self.events.emit( 'API loaded', self.api );
-		
-		Stripe.setPublishableKey( apiInfo.stripe.publishablekey );
+                Stripe.setPublishableKey( api.data.stripe.publishablekey );
             },
             error: function( xhr ) {
                 // TODO: better way to handle this?

@@ -1,42 +1,34 @@
-var express = require( 'express' );
-var util = require( 'util' );
+var extend = require( 'node.extend' );
 
-var Info = function() {
+var Info = module.exports = function( options ) {
     var self = this;
-
-    self.GetURLs = function( obj ) {
-        return obj ? {} : {
-            'info': '/api/1.0',
-            'icons': {
-                'active': '/images/icons/chat_highlighted.png',
-                'inactive': '/images/icons/chat.png'
-            }
-        };
-    }
-
-    self.bind = function( app ) {
-
-        app.get( '/api/1.0', function( request, response ) {
-            var urls = app.GetURLs ? app.GetURLs( request ) : {};
-            app.FixURLs( request, urls );
-            
-            var result = {
-                urls: urls,
-                time: new Date(),
-                version: "1.0",
+    
+    options.app.get( '/api/1.0', function( request, response ) {
+        var result = {
+            data: {
                 stripe: {
-                    publishablekey: config.stripe.publishable[ process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ]
+                    publishablekey: options.config.stripe.publishable[ process.env[ 'NODE_ENVIRONMENT' ] || 'test' ]
                 },
                 amazon: {
-                    AWSAccessKeyID: config.aws.AccessKeyID
+                    AWSAccessKeyID: options.config.aws.AccessKeyID
+                },
+                mixpanel: {
+                    token: options.config.mixpanel.tokens[ process.env[ 'NODE_ENVIRONMENT' ] || 'dev' ]
                 }
-            };
+            }
+        };
 
-            response.json( result );
-        });
-    }
+        for ( var i = 0; i < options.subsystems.length; ++i )
+        {
+            var subsystem = options.subsystems[ i ];
+            if ( subsystem.Interface )
+            {
+                result = extend( result, subsystem.Interface );
+            }
+        }
+
+        response.json( result );
+    });
 
     return self;
 }
-
-module.exports = new Info();

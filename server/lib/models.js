@@ -1,44 +1,7 @@
 var mongoose = require( 'mongoose' );
 var SimpleTimestamps = require( 'mongoose-SimpleTimestamps' ).SimpleTimestamps;
 
-var dbURI = 'mongodb://' + config.mongo.host + ':' + config.mongo.port + '/' + config.mongo.name;
-log.channels.db.info( 'Connecting to: ' + dbURI );
-
-var connection = exports.connection = mongoose.createConnection( dbURI );
-
-connection.on( 'error', function( error ) {
-    log.channels.db.error( error );
-});
-
-connection.on( 'connected', function() {
-    log.channels.db.info( 'Connected to db.' ); 
-});
-
-connection.on( 'disconnected', function() {
-    log.channels.db.info( 'Disconnected from db.' ); 
-});
-
-connection.on( 'open', function() {
-    log.channels.db.info( 'DB connection open.' );
-});
-
-connection.on( 'close', function() {
-    log.channels.db.info( 'DB connection closed.' );
-});
-
-// TODO: make this be on the mongoose model prototype
-var censor = exports.censor = function ( object, fields )
-{
-    var censored = {};
-    for ( var key in ( object._doc || object ) )
-    {
-        if ( !( key in fields ) )
-        {
-            censored[ key ] = object[ key ];
-        }
-    }
-    return censored;
-}
+mongoose.set('debug', true);
 
 var update = exports.update = function( object, parameters, handlers ) {
     for ( var key in handlers )
@@ -66,67 +29,75 @@ var update = exports.update = function( object, parameters, handlers ) {
     }
 }
 
-exports.AuthTokenSchema = new mongoose.Schema({
-    token: { type: String, unique: true, index: true },
-    ownerId: { type: mongoose.Schema.ObjectId, index: true },
-    expires: { type: Date, default: null }
-});
-exports.AuthTokenSchema.plugin( SimpleTimestamps );
-exports.AuthToken = connection.model( 'AuthToken', exports.AuthTokenSchema );
-
-exports.UserSchema = new mongoose.Schema({
-    email: { type: String, unique: true, index: true },
-    hash: { type: String, unique: true, index: true },
-    passwordHash: { type: String },
-    nickname: { type: String },
-    location: { type: String },
-    bio: { type: String },
-    stripeToken: { type: mongoose.Schema.Types.Mixed },
-    stripeCustomer: { type: mongoose.Schema.Types.Mixed },
-    avatar: { type: String }
-});
-exports.UserSchema.plugin( SimpleTimestamps );
-exports.User = connection.model( 'User', exports.UserSchema );
-
-exports.RoomSchema = new mongoose.Schema({
-    ownerId: { type: mongoose.Schema.ObjectId, index: true },
-    name: { type: String, index: true },
-    description: { type: String },
-    tags: { type: Array, index: true },
-    image: { type: String },
-    users: { type: Number, default: 0, min: 0 },
-    features: {
-        privacy: { type: Boolean, default: false },
-        advertising: { type: Boolean, default: true },
-        logs: { type: Boolean, default: false },
-        search: { type: Boolean, default: false }
-    }
-});
-exports.RoomSchema.plugin( SimpleTimestamps );
-exports.Room = connection.model( 'Room', exports.RoomSchema );
-
-exports.MessageSchema = new mongoose.Schema({
-    roomId: { type: mongoose.Schema.ObjectId, index: true },
-    senderId: { type: mongoose.Schema.ObjectId, index: true },
-    nickname: { type: String }, // just easier to toss this here than to require a lookup
-    userHash: { type: String },
-    avatar: { type: String },
-    kind: { type: String },
-    content: { type: String }
-});
-exports.MessageSchema.plugin( SimpleTimestamps );
-exports.Message = connection.model( 'Message', exports.MessageSchema );
-
-exports.StripeEventRecordSchema = new mongoose.Schema({
-    json: { type: String } 
-});
-exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
-exports.StripeEventRecord = connection.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
-
-exports.InviteSchema = new mongoose.Schema({
-    senderId: { type: mongoose.Schema.ObjectId, index: true },
-    email: { type: String, index: true },
-    roomId: { type: mongoose.Schema.ObjectId }
-});
-exports.InviteSchema.plugin( SimpleTimestamps );
-exports.Invite = connection.model( 'Invite', exports.InviteSchema );
+exports.Init = function( connection ) {
+    exports.UserSchema = new mongoose.Schema({
+        email: { type: String, unique: true, index: true, select: false },
+        hash: { type: String, unique: true, index: true },
+        passwordHash: { type: String, select: false },
+        nickname: { type: String },
+        location: { type: String },
+        bio: { type: String },
+        stripeToken: { type: mongoose.Schema.Types.Mixed, select: false },
+        stripeCustomer: { type: mongoose.Schema.Types.Mixed, select: false },
+        avatar: { type: String }
+    });
+    exports.UserSchema.plugin( SimpleTimestamps );
+    exports.User = connection.model( 'User', exports.UserSchema );
+    
+    exports.AuthTokenSchema = new mongoose.Schema({
+        token: { type: String, unique: true, index: true },
+        owner: { type: mongoose.Schema.ObjectId, index: true, ref: 'User' },
+        expires: { type: Date, default: null }
+    });
+    exports.AuthTokenSchema.plugin( SimpleTimestamps );
+    exports.AuthToken = connection.model( 'AuthToken', exports.AuthTokenSchema );
+    
+    exports.RoomSchema = new mongoose.Schema({
+        owner: { type: mongoose.Schema.ObjectId, index: true, ref: 'User' },
+        name: { type: String, index: true },
+        description: { type: String },
+        tags: { type: Array, index: true },
+        image: { type: String },
+        features: {
+            privacy: { type: Boolean, default: false },
+            advertising: { type: Boolean, default: true },
+            logs: { type: Boolean, default: false },
+            search: { type: Boolean, default: false }
+        }
+    });
+    exports.RoomSchema.plugin( SimpleTimestamps );
+    exports.Room = connection.model( 'Room', exports.RoomSchema );
+    
+    exports.RoomDynamicsSchema = new mongoose.Schema({
+        room: { type: mongoose.Schema.ObjectId, index: true, ref: 'Room' },
+        users: { type: Number, default: 0, min: 0 },
+        messages: { type: Number, default: 0, min: 0 },
+        privacy: { type: Boolean, default: false, index: true }, // duplicated from room
+        tags: { type: Array, index: true } // duplicated from room
+    });
+    exports.RoomDynamicsSchema.plugin( SimpleTimestamps );
+    exports.RoomDynamics = connection.model( 'RoomDynamics', exports.RoomDynamicsSchema );
+    
+    exports.MessageSchema = new mongoose.Schema({
+        room: { type: mongoose.Schema.ObjectId, index: true, ref: 'Room' },
+        sender: { type: mongoose.Schema.ObjectId, index: true, ref: 'User' },
+        kind: { type: String },
+        content: { type: String }
+    });
+    exports.MessageSchema.plugin( SimpleTimestamps );
+    exports.Message = connection.model( 'Message', exports.MessageSchema );
+    
+    exports.StripeEventRecordSchema = new mongoose.Schema({
+        json: { type: String } 
+    });
+    exports.StripeEventRecordSchema.plugin( SimpleTimestamps );
+    exports.StripeEventRecord = connection.model( 'StripeEventRecord', exports.StripeEventRecordSchema );
+    
+    exports.InviteSchema = new mongoose.Schema({
+        sender: { type: mongoose.Schema.ObjectId, index: true, ref: 'User' },
+        email: { type: String, index: true },
+        room: { type: mongoose.Schema.ObjectId, index: true, ref: 'Room' }
+    });
+    exports.InviteSchema.plugin( SimpleTimestamps );
+    exports.Invite = connection.model( 'Invite', exports.InviteSchema );
+}

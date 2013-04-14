@@ -1,41 +1,86 @@
+var config = require( './config/config.js' )
+
+var Logger = require( './lib/Logger.js' );
+var logger = Logger.Create({
+    directoy: config.logging[ 'directory' ],
+    loggly: {
+        subdomain: config.logging.loggly.subdomain,
+        token: config.logging.loggly.inputTokens[ process.env[ 'NODE_ENVIRONMENT' ] || 'dev' ]
+    }
+});
+
 var domain = require( 'domain' );
 var topLevelDomain = domain.create();
 
 topLevelDomain.on( 'error', function( error ) {
-    if ( typeof( log ) != 'undefined' && log.channels && log.channels.server )
-    {
-        log.channels.server.log( 'error', error );
-    }
-    else
-    {
-        console.error( error.stack ? error.stack : error );
-    }
+    logger.error( error.message || error, {
+        channel: 'server',
+        error: error.name || error,
+        message: error.message || error,
+        stack: error.stack
+    });
+
     process.exit( 1 );
 });
 
 topLevelDomain.run( function() {
     
-    global.config = require( './config/server.config.js' )
-    
-    var Logging = require( './lib/logging.js' );
-    global.log = new Logging.Logger( config.logging );
-    
-    global.utils = require( './lib/utils.js' );
+    var utils = require( './lib/utils.js' );
     
     process.env.TZ = 'UTC';
-    log.channels.server.info( 'Server Timezone: ' + process.env.TZ );
+    logger.info( 'Server Timezone: ' + process.env.TZ, { channel: 'server' } );
     
     var express = require( 'express' );
     var events = require( 'events' );
+    var devents = require( 'devents' );
     var extend = require( 'node.extend' );
     var fs = require( 'fs' );
     var http = require( 'http' );
     var https = require( 'https' );
+    var Mixpanel = require( 'mixpanel' );
+    var mongoose = require( 'mongoose' );
     var net = require( 'net' );
     var uuid = require( 'node-uuid' );
     
-    global.models = require( './lib/models.js' );
-    global.checks = require( './lib/checks.js' );
+    var models = require( './lib/models.js' );
+    var checks = require( './lib/checks.js' );
+
+    var mixpanel = Mixpanel.init( config.mixpanel.tokens[ process.env[ 'NODE_ENVIRONMENT' ] || 'dev' ] );
+    
+    ///////////////////
+    // init db
+    
+    var dbURI = 'mongodb://' + config.mongo.host + ':' + config.mongo.port + '/' + config.mongo.name;
+    logger.info( 'DB URI: ' + dbURI, { channel: 'server' } );
+
+    var dbConnection = mongoose.createConnection();
+    
+    dbConnection.on( 'error', function( error ) {
+        logger.error( error, { channel: 'db' } );
+    });
+    
+    dbConnection.on( 'connected', function() {
+        logger.info( 'Connected to db.', { channel: 'db' } );
+    });
+    
+    dbConnection.on( 'disconnected', function() {
+        logger.info( 'Disconnected from db.', { channel: 'db' } );
+    });
+    
+    dbConnection.on( 'open', function() {
+        logger.info( 'DB connection open.', { channel: 'db' } );
+    });
+    
+    dbConnection.on( 'close', function() {
+        logger.info( 'DB connection closed.', { channel: 'db' } );
+    });
+
+    dbConnection.open( dbURI );
+    
+    models.Init( dbConnection );
+    
+    //
+    ///////////////////
     
     var SSL = {
         key: fs.readFileSync( 'ssl/grmble.key' ),
@@ -43,27 +88,33 @@ topLevelDomain.run( function() {
     };
     
     var app = express();
-
     app.use( function( request, response, next ) {
         request._startTime = new Date();
         
         response.on( 'finish', function() {
             var socket = request.socket.socket ? request.socket.socket : request.socket;
 
-            log.channels.access.info({
-                ip: request.ip ? request.ip : socket.remoteAddress,
-                date: new Date().toUTCString(),
+            var date = new Date().toUTCString();
+            var ip = request.ip ? request.ip : socket.remoteAddress;
+            var version = "HTTP" + ( !!request.connection.encrypted ? 'S' : '' ) + '/' + request.httpVersionMajor + '.' + request.httpVersionMinor;
+            var responseTime = new Date() - request._startTime;
+            
+            logger.info( ip + ' ' + request.headers[ 'user-agent' ] + ' [' + date + ']' + ' "' + request.method + ' ' + request.url + ' ' + version + '" ' + response.statusCode + ' ' + socket.bytesWritten + ' ' + responseTime + 'ms', {
+                ip: ip,
+                date: date,
                 request: {
                     method: request.method,
                     url: request.url,
-                    version: "HTTP" + ( request.connection.encrypted ? 'S' : '' ) + '/' + request.httpVersionMajor + '.' + request.httpVersionMinor
+                    version: version
                 },
                 status: response.statusCode,
-                'response-time': new Date() - request._startTime,
+                'response-time': responseTime,
                 'bytes-sent': socket.bytesWritten,
                 referrer: request.headers[ 'referer' ] || request.headers[ 'referrer' ],
                 'user-agent': request.headers[ 'user-agent' ],
-                id: uuid.v4()
+                id: uuid.v4(),
+                ssl: !!request.connection.encrypted,
+                channel: 'access'
             });
         });
         
@@ -73,27 +124,19 @@ topLevelDomain.run( function() {
     app.use( express.cookieParser() );
     app.use( express.static( __dirname + '/../client/web' ) );
 
-    app.eventEmitter = new events.EventEmitter();
+    // fix for iOS6 caching POSTs (wtf?)
+    app.post( '*', function( request, response, next ) {
+        response.header( 'Cache-Control', 'private, no-cache, no-store, must-revalidate' );
     
-    app.subsystems = [
-        // api
-        require( './api/1.0/Info.js' ),
-        require( './api/1.0/Sessions.js' ),
-        require( './api/1.0/Users.js' ),
-        require( './api/1.0/Messages.js' ),
-        require( './api/1.0/Rooms.js' ),
-        require( './api/1.0/Stripe.js' ),
-        require( './api/1.0/Pricing.js' ),
-        require( './api/1.0/Passwords.js' ),
-        
-        // sockets
-        require( './lib/Messaging.js' ),
-        
-        // feeds
-        
-        require( './api/1.0/feeds/Github.js' )
-    ];
-    
+        next();
+    });    
+
+    app.events = new events.EventEmitter();
+    app.devents = new devents.DistributedEventEmitter({
+        host: config.redis.host,
+        port: config.redis.port
+    });
+
     app.GetSubsystem = function( subsystemType ) {
         for ( var index = 0; index < app.subsystems.length; ++index )
         {
@@ -106,110 +149,37 @@ topLevelDomain.run( function() {
         return null;
     }
     
-    app.GetURLs = function( request ) {
-        var result = {};
-        for ( var subsystem in app.subsystems )
-        {
-            if ( app.subsystems[ subsystem ].GetURLs )
-            {
-                result = extend( result, app.subsystems[ subsystem ].GetURLs( null, request ) );
-            }
-        }
-        
-        return result;
-    }
-    
-    app.WithURLs = function( request, ref, postprocess ) {
-        function AddURLs( obj ) {
-            var result = obj._doc ? obj.toObject().clone() : obj.clone();
-            result.urls = {};
-            
-            if ( obj._doc )
-            {
-                for ( var field in obj._doc )
-                {
-                    if ( result[ field ] )
-                    {
-                        if ( obj._doc[ field ]._doc )
-                        {
-                            result[ field ] = AddURLs( obj[ field ] );
-                        }
-                        else if ( typeof( obj._doc[ field ] === 'array' ) && obj._doc[ field ].length && obj._doc[ field ][ 0 ]._doc )
-                        {
-                            result[ field ] = [];
-                            for ( var i = 0; i < obj._doc[ field ].length; ++i )
-                            {
-                                result[ field ].push( AddURLs( obj[ field ][ i ] ) );
-                            }
-                        }
-                    }
-                }
-            }
-            
-            for ( var subsystem in app.subsystems )
-            {
-                if ( app.subsystems[ subsystem ].GetURLs )
-                {
-                    result.urls = extend( result.urls, app.subsystems[ subsystem ].GetURLs( obj, request ) );
-                }
-            }
-            
-            app.FixURLs( request, result.urls );
-    
-            return postprocess ? postprocess( result ) : result;
-        }
-        
-        if ( ref instanceof Array )
-        {
-            var result = [];
-            for ( var index = 0; index < ref.length; ++index )
-            {
-                result.push( AddURLs( ref[ index ] ) );
-            }
-            return result;
-        }
-        else
-            return AddURLs( ref );
-    }
-    
-    app.FixURLs = function( request, urls ) {
-        urls = urls || {};
-        for ( var urlKey in urls )
-        {
-            if ( urls[ urlKey ] instanceof Array || urls[ urlKey ] instanceof Object )
-            {
-                app.FixURLs( request, urls[ urlKey ] );
-            }
-            else if ( urls[ urlKey ][ 0 ] == '/' )
-            {
-                urls[ urlKey ] = 'http' + ( request.connection.encrypted ? 's' : '' ) + '://' + request.headers.host + urls[ urlKey ];
-            }
-        }
-    }
+    logger.info( 'Environment: ' + ( process.env[ 'NODE_ENVIRONMENT' ] || 'dev' ), { channel: 'server' } );
 
-    
-    for ( var index = 0; index < app.subsystems.length; ++index )
-    {
-        if ( typeof( app.subsystems[ index ].bind ) == 'function' )
-        {
-            app.subsystems[ index ].bind( app );
-        }
-    }
-    
-    log.channels.server.info( 'Grmble Environment: ' + ( process.env[ 'GRMBLE_ENVIRONMENT' ] || 'test' ) );
-    log.channels.server.info( 'Server loaded...' );
-
-    log.channels.server.info( 'HTTP listening on port ' + config.server.port + ' ...' );
     var httpServer = http.createServer( app ).listen( config.server.port );
+    logger.info( 'HTTP listening on port ' + config.server.port + ' ...', { channel: 'server' } );
 
-    log.channels.server.info( 'HTTPS listening on port ' + config.server.sslport + ' ...' );
     var httpsServer = https.createServer( SSL, app ).listen( config.server.sslport );
+    logger.info( 'HTTPS listening on port ' + config.server.sslport + ' ...', { channel: 'server' } );
 
-    for ( var index = 0; index < app.subsystems.length; ++index )
+    var RecursiveRequire = require( './lib/recursiverequire' );
+    var requires = RecursiveRequire.require( './api' );
+    
+    var subsystems = [];
+    
+    var options = {
+        config: config,
+        logger: logger,
+        mixpanel: mixpanel,
+        models: models,
+        checks: checks,
+        utils: utils,
+        app: app,
+        subsystems: subsystems,
+        servers: [
+            httpServer,
+            httpsServer
+        ]
+    };
+    
+    for ( var req in requires )
     {
-        if ( typeof( app.subsystems[ index ].postbind ) == 'function' )
-        {
-            app.subsystems[ index ].postbind( app, [ httpServer, httpsServer ] );
-        }
+        var system = requires[ req ];
+        subsystems.push( new ( system )( options ) );
     }
 });
