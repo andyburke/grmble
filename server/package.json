@@ -4,6 +4,7 @@
   "author": "Andy Burke <aburke@bitflood.org>",
   "version": "0.0.1",
   "dependencies": {
+    "extend": "~1.2.1",
     "express": "3.0.x",
     "mongoose": "3.0.x",
     "mongoose-types": "1.0.x",

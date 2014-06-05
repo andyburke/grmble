@@ -1,5 +1,6 @@
 var domain = require( 'domain' );
 var topLevelDomain = domain.create();
+var extend = require( 'extend' );
 
 topLevelDomain.on( 'error', function( error ) {
     if ( typeof( log ) != 'undefined' && log.channels && log.channels.server )
@@ -121,7 +122,7 @@ topLevelDomain.run( function() {
     
     app.WithURLs = function( request, ref, postprocess ) {
         function AddURLs( obj ) {
-            var result = obj._doc ? obj.toObject().clone() : obj.clone();
+            var result = extend( {}, obj._doc ? obj.toObject() : obj );
             result.urls = {};
             
             if ( obj._doc )
