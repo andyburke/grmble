@@ -16,7 +16,7 @@ var Passwords = module.exports = function( options ) {
     });
 
     options.app.post( '/api/1.0/Passwords/RequestReset', function( request, response ) {
-        options.models.User.findOne( { 'email': request.param( 'email' ).toLowerCase().trim() }, function( error, user ) {
+        options.models.User.findOne( { 'email': request.param( 'email' ).toLowerCase().trim() } ).select( '+email' ).exec( function( error, user ) {
             if ( error )
             {
                 response.json( error, 500 );
@@ -81,7 +81,7 @@ var Passwords = module.exports = function( options ) {
     options.app.post( '/api/1.0/Passwords/Reset', function( request, response ) {
         options.models.AuthToken.findOne( { 'token': request.param( 'authToken' ) } ).populate({
             path: 'owner',
-            select: 'passwordHash email'
+            select: '+passwordHash +email'
         }).exec( function( error, authToken ) {
             if ( error )
             {
@@ -106,7 +106,7 @@ var Passwords = module.exports = function( options ) {
                 var newAuthToken = new options.models.AuthToken();
                 newAuthToken.token = options.utils.security.GenerateAuthToken( authToken.owner );
                 newAuthToken.expires = new Date().addYears( 1 );
-                newAuthToken.owner = user._id;
+                newAuthToken.owner = authToken.owner._id;
                 newAuthToken.save( function( error ) {
                     if ( error )
                     {

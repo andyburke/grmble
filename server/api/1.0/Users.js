@@ -107,7 +107,7 @@ var Users = module.exports = function( options ) {
                     return;
                 }
 
-                response.json( options.models.censor( options.app.WithURLs( request, request.user ), { 'passwordHash': true } ) );
+                response.json( options.models.censor( request.user, { 'passwordHash': true } ) );
             });
         }
         
@@ -156,12 +156,12 @@ var Users = module.exports = function( options ) {
                     return;
                 }
                 
-                response.json( options.models.censor( options.app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
+                response.json( user );
             });
         }
         else
         {
-            response.json( options.models.censor( options.app.WithURLs( request, request.user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
+            response.json( options.models.censor( request.user, { 'passwordHash': true, 'stripeCustomer': true } ) );
         }
     });
     
@@ -182,12 +182,12 @@ var Users = module.exports = function( options ) {
                     return;
                 }
                 
-                response.json( options.models.censor( options.app.WithURLs( request, user ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
+                response.json( user );
             });
         }
         else
         {
-            response.json( options.models.censor( options.app.WithURLs( request, request.user ), { 'passwordHash': true, 'stripeCustomer': true } ) );
+            response.json( options.models.censor( request.user, { 'passwordHash': true, 'stripeCustomer': true } ) );
         }
     });
 
@@ -205,7 +205,7 @@ var Users = module.exports = function( options ) {
             var result = [];
             for ( var index = 0; index < users.length; ++index )
             {
-                result.push( options.models.censor( options.app.WithURLs( request, users[ index ] ), { 'email': true, 'passwordHash': true, 'stripeToken': true, 'stripeCustomer': true } ) );
+                result.push( users[ index ] );
             }
             
             response.json( result );

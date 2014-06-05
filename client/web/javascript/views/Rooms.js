@@ -15,7 +15,7 @@ var Rooms = function() {
             $( '#main' ).spin( 'large' );
             self.app.GetAPI( function( api ) {
                 jsonCall({
-                    url: api.rooms,
+                    url: api.rooms.search,
                     type: 'GET',
                     data: {
                         'sortBy': 'users',
@@ -52,7 +52,7 @@ var Rooms = function() {
             
             self.app.GetAPI( function( api ) {
                 jsonCall({
-                    url: api.rooms,
+                    url: api.rooms.search,
                     type: 'GET',
                     data: {
                         tags: tags,

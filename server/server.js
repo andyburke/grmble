@@ -33,7 +33,6 @@ topLevelDomain.run( function() {
     var express = require( 'express' );
     var events = require( 'events' );
     var devents = require( 'devents' );
-    var extend = require( 'node.extend' );
     var fs = require( 'fs' );
     var http = require( 'http' );
     var https = require( 'https' );
@@ -88,6 +87,7 @@ topLevelDomain.run( function() {
     };
     
     var app = express();
+    app.enable( 'trust proxy' );
     app.use( function( request, response, next ) {
         request._startTime = new Date();
         

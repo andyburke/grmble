@@ -1,8 +1,7 @@
 var faye = require( 'faye' );
 var fayeRedis = require( 'faye-redis' );
-
 var mongoose = require( 'mongoose' );
-var extend = require( 'node.extend' );
+var extend = require( 'extend' );
 
 var Messaging = module.exports = function( options ) {
     var self = this;
@@ -33,15 +32,15 @@ var Messaging = module.exports = function( options ) {
     // TODO: figure out what to do with servers that have just come up
     //
     self.bayeux.getClient().subscribe( '/room/*', function( message ) {
-        if ( !self.rooms[ message.room ] )
+        if ( !self.rooms[ message.roomId ] )
         {
-            self.rooms[ message.room ] = {};
+            self.rooms[ message.roomId ] = {};
         }
 
         switch( message.kind )
         {
             case 'join':
-                self.rooms[ message.room ][ message.senderId ] = {
+                self.rooms[ message.roomId ][ message.senderId ] = {
                     senderId: message.senderId,
                     nickname: message.nickname,
                     userHash: message.userHash,
@@ -50,26 +49,26 @@ var Messaging = module.exports = function( options ) {
                 };
                 break;
             case 'leave':
-                delete self.rooms[ message.room ][ message.senderId ];
+                delete self.rooms[ message.roomId ][ message.senderId ];
                 break;
             case 'idle':
-                if ( self.rooms[ message.room ][ message.senderId ] )
+                if ( self.rooms[ message.roomId ][ message.senderId ] )
                 {
-                    self.rooms[ message.room ][ message.senderId ].idle = true;
+                    self.rooms[ message.roomId ][ message.senderId ].idle = true;
                 }
                 break;
             case 'active':
-                if ( self.rooms[ message.room ][ message.senderId ] )
+                if ( self.rooms[ message.roomId ][ message.senderId ] )
                 {
-                    self.rooms[ message.room ][ message.senderId ].idle = false;
+                    self.rooms[ message.roomId ][ message.senderId ].idle = false;
                 }
                 break;
         }
         
         var empty = true;
-        for ( var key in self.rooms[ message.room ] )
+        for ( var key in self.rooms[ message.roomId ] )
         {
-            if ( self.rooms[ message.room ].hasOwnProperty( key ) )
+            if ( self.rooms[ message.roomId ].hasOwnProperty( key ) )
             {
                 empty = false;
                 break;
@@ -78,7 +77,7 @@ var Messaging = module.exports = function( options ) {
         
         if ( empty )
         {
-            delete self.rooms[ message.room ];
+            delete self.rooms[ message.roomId ];
         }
     });
     
@@ -86,14 +85,14 @@ var Messaging = module.exports = function( options ) {
         switch( message.kind )
         {
         case 'heartbeat':
-            if ( !self.rooms[ message.room ] )
+            if ( !self.rooms[ message.roomId ] )
             {
-                self.rooms[ message.room ] = {};
+                self.rooms[ message.roomId ] = {};
             }
             
-            if ( !self.rooms[ message.room ][ message.senderId ] )
+            if ( !self.rooms[ message.roomId ][ message.senderId ] )
             {
-                self.rooms[ message.room ][ message.senderId ] = {
+                self.rooms[ message.roomId ][ message.senderId ] = {
                     senderId: message.senderId,
                     nickname: message.nickname,
                     userHash: message.userHash,
@@ -117,7 +116,7 @@ var Messaging = module.exports = function( options ) {
             return;
         }
 
-        options.models.Room.findById( message.room, function( error, room ) {
+        options.models.Room.findById( message.roomId, function( error, room ) {
             if ( error )
             {
                 self.bayeux.getClient().publish( '/client/' + message.clientId, {
@@ -131,8 +130,8 @@ var Messaging = module.exports = function( options ) {
             {
                 self.bayeux.getClient().publish( '/client/' + message.clientId, {
                     kind: 'error',
-                    error: 'No room found with id: ' + message.room
-                });
+                    error: 'No room found with id: ' + message.roomId
+                } );
                 return;
             }
 
@@ -202,14 +201,14 @@ var Messaging = module.exports = function( options ) {
             case 'userlist request':
                 
                 var users = [];
-                for ( var id in self.rooms[ message.room ] )
+                for ( var id in self.rooms[ message.roomId ] )
                 {
-                    users.push( self.rooms[ message.room ][ id ] );
+                    users.push( self.rooms[ message.roomId ][ id ] );
                 }
 
                 self.bayeux.getClient().publish( '/client/' + message.clientId, {
                     kind: 'userlist',
-                    room: message.room,
+                    roomId: message.roomId,
                     users: users
                 });
 
@@ -277,10 +276,10 @@ var Messaging = module.exports = function( options ) {
                 break;
 
             case 'leave':
-                if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.room ] )
+                if (  self.timeouts[ message.clientId ] && self.timeouts[ message.clientId ][ message.roomId ] )
                 {
-                    clearTimeout( self.timeouts[ message.clientId ][ message.room ] );
-                    delete self.timeouts[ message.clientId ][ message.room ];
+                    clearTimeout( self.timeouts[ message.clientId ][ message.roomId ] );
+                    delete self.timeouts[ message.clientId ][ message.roomId ];
                 }
 
                 options.models.RoomDynamics.update( { room: room._id }, { $inc: { users: -1 } }, function( error ) {
@@ -295,8 +294,12 @@ var Messaging = module.exports = function( options ) {
             
             if ( room.features.logs )
             {
-                var newMessage = new models.Message();
-                models.update( newMessage, message );
+                var newMessage = new options.models.Message();
+                options.models.update( newMessage, message, {
+                    room: function( obj, params ) {
+                        return params.roomId;
+                    }
+                } );
                 newMessage._id = message._id;
                 
                 newMessage.save( function( error ) {

@@ -37,7 +37,7 @@ var CreateRoom = function() {
             
             self.app.GetAPI( function( api ) {
                 jsonCall({
-                    url: api.room,
+                    url: api.rooms.room,
                     type: 'POST',
                     data: {
                         'name': name,

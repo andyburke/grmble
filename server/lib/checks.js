@@ -1,6 +1,7 @@
 var passwordHash = require( 'password-hash' );
-
 var crypto = require( 'crypto' );
+
+var models = require( './models' );
 
 function HandleAuthToken( authToken, request, response, next ) {
     models.AuthToken.findOne( { 'token': authToken } ).populate({
@@ -25,8 +26,7 @@ function HandleAuthToken( authToken, request, response, next ) {
     });
 }
 
-exports.user = function( request, response, next )
-{
+exports.user = function( request, response, next ) {
     if ( request.user )
     {
         next();

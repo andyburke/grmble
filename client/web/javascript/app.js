@@ -22,7 +22,7 @@ var App = function( apiURL, router ) {
         new UserManager(),
         new Billing(),
         new ConnectionStatus(),
-	
+    
         // views
         
         new Home(),
@@ -48,7 +48,7 @@ var App = function( apiURL, router ) {
         new TypingStatus(),
         new TabCompletion(),
         new InlineAds(),
-	
+    
         // message handlers
         // TODO: we really shouldn't need the app to know about all the subsystems, they should register themselves
         new AudioHandler(),
@@ -57,7 +57,7 @@ var App = function( apiURL, router ) {
         new SpotifyHandler(),
         new VimeoHandler(),
         new YouTubeHandler()
-	
+    
     ];
 
     self.GetSubsystem = function( subsystemType ) {
@@ -84,18 +84,18 @@ var App = function( apiURL, router ) {
     
     self.Start = function() {
 
-	// TODO: should we be using pageshow/pagehide?
-	window.onbeforeunload = function() {
-	    if ( self.room )
-	    {
-		self.events.emit( 'leaving room', self.room );
+    // TODO: should we be using pageshow/pagehide?
+    window.onbeforeunload = function() {
+        if ( self.room )
+        {
+        self.events.emit( 'leaving room', self.room );
                 
                 self.SendMessage({
-                    kind: 'leave' 
+                    kind: 'leave'
                 }, function( error, message ) {
                     if ( error )
                     {
-			// do nothing, they're closing
+            // do nothing, they're closing
                     }
                     else
                     {
@@ -103,9 +103,9 @@ var App = function( apiURL, router ) {
                     }
                     self.room = null;
                 });
-	    }
-	}
-	
+        }
+    }
+    
         self.events.addListener( 'navigated', function( view ) {
             $('.navItem').removeClass( 'active' );
             var activeItem = $( '#nav-' + view );
@@ -147,33 +147,34 @@ var App = function( apiURL, router ) {
         });
 
         self.GetAPI( function( api ) {
-	    
-	    // setup Faye
-	    var js = document.createElement( 'script' );
-	    js.src = api.faye + '/client.js';
-	    js.onload = function() {
-		self.client = new Faye.Client( api.faye, {
-		    timeout: 60,
-		    retry: 10
-		});
-		self.events.emit( 'client created', self.client );
-		
-		if ( self.debug )
-		{
-		    self.client.subscribe( '/client/' + self.clientId, function( message ) {
-			console.log( message );
-		    });
-		}
 
-		self.client.subscribe( '/client/' + self.clientId, function( message ) {
-		    if ( message.kind == 'error' )
-		    {
-			self.ShowError( message );
-		    }
-		});
-	    };
-	    document.getElementsByTagName( 'head' )[ 0 ].appendChild( js );
-	});
+            // setup Faye
+            var js = document.createElement( 'script' );
+            js.src = api.faye + '/client.js';
+            js.onload = function() {
+                self.client = new Faye.Client( api.faye, {
+                    timeout: 60,
+                    retry: 10
+                });
+    
+                self.events.emit( 'client created', self.client );
+                
+                if ( self.debug )
+                {
+                    self.client.subscribe( '/client/' + self.clientId, function( message ) {
+                        console.log( message );
+                    });
+                }
+        
+                self.client.subscribe( '/client/' + self.clientId, function( message ) {
+                    if ( message.kind == 'error' )
+                    {
+                        self.ShowError( message );
+                    }
+                });
+            };
+            document.getElementsByTagName( 'head' )[ 0 ].appendChild( js );
+        });
 
         self.userManager = new UserManager( self );
         
@@ -187,12 +188,12 @@ var App = function( apiURL, router ) {
     }
     
     self.ShowError = function( error ) {
-	mixpanel.track( "ShowError", {
-	    error: error
-	});
-	
+        mixpanel.track( "error", {
+            error: error
+        });
+    
         // TODO: improve this
-        alert( error );
+        alert( typeof( error ) == 'object' ? ( error.message || error.error || error ) : error );
     }
     
     self.api = null;
@@ -246,10 +247,10 @@ var App = function( apiURL, router ) {
                 //self.nicknameRegex = new RegExp( user.nickname + '[\W\s$]', "ig" );
                 callback( self.user );
                 self.events.emit( 'got me', self.user );
-		mixpanel.identify( self.user._id );
-		mixpanel.name_tag( self.user.email );
-		mixpanel.register( { email: self.user.email, nickname: self.user.nickname } );
-		mixpanel.people.set( { '$email': self.user.email, name: self.user.nickname } );
+                mixpanel.identify( self.user._id );
+                mixpanel.name_tag( self.user.email );
+                mixpanel.register( { email: self.user.email, nickname: self.user.nickname } );
+                mixpanel.people.set( { '$email': self.user.email, name: self.user.nickname } );
             },
             error: function( xhr ) {
                 callback( null );
@@ -288,7 +289,7 @@ var App = function( apiURL, router ) {
         
         self.GetAPI( function( api ) {
             jsonCall({
-                url: api.room + '/' + roomId,
+                url: api.rooms.room + '/' + roomId,
                 type: 'GET',
                 success: function( room ) {
                     self.rooms[ room._id ] = room;
@@ -317,63 +318,63 @@ var App = function( apiURL, router ) {
     }
     
     self.SendMessage = function( message, callback ) {
-	callback = callback || function() {};
-
-	if ( !self.user )
-	{
-	    callback( { 'error': 'no user', 'message': 'You are not currently logged in.' }, message );
-	    return;
-	}
-
-	if ( !self.room )
-	{
-	    callback( { 'error': 'no room', 'message': 'You are not currently in a room.' }, message );
-	    return;
-	}
-
-	var newMessage = $.extend({
-	    _id: new ObjectId().toString(),
-	    clientId: self.clientId,
-	    createdAt: new Date(),
-	    roomId: self.room._id,
-	    senderId: self.user._id,
-	    nickname: self.user.nickname,
-	    userHash: self.user.hash,
-	    avatar: self.user.avatar,
-	    content: null
-	}, message );
-	
-	var publication = self.client.publish( '/room/' + self.room._id, newMessage );
-	publication.callback( function() {
-	    callback( null, newMessage ); 
-	});
-	publication.errback( function( error ) {
-	    callback( error, newMessage ); 
-	});
+        callback = callback || function() {};
+    
+        if ( !self.user )
+        {
+            callback( { 'error': 'no user', 'message': 'You are not currently logged in.' }, message );
+            return;
+        }
+    
+        if ( !self.room )
+        {
+            callback( { 'error': 'no room', 'message': 'You are not currently in a room.' }, message );
+            return;
+        }
+    
+        var newMessage = $.extend({
+            _id: new ObjectId().toString(),
+            clientId: self.clientId,
+            createdAt: new Date(),
+            roomId: self.room._id,
+            senderId: self.user._id,
+            nickname: self.user.nickname,
+            userHash: self.user.hash,
+            avatar: self.user.avatar,
+            content: null
+        }, message );
+        
+        var publication = self.client.publish( '/room/' + self.room._id, newMessage );
+        publication.callback( function() {
+            callback( null, newMessage ); 
+        });
+        publication.errback( function( error ) {
+            callback( error, newMessage ); 
+        });
     }
 
     self.SendClientMessage = function( message, callback ) {
-	callback = callback || function() {};
-
-	var newMessage = $.extend({
-	    _id: new ObjectId().toString(),
-	    clientId: self.clientId,
-	    createdAt: new Date(),
-	    roomId: self.room ? self.room._id : null,
-	    senderId: self.user ? self.user._id : null,
-	    nickname: self.user ? self.user.nickname : null,
-	    userHash: self.user ? self.user.hash : null,
-	    avatar: self.user ? self.user.avatar : null,
-	    content: null
-	}, message );
-	
-	var publication = self.client.publish( '/client/' + self.clientId, newMessage );
-	publication.callback( function() {
-	    callback( null, newMessage ); 
-	});
-	publication.errback( function( error ) {
-	    callback( error, newMessage ); 
-	});
+        callback = callback || function() {};
+    
+        var newMessage = $.extend({
+            _id: new ObjectId().toString(),
+            clientId: self.clientId,
+            createdAt: new Date(),
+            roomId: self.room ? self.room._id : null,
+            senderId: self.user ? self.user._id : null,
+            nickname: self.user ? self.user.nickname : null,
+            userHash: self.user ? self.user.hash : null,
+            avatar: self.user ? self.user.avatar : null,
+            content: null
+        }, message );
+        
+        var publication = self.client.publish( '/client/' + self.clientId, newMessage );
+        publication.callback( function() {
+            callback( null, newMessage ); 
+        });
+        publication.errback( function( error ) {
+            callback( error, newMessage ); 
+        });
     }
 
 }
